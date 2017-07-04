@@ -1,6 +1,6 @@
 pragma solidity ^0.4.8;
 
-import "./Ownable.sol";
+import "./zeppelin/ownership/Ownable.sol";
 
 /**
  * @title Migrations
@@ -18,4 +18,5 @@ contract Migrations is Ownable {
     Migrations upgraded = Migrations(newAddress);
     upgraded.setCompleted(lastCompletedMigration);
   }
+  
 }

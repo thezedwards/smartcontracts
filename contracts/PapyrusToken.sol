@@ -1,13 +1,12 @@
 pragma solidity ^0.4.8;
 
-import "./ConsenSys/HumanStandardToken.sol";
-import "./Papyrus.sol";
-import "./Ownable.sol";
+import "./zeppelin/lifecycle/Pausable.sol";
+import "./zeppelin/token/MintableToken.sol";
 
 /**
  * @title Papyrus token contract (PPR).
  */
-contract PapyrusToken is HumanStandardToken, Ownable {
+contract PapyrusToken is MintableToken, Pausable {
 
   ///////////////////////////////////////////////
   // Pre-defined constants
@@ -15,39 +14,31 @@ contract PapyrusToken is HumanStandardToken, Ownable {
 
   string  private constant PPR_NAME                   = "Papyrus Token";
   string  private constant PPR_SYMBOL                 = "PPR";
-  uint8   private constant PPR_DECIMALS               = 9;
-  uint256 private constant QUANTUMS_PER_PPR           = uint256(10) ** PPR_DECIMALS;
-  uint256 private constant LIMIT_TOTAL                = 1000000000 * QUANTUMS_PER_PPR;
-  uint256 private constant LIMIT_PRE_SALE_PRIVATE     =   20000000 * QUANTUMS_PER_PPR;
-  uint256 private constant LIMIT_PRE_SALE_PUBLIC      =   30000000 * QUANTUMS_PER_PPR;
-  uint256 private constant LIMIT_CROWD_SALE_PHASE_1   =  300000000 * QUANTUMS_PER_PPR;
-  uint256 private constant LIMIT_CROWD_SALE_PHASE_2   =  300000000 * QUANTUMS_PER_PPR;
-
-  ///////////////////////////////////////////////
-  // Custom enumerations and structures
-  ///////////////////////////////////////////////
+  uint8   private constant PPR_DECIMALS               = 18;
+  string  private constant PPR_VERSION                = "H0.1";
+  uint256 private constant PPR_LIMIT                  = uint256(10) ** (PPR_DECIMALS + 9);
 
   ///////////////////////////////////////////////
   // State variables and constructor
   ///////////////////////////////////////////////
 
-  Papyrus.Event public currentEvent = Papyrus.Event.NoEvent;
-  Papyrus.Event public lastFinishedEvent = Papyrus.Event.NoEvent;
+  // Human Token related state variables
+  string public name = PPR_NAME;
+  uint8 public decimals = PPR_DECIMALS;
+  string public symbol = PPR_SYMBOL;
+  string public version = "H0.1";
 
-  function PapyrusToken() HumanStandardToken(0, PPR_NAME, PPR_DECIMALS, PPR_SYMBOL) {}
+  // At the start of the token existance it is not transferable
+  bool public transferable = false;
+
+  function PapyrusToken() {}
 
   ///////////////////////////////////////////////
   // Function modifiers
   ///////////////////////////////////////////////
 
-  modifier canSupply(uint256 _value) {
-    // Double-checking make sense here to protect uint256 limits
-    //require(_value > 0 && _value <= LIMIT_TOTAL && totalSupply + _value <= LIMIT_TOTAL);
-    _;
-  }
-
   modifier canTransfer() {
-    //require(currentEvent == Papyrus.Event.NoEvent);
+    require(transferable);
     _;
   }
 
@@ -55,15 +46,40 @@ contract PapyrusToken is HumanStandardToken, Ownable {
   // Events
   ///////////////////////////////////////////////
 
-  event Bought(address buyer, uint256 amount);
+  event BecomeTransferable();
 
   ///////////////////////////////////////////////
   // Functions
   ///////////////////////////////////////////////
 
-  function buy() payable canSupply(msg.value) {
-    balances[msg.sender] += msg.value;
-    totalSupply += msg.value;
-    Bought(msg.sender, msg.value);
+  // If ether is sent to this address, send it back.
+  function () { throw; }
+
+  // Do not allow transfer ownership.
+  function transferOwnership(address newOwner) { throw; }
+
+  // Check limits before mint
+  function mint(address _to, uint256 _amount) onlyOwner returns (bool) {
+    require(totalSupply.add(_amount) <= PPR_LIMIT);
+    return super.mint(_to, _amount);
+  }
+
+  // Check transferable state before transfer
+  function transfer(address _to, uint _value) canTransfer {
+    super.transfer(_to, _value);
+  }
+
+  // Check transferable state before transfer
+  function transferFrom(address _from, address _to, uint _value) canTransfer {
+    super.transferFrom(_from, _to, _value);
+  }
+
+  /**
+   * @dev Called by the owner to make the token transferable
+   */
+  function makeTransferable() onlyOwner returns (bool) {
+    transferable = true;
+    BecomeTransferable();
+    return true;
   }
 }
