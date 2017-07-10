@@ -1,12 +1,11 @@
 pragma solidity ^0.4.8;
 
-import './zeppelin/token/MintableToken.sol';
-import './zeppelin/math/SafeMath.sol';
+import './MintableToken.sol';
 
 /**
  * @title Crowdsale 
  * @dev Crowdsale is a base contract for managing a token crowdsale.
- * Crowdsales have a start and end limits, where investors can make
+ * Crowdsales have a start and end blocks, where investors can make
  * token purchases and the crowdsale will assign them tokens based
  * on a token per ETH rate. Funds collected are forwarded to a wallet 
  * as they arrive.
@@ -18,25 +17,26 @@ contract Crowdsale {
   // The token being sold
   MintableToken public token;
 
-  // Start and end limits where investments are allowed (both inclusive)
-  // These can be something like block numbers or timestamps
-  uint256 public startLimit;
-  uint256 public endLimit;
-
   // Address where funds are collected
   address public wallet;
+
+  // Start and end blocks where investments are allowed (both inclusive)
+  uint256 public startLimit;
+  uint256 public endLimit;
 
   // How many token units a buyer gets per wei
   uint256 public rate;
 
-  // Amount of raised money in wei
-  uint256 public weiRaised;
+  // Limit of token units to solve
+  uint256 public cap;
+
+  // Amount of raised money (as weis)
+  uint256 public raised;
 
   // Amount of minted token units
   uint256 public minted;
 
-  // Limit of token units to solve
-  uint256 public cap;
+  event LogMessage(string message, uint256 value);
 
   /**
    * Event for token purchase logging
@@ -47,21 +47,18 @@ contract Crowdsale {
    */ 
   event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
-  function Crowdsale(uint256 _startLimit, uint256 _endLimit, uint256 _rate, address _wallet) {
-    //require(_endLimit >= getLimitationValue());
-    //require(_endLimit >= _startLimit);
-    //require(_rate > 0);
-    //require(_wallet != 0x0);
-
+  function Crowdsale(MintableToken _token, address _wallet, uint256 _startLimit, uint256 _endLimit, uint256 _rate, uint256 _cap) {
+    require(_wallet != 0x0);
+    require(block.number <= _startLimit);
+    require(_startLimit <= _endLimit);
+    require(_rate > 0);
+    token = _token;
+    wallet = _wallet;
     startLimit = _startLimit;
     endLimit = _endLimit;
     rate = _rate;
-    wallet = _wallet;
+    cap = _cap;
   }
-
-  // Returns value should be used to compare with start/end limits. 
-  // Override this method to have relevant value like block index or timestamp.
-  function getLimitationValue() internal constant returns (uint256) { throw; }
 
   // Send ether to the fund collection wallet.
   // Override to create custom fund forwarding mechanisms
@@ -76,33 +73,34 @@ contract Crowdsale {
 
   // Low level token purchase function
   function buyTokens(address beneficiary) payable {
+
     require(beneficiary != 0x0);
 
-    uint256 weiAmount = msg.value;
-    uint256 updatedWeiRaised = weiRaised.add(weiAmount);
+    uint256 amount = msg.value;
+    uint256 raisedNew = raised.add(amount);
 
     // calculate token amount to be created
-    uint256 tokens = weiAmount.mul(rate);
+    uint256 tokens = amount.mul(rate);
 
     require(validPurchase(tokens));
 
-    uint256 updatedMinted = minted.add(tokens);
+    uint256 mintedNew = minted.add(tokens);
 
     // update state
-    weiRaised = updatedWeiRaised;
-    minted = updatedMinted;
+    raised = raisedNew;
+    minted = mintedNew;
 
     token.mint(beneficiary, tokens);
-    TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
+    TokenPurchase(msg.sender, beneficiary, amount, tokens);
 
     forwardFunds();
   }
 
   // @return true if the transaction can buy tokens
   function validPurchase(uint256 _tokens) internal constant returns (bool) {
-    uint256 current = getLimitationValue();
+    uint256 blockNumber = block.number;
     bool withinCap = minted.add(_tokens) <= cap; // TODO
-    bool withinPeriod = current >= startLimit && current <= endLimit;
+    bool withinPeriod = blockNumber >= startLimit && blockNumber <= endLimit;
     bool nonZeroPurchase = msg.value != 0;
     return withinCap && withinPeriod && nonZeroPurchase;
   }
@@ -110,32 +108,8 @@ contract Crowdsale {
   // @return true if crowdsale event has ended
   function hasEnded() public constant returns (bool) {
     bool capReached = minted >= cap;
-    bool limitReached = getLimitationValue() > endLimit;
+    bool limitReached = block.number > endLimit;
     return capReached || limitReached;
   }
-
-}
-
-contract CrowdsaleBlockNumberLimit is Crowdsale {
-  
-  function CrowdsaleBlockNumberLimit(address _tokenAddress, uint256 _startLimit, uint256 _endLimit, uint256 _rate, address _wallet)
-    Crowdsale(_startLimit, _endLimit, _rate, _wallet) {
-      require(_tokenAddress != 0x0);
-      //token = MintableToken(_tokenAddress);
-    }
-  
-  function getLimitationValue() internal constant returns (uint256) { return block.number; }
-
-}
-
-contract CrowdsaleBlockTimeLimit is Crowdsale {
-  
-  function CrowdsaleBlockTimeLimit(address _tokenAddress, uint256 _startLimit, uint256 _endLimit, uint256 _rate, address _wallet)
-    Crowdsale(_startLimit, _endLimit, _rate, _wallet) {
-      require(_tokenAddress != 0x0);
-      token = MintableToken(_tokenAddress);
-    }
-  
-  function getLimitationValue() internal constant returns (uint256) { return block.timestamp; }
 
 }

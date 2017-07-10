@@ -1,12 +1,11 @@
 pragma solidity ^0.4.8;
 
-import "./zeppelin/lifecycle/Pausable.sol";
-import "./zeppelin/token/MintableToken.sol";
+import "./MintableToken.sol";
 
 /**
  * @title Papyrus token contract (PPR).
  */
-contract PapyrusToken is MintableToken, Pausable {
+contract PapyrusToken is MintableToken {
 
   ///////////////////////////////////////////////
   // Pre-defined constants
@@ -31,7 +30,9 @@ contract PapyrusToken is MintableToken, Pausable {
   // At the start of the token existance it is not transferable
   bool public transferable = false;
 
-  function PapyrusToken() {}
+  function PapyrusToken() {
+    mintingCap = PPR_LIMIT;
+  }
 
   ///////////////////////////////////////////////
   // Function modifiers
@@ -46,7 +47,7 @@ contract PapyrusToken is MintableToken, Pausable {
   // Events
   ///////////////////////////////////////////////
 
-  event BecomeTransferable();
+  event BecameTransferable();
 
   ///////////////////////////////////////////////
   // Functions
@@ -54,15 +55,6 @@ contract PapyrusToken is MintableToken, Pausable {
 
   // If ether is sent to this address, send it back.
   function () { throw; }
-
-  // Do not allow transfer ownership.
-  function transferOwnership(address newOwner) { throw; }
-
-  // Check limits before mint
-  function mint(address _to, uint256 _amount) onlyOwner returns (bool) {
-    require(totalSupply.add(_amount) <= PPR_LIMIT);
-    return super.mint(_to, _amount);
-  }
 
   // Check transferable state before transfer
   function transfer(address _to, uint _value) canTransfer {
@@ -75,11 +67,12 @@ contract PapyrusToken is MintableToken, Pausable {
   }
 
   /**
-   * @dev Called by the owner to make the token transferable
+   * @dev Called by the owner to make the token transferable.
+   * @return True if the operation was successful.
    */
   function makeTransferable() onlyOwner returns (bool) {
     transferable = true;
-    BecomeTransferable();
+    BecameTransferable();
     return true;
   }
 }

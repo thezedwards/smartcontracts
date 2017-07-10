@@ -1,75 +1,87 @@
-var PapyrusToken = artifacts.require("./PapyrusToken.sol");
-//var CrowdsaleBlockNumberLimitAbi = artifacts.require("./bin/contracts/CrowdsaleBlockNumberLimit.abi");
-var CrowdsaleBlockNumberLimitAbi = [{ "constant": true, "inputs": [], "name": "startLimit", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "rate", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "cap", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "weiRaised", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "minted", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "wallet", "outputs": [{ "name": "", "type": "address" }], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "endLimit", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "type": "function" }, { "constant": false, "inputs": [{ "name": "beneficiary", "type": "address" }], "name": "buyTokens", "outputs": [], "payable": true, "type": "function" }, { "constant": true, "inputs": [], "name": "hasEnded", "outputs": [{ "name": "", "type": "bool" }], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "token", "outputs": [{ "name": "", "type": "address" }], "payable": false, "type": "function" }, { "inputs": [{ "name": "_tokenAddress", "type": "address" }, { "name": "_startLimit", "type": "uint256" }, { "name": "_endLimit", "type": "uint256" }, { "name": "_rate", "type": "uint256" }, { "name": "_wallet", "type": "address" }], "payable": false, "type": "constructor" }, { "payable": true, "type": "fallback" }, { "anonymous": false, "inputs": [{ "indexed": true, "name": "purchaser", "type": "address" }, { "indexed": true, "name": "beneficiary", "type": "address" }, { "indexed": false, "name": "value", "type": "uint256" }, { "indexed": false, "name": "amount", "type": "uint256" }], "name": "TokenPurchase", "type": "event" }];
+/*jshint esversion: 6 */
 
-var accountNames = ["Alice", "Bobby", "Carl", "Daniel", "Eric"];
-var accountIds = [0, 0, 0, 0, 0];
+import {
+    waitMiner,
+    shareEther,
+    ensureSynchronization,
+    printAccounts,
+    printAccountsShort,
+    printTokenInfo,
+    getPapyrusToken,
+    startCrowdsale,
+    testSolidityEvents,
+    checkAbilityToBuyPPR,
+    checkAbilityToTransferPPR,
+    waitUntilBlockNumber,
+    deinitialize
+} from './PapyrusLibraryTest.js';
 
-var printAccounts = function() {
-    console.log("There are " + accountIds.length + " nodes in the network:");
-    for (var i = 0; i < accountIds.length && i < accountNames.length; ++i) {
-        var balance = web3.eth.getBalance(accountIds[i]).valueOf();
-        var balanceEther = balance / 1000000000000000000;
-        console.log(" " + i + ". " + accountNames[i] + "\t: " + accountIds[i] + " has " + balanceEther.toFixed(3) + " ether");
-    }
-    console.log();
-};
+var startPrivatePreSale = 0;
+var startPublicPreSale = 0;
+var startSalePhase1 = 0;
+var startSalePhase2 = 0;
 
-var canBuyPPR = function(fromIndex, amount) {
-    return PapyrusToken.deployed().then(function(instance) {
-        var papyrusPrice = web3.toWei(amount, 'ether');
-        var initialBalance = web3.eth.getBalance(accountIds[fromIndex]).valueOf();
-        return instance.totalSupply.call().then(function(initialTotalSupply) {
-            return instance.buy({ from: accountIds[fromIndex], value: papyrusPrice }).then(function() {
-                var newBalance = web3.eth.getBalance(accountIds[fromIndex]).valueOf();
-                var difference = initialBalance - newBalance;
-                assert(difference > papyrusPrice);
-                return instance.totalSupply.call().then(function(totalSupply) {
-                    assert.equal(totalSupply.valueOf(), initialTotalSupply.plus(papyrusPrice), "Total supply should be changed on difference");
-                });
-            });
-        });
-    });
-};
+describe("Waiting until main account has enough ether to start testing...", function() {
+    this.timeout(600000);
+    it("OK", function() { waitMiner(); });
+});
 
-var cannotBuyPPR = function(fromIndex, amount) {
-    return PapyrusToken.deployed().then(function(instance) {
-        var papyrusPrice = web3.toWei(amount, 'ether');
-        var initialBalance = web3.eth.getBalance(accountIds[fromIndex]).valueOf();
-        return instance.totalSupply.call().then(function(initialTotalSupply) {
-            return instance.buyTokens({ from: accountIds[fromIndex], value: papyrusPrice }).then(function() {
-                var newBalance = web3.eth.getBalance(accountIds[fromIndex]).valueOf();
-                assert.equal(newBalance, initialBalance, "Difference should be zero");
-                return instance.totalSupply.call().then(function(totalSupply) {
-                    assert.equal(totalSupply.valueOf(), initialTotalSupply.valueOf(), "Total supply should not be changed");
-                });
-            });
-        });
-    });
-};
+describe("Make sure all donating accounts have enough ether to start testing...", function() {
+    this.timeout(600000);
+    it("OK", function() { return shareEther(); });
+});
 
-contract('PapyrusToken', function(accounts) {
+/*describe("Ensuring all transactions are synchronized with the Ethereum...", function() {
+    this.timeout(600000);
+    it("OK", function() { ensureSynchronization(); });
+});*/
 
-    accountIds = accounts;
+describe("Retrieving information about known accounts...", function() {
+    this.timeout(600000);
+    it("OK", function() { printAccounts(); });
+});
 
-    printAccounts();
-
-    it("Should have owner", function() {
-        return PapyrusToken.deployed().then(function(instance) {
+describe("Preparing Papyrus Token smart-contract...", function() {
+    this.timeout(600000);
+    it("OK", function() {
+        return getPapyrusToken().then(function(instance) {
             return instance.owner.call().then(function(owner) {
                 assert(owner.length > 0);
-                console.log("    Owner of the contract: " + owner);
+                console.log("    Owner of the Papyrus Token contract: " + owner);
+                return printTokenInfo();
             });
         });
     });
+});
 
-    it("Should be able to create crowdsale contract", function() {
-        return PapyrusToken.deployed().then(function(instance) {
-            var CrowdsaleBlockNumberLimit = web3.eth.contract(CrowdsaleBlockNumberLimitAbi);
-            var crowdsale = CrowdsaleBlockNumberLimit.new(instance.contract.address, 350, 360, 1, accountIds[0], { from: accountIds[0], gas: 3000000 });
-            console.log(crowdsale);
-        });
+describe("Creating private pre-sale Papyrus Crowdsale contract...", function() {
+    this.timeout(600000);
+    it("OK", function() {
+        startPrivatePreSale = web3.eth.blockNumber + 10;
+        return startCrowdsale(startPrivatePreSale, startPrivatePreSale + 100, 10, 1);
     });
+});
 
-    it("Should not be able to buy ", function() { return cannotBuyPPR(0, 1.1); });
+describe("Ensuring all transactions are synchronized with the Ethereum...", function() {
+    this.timeout(600000);
+    it("OK", function() { ensureSynchronization(); });
+});
+
+describe("Checking common state of Papyrus Token...", function() {
+    this.timeout(600000);
+    it("Should not be able to buy PPR before crowdsale is started", function() { return checkAbilityToBuyPPR(4, 1.0, false); });
+});
+
+describe("Waiting until crowdsale is started...", function() {
+    this.timeout(600000);
+    it("OK", function() { waitUntilBlockNumber(startPrivatePreSale); });
+});
+
+describe("Checking common state of Papyrus Token...", function() {
+    this.timeout(600000);
+    it("Should be able to buy PPR after crowdsale is started", function() { return checkAbilityToBuyPPR(3, 0.1, true); });
+});
+
+describe("Finishing testing...", function() {
+    it("OK", function() { deinitialize(); });
 });

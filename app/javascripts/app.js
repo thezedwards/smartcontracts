@@ -1,3 +1,5 @@
+/*jshint esversion: 6 */
+
 // Import the page's CSS. Webpack will know what to do with it.
 import "../stylesheets/app.css";
 
@@ -41,6 +43,8 @@ window.App = {
 
             self.refreshBalance();
         });
+
+        contracts.createCrowdsaleContract(web3);
     },
 
     setStatus: function(message) {
