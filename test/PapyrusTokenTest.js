@@ -10,6 +10,7 @@ import {
     getPapyrusToken,
     startCrowdsale,
     testSolidityEvents,
+    makeTransferable,
     checkAbilityToBuyPPR,
     checkAbilityToTransferPPR,
     waitUntilBlockNumber,
@@ -31,10 +32,10 @@ describe("Make sure all donating accounts have enough ether to start testing..."
     it("OK", function() { return shareEther(); });
 });
 
-/*describe("Ensuring all transactions are synchronized with the Ethereum...", function() {
+describe("Ensuring all transactions are synchronized with the Ethereum...", function() {
     this.timeout(600000);
     it("OK", function() { ensureSynchronization(); });
-});*/
+});
 
 describe("Retrieving information about known accounts...", function() {
     this.timeout(600000);
@@ -48,7 +49,6 @@ describe("Preparing Papyrus Token smart-contract...", function() {
             return instance.owner.call().then(function(owner) {
                 assert(owner.length > 0);
                 console.log("    Owner of the Papyrus Token contract: " + owner);
-                return printTokenInfo();
             });
         });
     });
@@ -67,9 +67,28 @@ describe("Ensuring all transactions are synchronized with the Ethereum...", func
     it("OK", function() { ensureSynchronization(); });
 });
 
+describe("Print network state...", function() {
+    this.timeout(600000);
+    it("OK", function() {
+        return printAccountsShort().then(function() {
+            return printTokenInfo();
+        });
+    });
+});
+
 describe("Checking common state of Papyrus Token...", function() {
     this.timeout(600000);
-    it("Should not be able to buy PPR before crowdsale is started", function() { return checkAbilityToBuyPPR(4, 1.0, false); });
+    it("Should not be able to buy PPR", function() { return checkAbilityToBuyPPR(4, 1.0, false); });
+    it("Should not be able to transfer PPR", function() { return checkAbilityToTransferPPR(3, 4, 0.01, false); });
+});
+
+describe("Print network state...", function() {
+    this.timeout(600000);
+    it("OK", function() {
+        return printAccountsShort().then(function() {
+            return printTokenInfo();
+        });
+    });
 });
 
 describe("Waiting until crowdsale is started...", function() {
@@ -79,7 +98,36 @@ describe("Waiting until crowdsale is started...", function() {
 
 describe("Checking common state of Papyrus Token...", function() {
     this.timeout(600000);
-    it("Should be able to buy PPR after crowdsale is started", function() { return checkAbilityToBuyPPR(3, 0.1, true); });
+    it("Should be able to buy PPR", function() { return checkAbilityToBuyPPR(3, 5.0, true); });
+    it("Should not be able to transfer PPR", function() { return checkAbilityToTransferPPR(3, 4, 0.01, false); });
+});
+
+describe("Print network state...", function() {
+    this.timeout(600000);
+    it("OK", function() {
+        return printAccountsShort().then(function() {
+            return printTokenInfo();
+        });
+    });
+});
+
+describe("Making Papyrus Token to be transferable...", function() {
+    this.timeout(600000);
+    it("OK", function() { return makeTransferable(); });
+});
+
+describe("Checking common state of Papyrus Token...", function() {
+    this.timeout(600000);
+    it("Should be able to transfer PPR", function() { return checkAbilityToTransferPPR(3, 4, 0.01, true); });
+});
+
+describe("Print network state...", function() {
+    this.timeout(600000);
+    it("OK", function() {
+        return printAccountsShort().then(function() {
+            return printTokenInfo();
+        });
+    });
 });
 
 describe("Finishing testing...", function() {

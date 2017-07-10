@@ -17,9 +17,9 @@ var accountMinerId = accountIds[0];
 var accountPreSaleWalletId = accountIds[1];
 var accountSaleWalletId = accountIds[2];
 
-const MINER_ETHER_MIN = 100;
+const MINER_ETHER_MIN = 150;
 const MINER_ETHER_MIN_WEI = web3.toBigNumber(web3.toWei(MINER_ETHER_MIN, "ether"));
-const ACCOUNT_ETHER_MIN = 10;
+const ACCOUNT_ETHER_MIN = 25;
 const ACCOUNT_ETHER_MIN_WEI = web3.toBigNumber(web3.toWei(ACCOUNT_ETHER_MIN, "ether"));
 
 var tokenContract = null;
@@ -77,20 +77,35 @@ export function printAccounts() {
 }
 
 export function printAccountsShort() {
-    var message = "";
+
+    var messageEther = "";
+    var messagePPR = "";
+    var index = 0;
+
     for (var i = 0, c = accountIds.length; i < c; ++i) {
-        message += (i == 0 ? "" : "    ") + i + ": " + web3.fromWei(web3.eth.getBalance(accountIds[i])).toPrecision(7);
+        messageEther += (i == 0 ? "" : "    ") + accountNames[i] + ": " + web3.fromWei(web3.eth.getBalance(accountIds[i])).toPrecision(7);
     }
-    console.log("    Account balances:    " + message + "                   Block: " + web3.eth.blockNumber + "    Timestamp: " + web3.eth.getBlock("latest").timestamp);
+
+    function balanceReceived(result) {
+        if (index < accountIds.length) {
+            messagePPR += (index == 0 ? "" : "    ") + accountNames[index] + ": " + web3.toBigNumber(web3.fromWei(result)).toPrecision(7);
+            if (index < accountIds.length - 1) {
+                return tokenContract.balanceOf.call(accountIds[++index]).then(balanceReceived);
+            } else {
+                var block = web3.eth.getBlock("latest");
+                console.log("Block " + block.number + " : Account balances (Ether):    " + messageEther);
+                console.log("Block " + block.number + " : Account balances (PPR):      " + messagePPR);
+            }
+        }
+    }
+
+    return tokenContract.balanceOf.call(accountIds[index]).then(balanceReceived);
 }
 
 export function printTokenInfo() {
-    return getPapyrusToken().then(function(instance) {
-        return instance.totalSupply.call().then(function(totalSupply) {
-            console.log("    Papyrus Token (" + instance.address + "): Total supply PPR = " + web3.fromWei(totalSupply).toPrecision(7) +
-                "; Balance = " + web3.fromWei(web3.eth.getBalance(instance.address)).toPrecision(7) +
-                "    Block: " + web3.eth.blockNumber + "    Timestamp: " + web3.eth.getBlock("latest").timestamp);
-        });
+    return tokenContract.totalSupply.call().then(function(totalSupply) {
+        var block = web3.eth.getBlock("latest");
+        console.log("Block " + block.number + " : Papyrus Token (" + tokenContract.address + ") : Total supply " + web3.fromWei(totalSupply).toPrecision(7) + " PPR");
     });
 }
 
@@ -146,35 +161,41 @@ export function getPapyrusToken() {
 export function startCrowdsale(start, end, cap, targetAccountIndex) {
     assert(!crowdsaleContract);
     if (!crowdsaleContract) {
-        return getPapyrusToken().then(function(instance) {
-            var papyrusToken = instance;
-            console.log("    Creating new Papyrus Crowdsale contract...");
-            return Crowdsale.new(instance.address, accountIds[targetAccountIndex], start, end, 1, web3.toWei(cap, "ether"), { from: accountMinerId }).then(function(instance) {
-                crowdsaleContract = instance;
-                assert(web3.eth.getCode(crowdsaleContract.address) != "0x0");
-                console.log("    Papyrus Crowdsale contract address: " + crowdsaleContract.address);
-                registerEvent(crowdsaleContract.LogMessage(), function(error, result) {
-                    if (!error) {
-                        console.log("[EVENT] Crowdsale::LogMessage: " + result.args.message + " (" + web3.fromWei(result.args.value) + " ether) (block:" + result.blockNumber + ")");
-                    }
-                });
-                registerEvent(crowdsaleContract.TokenPurchase(), function(error, result) {
-                    if (!error) {
-                        var msg = "[EVENT] Crowdsale::TokenPurchase: " + result.args.purchaser + " bought " + web3.fromWei(result.args.value) + " PPR on wallet " + result.args.beneficiary + " (block:" + result.blockNumber + ")";
-                        console.log(msg);
-                    }
-                });
-                return papyrusToken.registerMinter(crowdsaleContract.address, { from: accountMinerId }).then(function(result) {
-                    if (result) {
-                        console.log("    Papyrus Crowdsale contract registered at Papyrus Token");
-                    }
-                    return crowdsaleContract;
-                });
+        console.log("    Creating new Papyrus Crowdsale contract...");
+        return Crowdsale.new(tokenContract.address, accountIds[targetAccountIndex], start, end, 1, web3.toWei(cap, "ether"), { from: accountMinerId }).then(function(instance) {
+            crowdsaleContract = instance;
+            assert(web3.eth.getCode(crowdsaleContract.address) != "0x0");
+            console.log("    Papyrus Crowdsale contract address: " + crowdsaleContract.address);
+            registerEvent(crowdsaleContract.LogMessage(), function(error, result) {
+                if (!error) {
+                    console.log("[EVENT] Crowdsale::LogMessage: " + result.args.message + " (" + web3.fromWei(result.args.value) + " ether) (block:" + result.blockNumber + ")");
+                }
+            });
+            registerEvent(crowdsaleContract.TokenPurchase(), function(error, result) {
+                if (!error) {
+                    var msg = "[EVENT] Crowdsale::TokenPurchase: " + result.args.purchaser + " bought " + web3.fromWei(result.args.value) + " PPR on wallet " + result.args.beneficiary + " (block:" + result.blockNumber + ")";
+                    console.log(msg);
+                }
+            });
+            return tokenContract.registerMinter(crowdsaleContract.address, { from: accountMinerId }).then(function(result) {
+                if (result) {
+                    console.log("    Papyrus Crowdsale contract registered at Papyrus Token");
+                }
+                return crowdsaleContract;
             });
         });
     } else {
         return Crowdsale.at(crowdsaleContract.address);
     }
+}
+
+export function makeTransferable() {
+    console.log("    Making Papyrus Token contract to be transferable so users can send PPR to each other");
+    return tokenContract.makeTransferable({ from: accountMinerId }).then(function(result) {
+        if (result) {}
+    }).catch(function(err) {
+        throw err;
+    });
 }
 
 export function checkAbilityToBuyPPR(fromIndex, amount, shouldBeAble) {
@@ -186,45 +207,35 @@ export function checkAbilityToBuyPPR(fromIndex, amount, shouldBeAble) {
     if (shouldBeAble || estimatedGas < web3.eth.getBlock("pending").gasLimit) {
         var initialBalanceWei = web3.toBigNumber(web3.eth.getBalance(accountIds[fromIndex]));
         return tokenContract.totalSupply.call().then(function(initialTotalSupply) {
-            printAccountsShort();
-            return printTokenInfo().then(function() {
-                return Crowdsale.at(crowdsaleContract.address).then(function(instance) {
-                    return new Promise(function(resolve, reject) {
-                        console.log("    Making transfer " + amount + " ether from " + accountNames[fromIndex] + " to Crowdsale contract address " + instance.address + "...");
-                        return instance.sendTransaction({
-                            from: accountIds[fromIndex],
-                            value: amountWei,
-                            gas: estimatedGas
-                        }).then(function(result) {
-                            //ensureSynchronization();
-                            printAccountsShort();
-                            resolve(result);
-                        }).catch(function(err) {
-                            //ensureSynchronization();
-                            printAccountsShort();
-                            if (shouldBeAble)
-                                reject(err);
-                            else
-                                resolve();
-                        });
-                    }).then(function(result) {
-                        //console.log(result);
-                        return printTokenInfo().then(function() {
-                            var newBalanceWei = web3.toBigNumber(web3.eth.getBalance(accountIds[fromIndex]));
-                            if (shouldBeAble) {
-                                var differenceWei = initialBalanceWei.minus(newBalanceWei);
-                                assert(differenceWei.greaterThanOrEqualTo(amountWei));
-                                assert(differenceWei.lessThanOrEqualTo(amountWei.plus(estimatedGas * web3.eth.gasPrice)));
-                            }
-                            return tokenContract.totalSupply.call().then(function(totalSupply) {
-                                if (shouldBeAble) {
-                                    assert(totalSupply.equals(initialTotalSupply.plus(amountWei)));
-                                } else {
-                                    assert(totalSupply.equals(initialTotalSupply));
-                                }
-                            });
-                        });
-                    });
+            return new Promise(function(resolve, reject) {
+                console.log("    Making transfer " + amount + " ether from " + accountNames[fromIndex] + " to Crowdsale contract address " + crowdsaleContract.address + "...");
+                return crowdsaleContract.sendTransaction({
+                    from: accountIds[fromIndex],
+                    value: amountWei,
+                    gas: estimatedGas
+                }).then(function(result) {
+                    //ensureSynchronization();
+                    resolve(result);
+                }).catch(function(err) {
+                    //ensureSynchronization();
+                    if (shouldBeAble)
+                        reject(err);
+                    else
+                        resolve();
+                });
+            }).then(function(result) {
+                var newBalanceWei = web3.toBigNumber(web3.eth.getBalance(accountIds[fromIndex]));
+                if (shouldBeAble) {
+                    var differenceWei = initialBalanceWei.minus(newBalanceWei);
+                    assert(differenceWei.greaterThanOrEqualTo(amountWei));
+                    assert(differenceWei.lessThanOrEqualTo(amountWei.plus(estimatedGas * web3.eth.gasPrice)));
+                }
+                return tokenContract.totalSupply.call().then(function(totalSupply) {
+                    if (shouldBeAble) {
+                        assert(totalSupply.equals(initialTotalSupply.plus(amountWei)));
+                    } else {
+                        assert(totalSupply.equals(initialTotalSupply));
+                    }
                 });
             });
         });
@@ -232,27 +243,43 @@ export function checkAbilityToBuyPPR(fromIndex, amount, shouldBeAble) {
 }
 
 export function checkAbilityToTransferPPR(fromIndex, toIndex, amount, shouldBeAble) {
-    /*return getPapyrusToken().then(function(instance) {
-        var papyrusPrice = web3.toWei(amount, 'ether');
-        var initialBalance = web3.eth.getBalance(accountIds[fromIndex]).valueOf();
-        return instance.totalSupply.call().then(function(initialTotalSupply) {
-            return instance.buy({ from: accountIds[fromIndex], value: papyrusPrice }).then(function() {
-                var newBalance = web3.eth.getBalance(accountIds[fromIndex]).valueOf();
-                if (shouldBeAble) {
-                    var difference = initialBalance - newBalance;
-                    assert(difference >= papyrusPrice);
-                }
-                return instance.totalSupply.call().then(function(totalSupply) {
-                    if (shouldBeAble) {
-                        assert.equal(totalSupply.valueOf(), initialTotalSupply.plus(papyrusPrice), "Total supply should be changed on difference");
-                    } else {
-                        assert.equal(totalSupply.valueOf(), initialTotalSupply.valueOf(), "Total supply should not be changed");
-                    }
-                    return printTokenInfo();
-                });
+    var amountWei = web3.toBigNumber(web3.toWei(amount, 'ether'));
+    var initialBalanceFrom = web3.toBigNumber(0);
+    var initialBalanceTo = web3.toBigNumber(0);
+    var newBalanceFrom = web3.toBigNumber(0);
+    var newBalanceTo = web3.toBigNumber(0);
+    return tokenContract.balanceOf.call(accountIds[fromIndex]).then(function(result) {
+        initialBalanceFrom = web3.toBigNumber(result);
+        return tokenContract.balanceOf.call(accountIds[toIndex]);
+    }).then(function(result) {
+        initialBalanceTo = web3.toBigNumber(result);
+        return new Promise(function(resolve, reject) {
+            console.log("    Making transfer " + amount + " PPR from " + accountNames[fromIndex] + " to " + accountNames[toIndex] + "...");
+            return tokenContract.transfer(accountIds[toIndex], amountWei, {
+                from: accountIds[fromIndex]
+            }).then(function(result) {
+                //ensureSynchronization();
+                resolve(result);
+            }).catch(function(err) {
+                //ensureSynchronization();
+                if (shouldBeAble)
+                    reject(err);
+                else
+                    resolve();
             });
         });
-    });*/
+    }).then(function(result) {
+        return tokenContract.balanceOf.call(accountIds[fromIndex]).then(function(result) {
+            newBalanceFrom = web3.toBigNumber(result);
+            return tokenContract.balanceOf.call(accountIds[toIndex]);
+        }).then(function(result) {
+            newBalanceTo = web3.toBigNumber(result);
+            assert(initialBalanceFrom.minus(amountWei).equals(newBalanceFrom) && initialBalanceTo.plus(amountWei).equals(newBalanceTo));
+        });
+    }).catch(function(err) {
+        if (shouldBeAble)
+            throw err;
+    });
 }
 
 export function waitUntilBlockNumber(blockNumber) {

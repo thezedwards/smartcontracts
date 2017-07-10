@@ -25,7 +25,7 @@ contract PapyrusToken is MintableToken {
   string public name = PPR_NAME;
   uint8 public decimals = PPR_DECIMALS;
   string public symbol = PPR_SYMBOL;
-  string public version = "H0.1";
+  string public version = PPR_VERSION;
 
   // At the start of the token existance it is not transferable
   bool public transferable = false;
@@ -59,6 +59,11 @@ contract PapyrusToken is MintableToken {
   // Check transferable state before transfer
   function transfer(address _to, uint _value) canTransfer {
     super.transfer(_to, _value);
+  }
+
+  // Check transferable state before transfer
+  function approve(address _spender, uint256 _value) canTransfer {
+    super.approve(_spender, _value);
   }
 
   // Check transferable state before transfer
