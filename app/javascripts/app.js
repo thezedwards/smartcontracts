@@ -8,7 +8,7 @@ import { default as Web3 } from 'web3';
 import { default as contract } from 'truffle-contract';
 
 // Import our contract artifacts and turn them into usable abstractions.
-import papyrus_token_artifacts from '../../build/contracts/PapyrusToken.json';
+import papyrus_token_artifacts from '../../bin/contracts/PapyrusToken.json';
 
 // PapyrusToken is our usable abstraction, which we'll use through the code below.
 var PapyrusToken = contract(papyrus_token_artifacts);
