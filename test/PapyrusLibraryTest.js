@@ -1,7 +1,7 @@
 /*jshint esversion: 6 */
 
 var PapyrusToken = artifacts.require("PapyrusToken");
-var Crowdsale = artifacts.require("CrowdsaleBlockNumberLimit");
+var Crowdsale = artifacts.require("PapyrusCrowdsale");
 
 var accountNames = ["Alice", "Eric", "Bobby", "Carl", "Daniel"];
 var accountDescriptions = [

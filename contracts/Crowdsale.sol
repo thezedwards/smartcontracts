@@ -10,7 +10,7 @@ import './MintableToken.sol';
  * on a token per ETH rate. Funds collected are forwarded to a wallet 
  * as they arrive.
  */
-contract Crowdsale {
+contract PapyrusCrowdsale {
 
   using SafeMath for uint256;
 
