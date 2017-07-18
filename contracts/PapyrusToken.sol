@@ -39,7 +39,7 @@ contract PapyrusToken is MintableToken {
     ///////////////////////////////////////////////
 
     modifier canTransfer() {
-        require(transferable);
+        require(transferable || msg.sender != owner);
         _;
     }
 
