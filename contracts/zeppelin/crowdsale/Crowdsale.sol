@@ -1,4 +1,4 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.11;
 
 import '../token/MintableToken.sol';
 import '../math/SafeMath.sol';
@@ -71,13 +71,12 @@ contract Crowdsale {
     require(validPurchase());
 
     uint256 weiAmount = msg.value;
-    uint256 updatedWeiRaised = weiRaised.add(weiAmount);
 
     // calculate token amount to be created
     uint256 tokens = weiAmount.mul(rate);
 
     // update state
-    weiRaised = updatedWeiRaised;
+    weiRaised = weiRaised.add(weiAmount);
 
     token.mint(beneficiary, tokens);
     TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);

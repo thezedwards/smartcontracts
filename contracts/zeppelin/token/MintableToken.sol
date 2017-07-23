@@ -1,4 +1,4 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.11;
 
 
 import './StandardToken.sol';
@@ -21,7 +21,7 @@ contract MintableToken is StandardToken, Ownable {
 
 
   modifier canMint() {
-    if(mintingFinished) throw;
+    require(!mintingFinished);
     _;
   }
 
