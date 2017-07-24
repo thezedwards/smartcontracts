@@ -1,24 +1,36 @@
 pragma solidity ^0.4.11;
 
+import "./zeppelin/ownership/Ownable.sol";
 import "./zeppelin/token/BasicToken.sol";
 
-/**
- * @title Presale dutch auction contract - distribution of Papyrus tokens using an auction.
- * Based on dutch auction contract from Stefan George.
- */
-contract PapyrusPresale {
-
+/// @title Presale dutch auction contract - distribution of Papyrus tokens using an auction.
+/// Based on dutch auction contract from Stefan George (Gnosis).
+contract PapyrusPresale is Ownable {
     using SafeMath for uint256;
 
-    /*
-     *  Events
-     */
+    // TYPES
+
+    enum Stage {
+        AuctionDeployed,
+        AuctionSetUp,
+        AuctionStartedPrivate,
+        AuctionStartedPublic,
+        AuctionEnded,
+        ClaimingStarted
+    }
+
+    struct PrivateBid {
+        address bidder;
+        uint256 price;
+        uint256 amount;
+        bool performed;
+    }
+
+    // EVENTS
 
     event BidSubmission(address indexed sender, uint256 amount);
 
-    /*
-     *  Public functions
-     */
+    // PUBLIC FUNCTIONS
 
     /// @dev Contract constructor function sets owner.
     /// @param _wallet Papyrus wallet.
@@ -27,7 +39,6 @@ contract PapyrusPresale {
     /// @param _waitingPeriod Period of time when auction will be available after stop price is achieved.
     function PapyrusPresale(address _wallet, uint256 _ceiling, uint256 _priceFactor, uint256 _waitingPeriod) public {
         require(_wallet != address(0) && _ceiling != 0 && _priceFactor != 0 && _waitingPeriod != 0);
-        owner = msg.sender;
         wallet = _wallet;
         ceiling = _ceiling;
         priceFactor = _priceFactor;
@@ -43,7 +54,7 @@ contract PapyrusPresale {
     /// @param _minPublicBid Minimal amount of weis for public participants of the auction.
     function setup(address _papyrusToken, uint256 _tokensToSell, uint8 _bonusPercent, uint256 _minPrivateBid, uint256 _minPublicBid)
         public
-        isOwner
+        onlyOwner
         atStage(Stage.AuctionDeployed)
     {
         require(_papyrusToken != address(0) && _tokensToSell != 0 && _minPrivateBid != 0 && _minPublicBid != 0);
@@ -63,7 +74,7 @@ contract PapyrusPresale {
     /// @param _waitingPeriod Period of time when auction will be available after stop price is achieved.
     function changeSettings(uint256 _ceiling, uint256 _priceFactor, uint256 _waitingPeriod)
         public
-        isWallet
+        onlyOwner
         atStage(Stage.AuctionSetUp)
     {
         require(_ceiling != 0 && _priceFactor != 0 && _waitingPeriod != 0);
@@ -77,7 +88,7 @@ contract PapyrusPresale {
     /// @param _amount Amount of weis allowed to bid for the participant.
     function allowPrivateParticipant(address _participant, uint256 _amount)
         public
-        isWallet
+        onlyOwner
         atStage(Stage.AuctionSetUp)
     {
         require(_participant != address(0));
@@ -88,7 +99,7 @@ contract PapyrusPresale {
     /// @dev Starts private stage of auction.
     function startPrivateAuction()
         public
-        isWallet
+        onlyOwner
         atStage(Stage.AuctionSetUp)
     {
         stage = Stage.AuctionStartedPrivate;
@@ -97,7 +108,7 @@ contract PapyrusPresale {
     /// @dev Starts public stage of auction and sets startBlock.
     function startPublicAuction()
         public
-        isWallet
+        onlyOwner
         atStage(Stage.AuctionStartedPrivate)
     {
         stage = Stage.AuctionStartedPublic;
@@ -143,7 +154,7 @@ contract PapyrusPresale {
         // Check some conditions depending on stage of the auction
         if (stage == Stage.AuctionStartedPrivate) {
             uint256 amountAllowed = privateParticipants[receiver];
-            require(amountAllowed != 0 && msg.value >= minPrivateBid && price != 0 && amount <= amountAllowed);
+            require(amountAllowed != 0 && amount >= minPrivateBid && amount <= amountAllowed && price != 0);
             if (price >= tokenPrice) {
                 // We can just perform the bid since requested price is big enough
                 amount = performBid(receiver, amount);
@@ -152,7 +163,7 @@ contract PapyrusPresale {
                 addPrivateBid(receiver, price, amount);
             }
         } else if (stage == Stage.AuctionStartedPublic) {
-            require(msg.value >= minPublicBid);
+            require(amount >= minPublicBid);
             // Before we perform just received bid check on private bids and perform some of them if necessary
             for (uint i = 0; i < privateBids.length; ++i) {
                 var privateBid = privateBids[i];
@@ -171,6 +182,19 @@ contract PapyrusPresale {
         }
     }
 
+    /// @dev Claims ether for private bidder after auction.
+    /// @param receiver Ether will be sent to this address if set.
+    function claimEther(address receiver)
+        public
+        isValidPayload
+        timedTransitions
+        atStage(Stage.ClaimingStarted)
+    {
+        if (receiver == address(0))
+            receiver = msg.sender;
+        // TODO: Implement carefully
+    }
+
     /// @dev Claims tokens for bidder after auction.
     /// @param receiver Tokens will be assigned to this address if set.
     function claimTokens(address receiver)
@@ -183,11 +207,9 @@ contract PapyrusPresale {
             receiver = msg.sender;
         uint256 tokenCount = bids[receiver].mul(E18).div(finalPrice);
         // Add bonus to private participant if necessary
-        if (privateParticipants[receiver] != 0) {
+        if (privateParticipants[receiver] != 0)
             tokenCount = tokenCount.mul(100 + bonusPercent).div(100);
-        }
         bids[receiver] = 0;
-        // TODO: Currently this will not work because PapyrusToken will not allow to make such transfer at presale
         papyrusToken.transfer(receiver, tokenCount);
     }
 
@@ -204,9 +226,7 @@ contract PapyrusPresale {
         return priceFactor.mul(E18).div(denominator).add(1);
     }
 
-    /*
-     *  Private functions
-     */
+    // PRIVATE FUNCTIONS
 
     function addPrivateBid(address bidder, uint256 price, uint256 amount) private {
         // Create private bid
@@ -280,16 +300,13 @@ contract PapyrusPresale {
         uint256 papyrusTokensSold = totalReceived.mul(E18).div(finalPrice);
         if (papyrusTokensSold < tokensToSell) {
             // Auction contract transfers all unsold tokens to Papyrus inventory multisig
-            // TODO: Currently this will not work because PapyrusToken will not allow to make such transfer at presale
             // TODO: Also need to add remaining bonus tokens to this transfer
             papyrusToken.transfer(wallet, tokensToSell - papyrusTokensSold);
         }
         endTime = now;
     }
 
-    /*
-     *  Modifiers
-     */
+    // MODIFIERS
 
     modifier atStage(Stage _stage) {
         require(stage == _stage);
@@ -301,18 +318,9 @@ contract PapyrusPresale {
         _;
     }
 
-    modifier isOwner() {
-        require(msg.sender == owner);
-        _;
-    }
-
-    modifier isWallet() {
-        require(msg.sender == wallet);
-        _;
-    }
-
     modifier isValidPayload() {
-        require(msg.data.length == 4 || msg.data.length == 36);
+        // TODO: Why is this necessary?
+        //require(msg.data.length == 4 || msg.data.length == 36);
         _;
     }
 
@@ -324,29 +332,7 @@ contract PapyrusPresale {
         _;
     }
 
-    /*
-     *  Enums and structures
-     */
-
-    enum Stage {
-        AuctionDeployed,
-        AuctionSetUp,
-        AuctionStartedPrivate,
-        AuctionStartedPublic,
-        AuctionEnded,
-        ClaimingStarted
-    }
-
-    struct PrivateBid {
-        address bidder;
-        uint256 price;
-        uint256 amount;
-        bool performed;
-    }
-
-    /*
-     *  Storage
-     */
+    // FIELDS
 
     // Papyrus token should be sold during auction
     BasicToken public papyrusToken;
@@ -362,9 +348,6 @@ contract PapyrusPresale {
 
     // Minimal amount of weis for public participants of the auction
     uint256 public minPublicBid;
-
-    // Address of the contract creator
-    address public owner;
 
     // Address of multisig wallet used to hold received ether
     address public wallet;
