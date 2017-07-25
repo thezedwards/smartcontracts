@@ -15,15 +15,16 @@ contract PapyrusPresale is Ownable {
         AuctionSetUp,
         AuctionStartedPrivate,
         AuctionStartedPublic,
-        AuctionEnded,
+        AuctionFinishing,
+        AuctionFinished,
         ClaimingStarted
     }
 
     struct PrivateBid {
         address bidder;
         uint256 price;
-        uint256 amount;
-        bool performed;
+        uint256 allowed;  // amount of weis allowed to bid
+        uint256 accepted; // amount of weis accepted as bid
     }
 
     // EVENTS
@@ -36,13 +37,15 @@ contract PapyrusPresale is Ownable {
     /// @param _wallet Papyrus wallet.
     /// @param _ceiling Auction ceiling.
     /// @param _priceFactor Auction start price factor.
-    /// @param _waitingPeriod Period of time when auction will be available after stop price is achieved.
-    function PapyrusPresale(address _wallet, uint256 _ceiling, uint256 _priceFactor, uint256 _waitingPeriod) public {
-        require(_wallet != address(0) && _ceiling != 0 && _priceFactor != 0 && _waitingPeriod != 0);
+    /// @param _auctionPeriod Period of time when auction will be available after stop price is achieved.
+    /// @param _delayPeriod Period of time which claiming tokens will be delayed after auction is finished.
+    function PapyrusPresale(address _wallet, uint256 _ceiling, uint256 _priceFactor, uint256 _auctionPeriod, uint256 _delayPeriod) public {
+        require(_wallet != address(0) && _ceiling != 0 && _priceFactor != 0 && _auctionPeriod != 0);
         wallet = _wallet;
         ceiling = _ceiling;
         priceFactor = _priceFactor;
-        waitingPeriod = _waitingPeriod;
+        auctionPeriod = _auctionPeriod;
+        delayPeriod = _delayPeriod;
         stage = Stage.AuctionDeployed;
     }
 
@@ -71,16 +74,18 @@ contract PapyrusPresale is Ownable {
     /// @dev Changes auction ceiling and start price factor before auction is started.
     /// @param _ceiling Updated auction ceiling.
     /// @param _priceFactor Updated auction start price factor.
-    /// @param _waitingPeriod Period of time when auction will be available after stop price is achieved.
-    function changeSettings(uint256 _ceiling, uint256 _priceFactor, uint256 _waitingPeriod)
+    /// @param _auctionPeriod Period of time when auction will be available after stop price is achieved.
+    /// @param _delayPeriod Period of time which claiming tokens will be delayed after auction is finished.
+    function changeSettings(uint256 _ceiling, uint256 _priceFactor, uint256 _auctionPeriod, uint256 _delayPeriod)
         public
         onlyOwner
         atStage(Stage.AuctionSetUp)
     {
-        require(_ceiling != 0 && _priceFactor != 0 && _waitingPeriod != 0);
+        require(_ceiling != 0 && _priceFactor != 0 && _auctionPeriod != 0);
         ceiling = _ceiling;
         priceFactor = _priceFactor;
-        waitingPeriod = _waitingPeriod;
+        auctionPeriod = _auctionPeriod;
+        delayPeriod = _delayPeriod;
     }
 
     /// @dev Allows specified address to participate in private stage of the auction.
@@ -122,7 +127,7 @@ contract PapyrusPresale is Ownable {
         timedTransitions
         returns (uint256)
     {
-        return stage == Stage.AuctionEnded || stage == Stage.ClaimingStarted ? finalPrice : calcTokenPrice();
+        return stage == Stage.AuctionFinishing || stage == Stage.AuctionFinished || stage == Stage.ClaimingStarted ? finalPrice : calcTokenPrice();
     }
 
     /// @dev Returns correct stage, even if a function with timedTransitions modifier has not been called yet.
@@ -146,31 +151,34 @@ contract PapyrusPresale is Ownable {
         isAuctionStarted
         returns (uint256 amount)
     {
-        uint256 tokenPrice = calcTokenPrice();
         // If a bid is done on behalf of a user via ShapeShift, the receiver address is set
         if (receiver == address(0))
             receiver = msg.sender;
+        uint i;
         amount = msg.value;
         // Check some conditions depending on stage of the auction
         if (stage == Stage.AuctionStartedPrivate) {
             uint256 amountAllowed = privateParticipants[receiver];
             require(amountAllowed != 0 && amount >= minPrivateBid && amount <= amountAllowed && price != 0);
-            if (price >= tokenPrice) {
+            addPrivateBid(receiver, price, amount);
+            if (price >= calcTokenPrice()) {
                 // We can just perform the bid since requested price is big enough
                 amount = performBid(receiver, amount);
-            } else {
-                // We cannot perform the bid now so just add this to array of private bids to perform when token price is low enough
-                addPrivateBid(receiver, price, amount);
+                for (i = 0; i < privateBids.length; ++i) {
+                    if (privateBids[i].bidder == receiver) {
+                        privateBids[i].accepted = amount;
+                        break;
+                    }
+                }
             }
         } else if (stage == Stage.AuctionStartedPublic) {
             require(amount >= minPublicBid);
             // Before we perform just received bid check on private bids and perform some of them if necessary
-            for (uint i = 0; i < privateBids.length; ++i) {
+            for (i = 0; i < privateBids.length; ++i) {
+                uint256 tokenPrice = calcTokenPrice();
                 var privateBid = privateBids[i];
-                if (!privateBid.performed && privateBid.price >= tokenPrice) {
-                    if (performBid(receiver, amount) != 0) {
-                        privateBids[i].performed = true;
-                    }
+                if (privateBid.accepted == 0 && privateBid.price >= tokenPrice) {
+                    privateBids[i].accepted = performBid(privateBid.bidder, privateBid.allowed);
                 } else if (privateBid.price < tokenPrice) {
                     break;
                 }
@@ -182,6 +190,29 @@ contract PapyrusPresale is Ownable {
         }
     }
 
+    /// @dev Declines bid for specified bidder.
+    /// @param bidder Address of bidder whose bid should be declined.
+    function declineBid(address bidder)
+        public
+        onlyOwner
+        timedTransitions
+        atStage(Stage.AuctionFinished)
+    {
+        // TODO: Check this carefully for cases when the same address used in both private and public states of the auction
+        if (privateParticipants[bidder] != 0) {
+            for (uint i = 0; i < privateBids.length; ++i) {
+                if (privateBids[i].bidder == bidder) {
+                    declinedBids[bidder] = privateBids[i].allowed;
+                    privateBids[i].accepted = 0;
+                    break;
+                }
+            }
+        } else {
+            declinedBids[bidder] = bids[bidder];
+        }
+        bids[bidder] = 0;
+    }
+
     /// @dev Claims ether for private bidder after auction.
     /// @param receiver Ether will be sent to this address if set.
     function claimEther(address receiver)
@@ -190,9 +221,25 @@ contract PapyrusPresale is Ownable {
         timedTransitions
         atStage(Stage.ClaimingStarted)
     {
-        if (receiver == address(0))
-            receiver = msg.sender;
-        // TODO: Implement carefully
+        // TODO: Check this carefully for cases when the same address used in both private and public states of the auction
+        uint256 amount = 0;
+        if (declinedBids[receiver] > 0) {
+            amount = declinedBids[receiver];
+        } else if (privateParticipants[receiver] > 0) {
+            for (uint i = 0; i < privateBids.length; ++i) {
+                if (privateBids[i].bidder == receiver) {
+                    amount = privateBids[i].allowed.sub(privateBids[i].accepted);
+                    break;
+                }
+            }
+        }
+        if (amount > 0) {
+            // Send change back to receiver address
+            if (!receiver.send(amount)) {
+                // Sending failed
+                revert();
+            }
+        }
     }
 
     /// @dev Claims tokens for bidder after auction.
@@ -203,12 +250,25 @@ contract PapyrusPresale is Ownable {
         timedTransitions
         atStage(Stage.ClaimingStarted)
     {
+        // TODO: Check this carefully for cases when the same address used in both private and public states of the auction
         if (receiver == address(0))
             receiver = msg.sender;
+        // Forward funding to ether wallet
+        if (!wallet.send(bids[receiver])) {
+            // Sending failed
+            revert();
+        }
         uint256 tokenCount = bids[receiver].mul(E18).div(finalPrice);
         // Add bonus to private participant if necessary
-        if (privateParticipants[receiver] != 0)
-            tokenCount = tokenCount.mul(100 + bonusPercent).div(100);
+        if (privateParticipants[receiver] != 0) {
+            for (uint i = 0; i < privateBids.length; ++i) {
+                var privateBid = privateBids[i];
+                if (privateBid.bidder == receiver) {
+                    tokenCount = tokenCount.add(privateBid.accepted.mul(bonusPercent).div(100));
+                    break;
+                }
+            }
+        }
         bids[receiver] = 0;
         papyrusToken.transfer(receiver, tokenCount);
     }
@@ -216,7 +276,7 @@ contract PapyrusPresale is Ownable {
     /// @dev Calculates stop price.
     /// @return Returns stop price.
     function calcStopPrice() constant public returns (uint256) {
-        return totalReceived.mul(E18).div(tokensToSell).add(1);
+        return totalReceived.sub(privateReceived).mul(E18).div(tokensToSell).add(1);
     }
 
     /// @dev Calculates token price.
@@ -230,7 +290,7 @@ contract PapyrusPresale is Ownable {
 
     function addPrivateBid(address bidder, uint256 price, uint256 amount) private {
         // Create private bid
-        var privateBid = PrivateBid(bidder, price, amount, false);
+        var privateBid = PrivateBid(bidder, price, amount, 0);
         // Add it to the end of private bids array for start
         privateBids.push(privateBid);
         // Then sort private bids array so it is suitable for further usage
@@ -240,7 +300,7 @@ contract PapyrusPresale is Ownable {
             if (privateBids[i].price < privateBid.price) {
                 indexToInsert = i;
                 break;
-            } else if (privateBids[i].price == privateBid.price && privateBids[i].amount < privateBid.amount) {
+            } else if (privateBids[i].price == privateBid.price && privateBids[i].allowed < privateBid.allowed) {
                 indexToInsert = i;
                 break;
             }
@@ -276,11 +336,6 @@ contract PapyrusPresale is Ownable {
         if (amount == 0) {
             return;
         }
-        // Forward funding to ether wallet
-        if (!wallet.send(amount)) {
-            // Sending failed
-            revert();
-        }
         bids[receiver] = bids[receiver].add(amount);
         if (stage == Stage.AuctionStartedPrivate) {
             // Hold amount of received weis separately for private presale stage
@@ -295,7 +350,7 @@ contract PapyrusPresale is Ownable {
     }
 
     function finalizeAuction() private {
-        stage = Stage.AuctionEnded;
+        stage = Stage.AuctionFinishing;
         finalPrice = totalReceived == ceiling ? calcTokenPrice() : calcStopPrice();
         uint256 papyrusTokensSold = totalReceived.mul(E18).div(finalPrice);
         if (papyrusTokensSold < tokensToSell) {
@@ -303,7 +358,7 @@ contract PapyrusPresale is Ownable {
             // TODO: Also need to add remaining bonus tokens to this transfer
             papyrusToken.transfer(wallet, tokensToSell - papyrusTokensSold);
         }
-        endTime = now;
+        finishingTime = now;
     }
 
     // MODIFIERS
@@ -327,7 +382,9 @@ contract PapyrusPresale is Ownable {
     modifier timedTransitions() {
         if (stage == Stage.AuctionStartedPrivate && calcTokenPrice() <= calcStopPrice())
             finalizeAuction();
-        if (stage == Stage.AuctionEnded && now > endTime + waitingPeriod)
+        if (stage == Stage.AuctionFinishing && now > finishingTime + auctionPeriod)
+            stage = Stage.AuctionFinished;
+        if (stage == Stage.AuctionFinished && now > finishedTime + delayPeriod)
             stage = Stage.ClaimingStarted;
         _;
     }
@@ -358,14 +415,20 @@ contract PapyrusPresale is Ownable {
     // Auction price factor
     uint256 public priceFactor;
 
-    // Period of time when auction will be available after stop price is achieved
-    uint256 public waitingPeriod;
+    // Period of time which auction will be available after stop price is achieved
+    uint256 public auctionPeriod;
+
+    // Period of time which claiming tokens will be delayed after auction is finished
+    uint256 public delayPeriod;
 
     // Index of block from which auction was started
     uint256 public startBlock;
 
-    // Timestamp when auction was ended
-    uint256 public endTime;
+    // Timestamp when auction starting finishing (stop price achieved)
+    uint256 public finishingTime;
+
+    // Timestamp when auction finished (starting waiting before claiming tokens allowed)
+    uint256 public finishedTime;
 
     // Amount of received weis at private presale stage
     uint256 public privateReceived;
@@ -384,6 +447,9 @@ contract PapyrusPresale is Ownable {
 
     // Received bids
     mapping (address => uint256) public bids;
+
+    // Declined bids
+    mapping (address => uint256) public declinedBids;
 
     // Current stage of the auction
     Stage public stage;
