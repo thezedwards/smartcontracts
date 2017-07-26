@@ -1,7 +1,5 @@
 pragma solidity ^0.4.11;
 
-import '../lib/ArbiterSorter.sol';
-
 // This is the base contract that your contract ArbiterRegistry extends from.
 contract ArbiterRegistry {
 
@@ -59,7 +57,7 @@ contract ArbiterRegistry {
             mostTrusted.length++;
             mostTrusted[mostTrusted.length - 1] = arbiters[key];
             numTrusted++;
-            ArbiterSorter.sort(mostTrusted);
+            sortTrusted();
             if (numTrusted > trustedArbitersNumber) {
                 mostTrusted.length--;
             }
@@ -74,7 +72,7 @@ contract ArbiterRegistry {
         if (arbiters[key].owner == msg.sender) {
             arbiters[key].karma = karma;
         }
-        ArbiterSorter.sort(mostTrusted);
+        sortTrusted();
     }
 
     // Tells whether a given key is registered.
@@ -101,6 +99,35 @@ contract ArbiterRegistry {
     // are returned.
     function getTime(address key) returns(uint) {
         return arbiters[key].time;
+    }
+
+    function sortTrusted() {
+
+        uint n = mostTrusted.length;
+        Arbiter[] memory arr = new Arbiter[](n);
+        uint i;
+
+        for (i = 0; i < n; i++) {
+            arr[i] = mostTrusted[i];
+        }
+
+        Arbiter memory key;
+        uint j;
+
+        for (i = 1; i < arr.length; i++) {
+            key = arr[i];
+
+            for (j = i; j > 0 && arr[j - 1].karma < key.karma; j--) {
+                arr[j] = arr[j - 1];
+            }
+
+            arr[j] = key;
+        }
+
+        for (i = 0; i < n; i++) {
+            mostTrusted[i] = arr[i];
+        }
+
     }
 
     function kill() onlyOwner {

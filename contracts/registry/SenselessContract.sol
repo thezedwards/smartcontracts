@@ -1,8 +1,8 @@
 pragma solidity ^0.4.11;
 
-import './EventLogger.sol';
+import './ActionLogger.sol';
 
-contract SenselessContract is EventLogger{
+contract SenselessContract is ActionLogger{
     function SenselessContract(){
         register("first", "CONTRACT_CREATING", msg.sender, "First info");
     }
