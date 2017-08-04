@@ -9,14 +9,21 @@ contract PapyrusToken is StandardToken, Ownable {
     // EVENTS
 
     event TransferableChanged(bool transferable);
-    event AuctionStarted(address indexed auction);
-    event AuctionFinished(address indexed auction);
 
     // PUBLIC FUNCTIONS
 
-    function PapyrusToken() {
+    function PapyrusToken(address[] _wallets, uint256[] _amounts) {
+        require(_wallets.length == _amounts.length && _wallets.length > 0);
+        uint i;
+        uint256 sum = 0;
+        for (i = 0; i < _wallets.length; ++i) {
+            sum = sum.add(_amounts[i]);
+        }
+        require(sum == PPR_LIMIT);
         totalSupply = PPR_LIMIT;
-        balances[msg.sender] = PPR_LIMIT;
+        for (i = 0; i < _wallets.length; ++i) {
+            balances[_wallets[i]] = _amounts[i];
+        }
     }
 
     // If ether is sent to this address, send it back
@@ -44,20 +51,10 @@ contract PapyrusToken is StandardToken, Ownable {
         TransferableChanged(transferable);
     }
 
-    /// @dev Called by the owner to specify auction address so it is possible to transfer PPR while it is not transferable.
-    function setAuctionAddress(address _auction) onlyOwner {
-        require(auction != _auction);
-        if (auction != address(0))
-            AuctionFinished(auction);
-        auction = _auction;
-        if (auction != address(0))
-            AuctionStarted(auction);
-    }
-
     // MODIFIERS
 
     modifier canTransfer() {
-        require(transferable || msg.sender == owner || msg.sender == auction);
+        require(transferable || msg.sender == owner);
         _;
     }
 
@@ -69,11 +66,8 @@ contract PapyrusToken is StandardToken, Ownable {
     string public version = "H0.1";
     uint8 public decimals = 18;
 
-    // At the start of the token existence it is not transferable
-    bool public transferable = false;
-
-    // To allow perform PPR transactions during auctions we use this address
-    address public auction;
+    // At the start of the token existence it is transferable
+    bool public transferable = true;
 
     // Amount of supplied tokens is constant and equals to 1 000 000 000 PPR
     uint256 private constant PPR_LIMIT = 10**27;
