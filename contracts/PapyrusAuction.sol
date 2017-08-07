@@ -452,5 +452,5 @@ contract PapyrusAuction is Ownable {
     Stage public stage;
 
     // Some pre-calculated constant values
-    uint256 constant private E18 = 10**18;
+    uint256 private constant E18 = 10**18;
 }
