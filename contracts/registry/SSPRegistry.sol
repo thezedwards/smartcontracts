@@ -74,13 +74,6 @@ contract SSPRegistry is Ownable {
         return records[key].time != 0;
     }
 
-    function getSSPAtIndex(uint rindex) returns(address key, address owner, uint time) {
-        SSP record = records[keys[rindex]];
-        key = keys[rindex];
-        owner = record.owner;
-        time = record.time;
-    }
-
     function getSSP(address key) returns(address owner, uint time) {
         SSP record = records[key];
         owner = record.owner;
@@ -99,12 +92,6 @@ contract SSPRegistry is Ownable {
     // are returned.
     function getTime(address key) returns(uint) {
         return records[key].time;
-    }
-
-    // Registry owner can use this function to withdraw any value owned by
-    // the registry.
-    function withdraw(address to, uint value) onlyOwner {
-        if (!to.send(value)) throw;
     }
 
     function kill() onlyOwner {
