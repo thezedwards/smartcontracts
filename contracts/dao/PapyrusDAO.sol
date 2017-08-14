@@ -40,7 +40,7 @@ contract PapyrusDAO {
         }
     }
 
-    function returnDeposit(address depositSender) {
+    function returnDeposit(address depositSender) private {
         uint256 amount = depositRegistry.getDeposit(depositSender);
         if (amount > 0) {
             token.transfer(depositSender, amount);
@@ -55,6 +55,10 @@ contract PapyrusDAO {
 
     event SSPRegistered(address sspAddress);
     event SSPUnregistered(address sspAddress);
+
+    function getSspRegistry() constant returns(address sspRegistryAddress) {
+        return sspRegistry;
+    }
 
     function findSsp(address sspAddress) constant returns(address owner, uint time) {
         return sspRegistry.getSSP(sspAddress);
@@ -84,8 +88,12 @@ contract PapyrusDAO {
     event DSPRegistered(address dspAddress);
     event DSPUnregistered(address dspAddress);
 
-    function findDsp(address dspAddress) constant returns(address owner, uint time) {
-        return dspRegistry.getDSP(dspAddress);
+    function getDspRegistry() constant returns(address dspRegistryAddress) {
+        return dspRegistry;
+    }
+
+    function findDsp(address addr) constant returns(address dspAddress, uint time) {
+        return dspRegistry.getDSP(addr);
     }
 
     function registerDsp(address dspAddress) {

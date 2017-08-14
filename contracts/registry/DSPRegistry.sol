@@ -9,12 +9,14 @@ contract DSPRegistry is Ownable {
 
     // This struct keeps all data for a DSP.
     struct DSP {
-    // Keeps the address of this record creator.
-    address owner;
-    // Keeps the time when this record was created.
-    uint time;
-    // Keeps the index of the keys array for fast lookup
-    uint keysIndex;
+        // Keeps the address of this record creator.
+        address owner;
+        // Keeps the time when this record was created.
+        uint time;
+        // Keeps the index of the keys array for fast lookup
+        uint keysIndex;
+        // DSP Address
+        address dspAddress;
     }
 
     // This mapping keeps the records of this Registry.
@@ -32,6 +34,7 @@ contract DSPRegistry is Ownable {
             records[key].time = now;
             records[key].owner = msg.sender;
             records[key].keysIndex = keys.length;
+            records[key].dspAddress = key;
             keys.length++;
             keys[keys.length - 1] = key;
             numRecords++;
@@ -41,7 +44,7 @@ contract DSPRegistry is Ownable {
     }
 
     // Updates the values of the given record.
-    function update(address key) {
+    function update(address key) onlyOwner {
         // Only the owner can update his record.
         if (records[key].owner == msg.sender) {
             // Something could be here
@@ -49,7 +52,7 @@ contract DSPRegistry is Ownable {
     }
 
     // Unregister a given record
-    function unregister(address key) {
+    function unregister(address key) onlyOwner {
         if (records[key].owner == msg.sender) {
             uint keysIndex = records[key].keysIndex;
             delete records[key];
@@ -74,9 +77,9 @@ contract DSPRegistry is Ownable {
         return records[key].time != 0;
     }
 
-    function getDSP(address key) returns(address owner, uint time) {
+    function getDSP(address key) returns(address dspAddress, uint time) {
         DSP record = records[key];
-        owner = record.owner;
+        dspAddress = record.dspAddress;
         time = record.time;
     }
 
@@ -92,6 +95,17 @@ contract DSPRegistry is Ownable {
     // are returned.
     function getTime(address key) returns(uint) {
         return records[key].time;
+    }
+
+    function getAllDSP() returns(address[] addresses, uint[] times) {
+        addresses = new address[](numRecords);
+        times = new uint[](numRecords);
+        uint i;
+        for(i = 0; i < numRecords; i++) {
+            DSP dsp = records[keys[i]];
+            addresses[i] = dsp.dspAddress;
+            times[i] = dsp.time;
+        }
     }
 
     function kill() onlyOwner {

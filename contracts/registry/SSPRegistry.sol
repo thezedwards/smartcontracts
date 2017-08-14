@@ -15,6 +15,8 @@ contract SSPRegistry is Ownable {
         uint time;
         // Keeps the index of the keys array for fast lookup
         uint keysIndex;
+        // SSP Address
+        address sspAddress;
     }
 
     // This mapping keeps the records of this Registry.
@@ -32,6 +34,7 @@ contract SSPRegistry is Ownable {
             records[key].time = now;
             records[key].owner = msg.sender;
             records[key].keysIndex = keys.length;
+            records[key].sspAddress = key;
             keys.length++;
             keys[keys.length - 1] = key;
             numRecords++;
@@ -74,9 +77,9 @@ contract SSPRegistry is Ownable {
         return records[key].time != 0;
     }
 
-    function getSSP(address key) returns(address owner, uint time) {
+    function getSSP(address key) returns(address sspAddress, uint time) {
         SSP record = records[key];
-        owner = record.owner;
+        sspAddress = record.sspAddress;
         time = record.time;
     }
 
@@ -85,6 +88,17 @@ contract SSPRegistry is Ownable {
     // are returned.
     function getOwner(address key) returns(address) {
         return records[key].owner;
+    }
+
+    function getAllSSP() returns(address[] addresses, uint[] times) {
+        addresses = new address[](numRecords);
+        times = new uint[](numRecords);
+        uint i;
+        for(i = 0; i < numRecords; i++) {
+            SSP ssp = records[keys[i]];
+            addresses[i] = ssp.sspAddress;
+            times[i] = ssp.time;
+        }
     }
 
     // Returns the registration time of the given record. The time could also
