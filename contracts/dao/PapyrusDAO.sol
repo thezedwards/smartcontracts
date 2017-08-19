@@ -5,6 +5,8 @@ import "../zeppelin/token/ERC20.sol";
 import "../registry/SSPRegistry.sol";
 import "../registry/DSPRegistry.sol";
 import "../registry/DepositRegistry.sol";
+import "../registry/SecurityDepositRegistry.sol";
+import "../registry/SpendingDepositRegistry.sol";
 
 
 contract PapyrusDAO {
@@ -15,23 +17,36 @@ contract PapyrusDAO {
         token = papyrusToken;
         sspRegistry = new SSPRegistry();
         dspRegistry = new DSPRegistry();
-        depositRegistry = new DepositRegistry();
+        securityDepositRegistry = new SecurityDepositRegistry();
+        spendingDepositRegistry = new SpendingDepositRegistry();
     }
 
-    /*------------- Deposit --------------*/
-
-    uint256 constant DEPOSIT_SIZE = 10;
-
-    DepositRegistry private depositRegistry;
+    /*------------- Abstract Deposit -------------*/
 
     event DepositReceived(address depositOwner);
     event DepositReturned(address depositOwner, uint256 amount);
     event DepositNotApproved(address depositOwner);
 
-    function receiveDeposit(address depositSender) private returns(bool) {
-        if (token.balanceOf(depositSender) > DEPOSIT_SIZE && token.allowance(depositSender, this) >= DEPOSIT_SIZE) {
-            token.transferFrom(depositSender, this, DEPOSIT_SIZE);
-            depositRegistry.register(depositSender, DEPOSIT_SIZE);
+    function returnDeposit(address depositSender, DepositRegistry depositRegistry) private {
+        if (depositRegistry.isRegistered(depositSender)) {}
+        uint256 amount = depositRegistry.getDeposit(depositSender);
+        if (amount > 0) {
+            token.transfer(depositSender, amount);
+            depositRegistry.unregister(depositSender);
+            DepositReturned(depositSender, amount);
+        }
+    }
+
+    /*---------- Security Deposit ----------*/
+
+    uint256 constant SECURITY_DEPOSIT_SIZE = 10;
+
+    SecurityDepositRegistry private securityDepositRegistry;
+
+    function receiveSecurityDeposit(address depositSender) private returns(bool) {
+        if (token.balanceOf(depositSender) > SECURITY_DEPOSIT_SIZE && token.allowance(depositSender, this) >= SECURITY_DEPOSIT_SIZE) {
+            token.transferFrom(depositSender, this, SECURITY_DEPOSIT_SIZE);
+            securityDepositRegistry.register(depositSender, SECURITY_DEPOSIT_SIZE);
             DepositReceived(depositSender);
             return true;
         } else {
@@ -40,12 +55,35 @@ contract PapyrusDAO {
         }
     }
 
-    function returnDeposit(address depositSender) private {
-        uint256 amount = depositRegistry.getDeposit(depositSender);
-        if (amount > 0) {
-            token.transfer(depositSender, amount);
-            depositRegistry.unregister(depositSender);
-            DepositReturned(depositSender, amount);
+    /*--------- Spending Deposit ---------*/
+
+    SpendingDepositRegistry private spendingDepositRegistry;
+
+    event DepositSpent(address from, address to, uint256 amount);
+    event NotEnoughTokens(address spender, uint256 amount);
+
+    function receiveSpendingDeposit(address depositSender, uint256 amount) private returns(bool) {
+        if (token.balanceOf(depositSender) > amount && token.allowance(depositSender, this) >= amount) {
+            token.transferFrom(depositSender, this, amount);
+            if (spendingDepositRegistry.isRegistered(depositSender)) {
+                spendingDepositRegistry.refill(depositSender, amount);
+            } else {
+                spendingDepositRegistry.register(depositSender, amount);
+            }
+            DepositReceived(depositSender);
+            return true;
+        } else {
+            DepositNotApproved(depositSender);
+            return false;
+        }
+    }
+
+    function spendDeposit(address spender, address receiver, uint256 amount) private returns (bool){
+        if (spendingDepositRegistry.spend(spender, amount)) {
+            token.transfer(receiver, amount);
+            DepositSpent(spender, receiver, amount);
+        } else {
+            NotEnoughTokens(spender, amount);
         }
     }
 
@@ -71,7 +109,7 @@ contract PapyrusDAO {
     //@param sspAddress address of wallet to register
     function registerSsp(address sspAddress) {
         if (!sspRegistry.isRegistered(sspAddress)) {
-            if (receiveDeposit(sspAddress)) {
+            if (receiveSecurityDeposit(sspAddress)) {
                 sspRegistry.register(sspAddress);
                 SSPRegistered(sspAddress);
             }
@@ -82,7 +120,7 @@ contract PapyrusDAO {
     //@param Address of SSP to be unregistered
     function unregisterSsp(address sspAddress) {
         if (sspRegistry.isRegistered(sspAddress)) {
-            returnDeposit(sspAddress);
+            returnDeposit(sspAddress, securityDepositRegistry);
             sspRegistry.unregister(sspAddress);
             SSPUnregistered(sspAddress);
         }
@@ -110,7 +148,7 @@ contract PapyrusDAO {
     //@param dspAddress address of wallet to register
     function registerDsp(address dspAddress) {
         if (!dspRegistry.isRegistered(dspAddress)) {
-            if (receiveDeposit(dspAddress)) {
+            if (receiveSecurityDeposit(dspAddress)) {
                 dspRegistry.register(dspAddress);
                 DSPRegistered(dspAddress);
             }
@@ -121,9 +159,31 @@ contract PapyrusDAO {
     //@param Address of DSP to be unregistered
     function unregisterDsp(address dspAddress) {
         if (dspRegistry.isRegistered(dspAddress)) {
-            returnDeposit(dspAddress);
+            returnDeposit(dspAddress, spendingDepositRegistry);
+            returnDeposit(dspAddress, securityDepositRegistry);
             dspRegistry.unregister(dspAddress);
             DSPUnregistered(dspAddress);
+        }
+    }
+
+    //@dev Refill deposit to spend for ads
+    //@param dspAddress - address of dsp to refill
+    //@param amount - deposit amount
+    function refillSpendingDeposit(address dspAddress, uint256 amount) {
+        if (dspRegistry.isRegistered(dspAddress)) {
+            receiveSpendingDeposit(dspAddress, amount);
+        }
+    }
+
+    //@dev This method confirms that service (ads) was provided and payment must be performed
+    //@param fromDspAddress - payer, payment will be performed from its spending deposit
+    //@param toSspAddress - service provider, tokens will be sent directly to its account
+    //@param amount - payments amount
+    function approvePayment(address fromDspAddress, address toSspAddress, uint256 amount) returns (bool) {
+        if (dspRegistry.isRegistered(fromDspAddress) && sspRegistry.isRegistered(toSspAddress)) {
+            return spendDeposit(fromDspAddress, toSspAddress, amount);
+        } else {
+            return false;
         }
     }
 }

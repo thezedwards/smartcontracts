@@ -84,6 +84,30 @@ contract DepositRegistry is Ownable {
         amount = record.amount;
     }
 
+    function hasEnough(address key, uint256 amount) constant returns(bool) {
+        Deposit deposit = records[key];
+        return deposit.amount >= amount;
+    }
+
+    function spend(address key, uint256 amount) onlyOwner returns(bool){
+        if (isRegistered(key) && hasEnough(key, amount)) {
+            Deposit deposit = records[key];
+            deposit.amount = deposit.amount - amount;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function refill(address key, uint256 amount) onlyOwner {
+        if (isRegistered(key)) {
+            Deposit deposit = records[key];
+            deposit.amount = deposit.amount + amount;
+        } else {
+            throw;
+        }
+    }
+
     // Returns the registration time of the given record. The time could also
     // be get by using the function getDeposit but in that case all record attributes
     // are returned.
