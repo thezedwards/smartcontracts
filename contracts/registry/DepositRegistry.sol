@@ -47,7 +47,7 @@ contract DepositRegistry is Ownable {
     }
 
     // Unregister a given record
-    function unregister(address key) {
+    function unregister(address key) onlyOwner {
         if (records[key].owner == msg.sender) {
             uint keysIndex = records[key].keysIndex;
             delete records[key];

@@ -29,7 +29,7 @@ contract DSPRegistry is Ownable {
     address[] public keys;
 
     // This is the function that actually insert a record.
-    function register(address key) {
+    function register(address key) onlyOwner {
         if (records[key].time == 0) {
             records[key].time = now;
             records[key].owner = msg.sender;
@@ -64,7 +64,7 @@ contract DSPRegistry is Ownable {
     }
 
     // Transfer ownership of a given record.
-    function transfer(address key, address newOwner) {
+    function transfer(address key, address newOwner) onlyOwner {
         if (records[key].owner == msg.sender) {
             records[key].owner = newOwner;
         } else {
@@ -97,6 +97,8 @@ contract DSPRegistry is Ownable {
         return records[key].time;
     }
 
+    //@dev Get list of all registered dsp
+    //@return Returns array of addresses registered as DSP with register times
     function getAllDSP() returns(address[] addresses, uint[] times) {
         addresses = new address[](numRecords);
         times = new uint[](numRecords);
