@@ -10,7 +10,7 @@ contract PapyrusSalePhase1 is Ownable {
 
     enum Stage {
         JustCreated,        // Contract is just created
-        AuctionDeployed,    // Contract is just created
+        AuctionDeployed,    // Auction is just deployed but not set up yet
         AuctionSetUp,       // Auction is set up and ready to start
         AuctionStarted,     // Auction is started and bids can be received by contract
         AuctionFinishing,   // Auction is still continuing but price is fixed now
@@ -82,7 +82,7 @@ contract PapyrusSalePhase1 is Ownable {
     )
         onlyOwner
     {
-        require(stage >= Stage.AuctionDeployed && stage < Stage.AuctionStarted);
+        require(stage == Stage.AuctionDeployed || stage == Stage.AuctionSetUp);
         require(_ceiling != 0 && _priceEther != 0 && _priceTokenMin != 0 && _priceTokenMin < _priceTokenMax && _priceCurveFactor != 0);
         require(_auctionPeriod != 0 && block.number < _auctionStart && _auctionStart <= _auctionClaimingStart);
         ceiling = _ceiling;
@@ -95,6 +95,7 @@ contract PapyrusSalePhase1 is Ownable {
         auctionPeriod = _auctionPeriod;
         auctionStart = _auctionStart;
         auctionClaimingStart = _auctionClaimingStart;
+        stage = Stage.AuctionSetUp;
     }
 
     /// @dev Sets auction start block index.
@@ -102,7 +103,7 @@ contract PapyrusSalePhase1 is Ownable {
         onlyOwner
         timedTransitions
     {
-        require(stage >= Stage.AuctionDeployed && stage < Stage.AuctionStarted);
+        require(stage >= Stage.AuctionSetUp && stage < Stage.AuctionStarted);
         require(_blockIndex > block.number && _blockIndex <= auctionClaimingStart);
         auctionStart = _blockIndex;
     }
@@ -112,9 +113,20 @@ contract PapyrusSalePhase1 is Ownable {
         onlyOwner
         timedTransitions
     {
-        require(stage >= Stage.AuctionDeployed && stage < Stage.ClaimingStarted);
+        require(stage >= Stage.AuctionSetUp && stage < Stage.ClaimingStarted);
         require(_blockIndex > block.number && _blockIndex >= auctionStart);
         auctionClaimingStart = _blockIndex;
+    }
+
+    /// @dev Sets ether price in USD.
+    /// @param _priceEther Current price ETH/USD.
+    function setPriceEther(uint256 _priceEther)
+        onlyOwner
+        timedTransitions
+    {
+        require(stage >= Stage.AuctionSetUp && stage < Stage.ClaimingStarted);
+        require(_priceEther != 0);
+        priceEther = _priceEther;
     }
 
     /// @dev Calculates current token price.
@@ -149,7 +161,8 @@ contract PapyrusSalePhase1 is Ownable {
         if (receiver == address(0))
             receiver = msg.sender;
         amount = msg.value;
-        uint256 amountAllowed = calcAllowedAmount();
+        uint256 tokenPrice = calcTokenPrice();
+        uint256 amountAllowed = calcAllowedWeisToInvest(tokenPrice);
         if (amountAllowed == 0) {
             // When amountAllowed is equal to zero the auction is ended and finalizeAuction is triggered.
             finalizeAuction();
@@ -258,13 +271,23 @@ contract PapyrusSalePhase1 is Ownable {
 
     // PRIVATE FUNCTIONS
 
-    // TODO
     function finalizeAuction() private {
         bool achieved = totalReceived == ceiling;
         stage = achieved ? Stage.AuctionFinished : Stage.AuctionFinishing;
         finalPrice = achieved ? calcTokenPrice() : calcStopPrice();
+        uint256 allowedWeis = calcAllowedWeisToInvest(finalPrice);
+        if (allowedWeis == 0) {
+        }
         uint256 reservedTokens = calcReservedTokens(prePapyrusToken.tokensSold(), finalPrice);
         uint256 tokensSold = totalReceived.mul(E18).div(finalPrice).add(reservedTokens);
+        if (tokensSold > tokensToSell) {
+            // It looks like finalPrice is too low so we have no enough tokens to guarantee all claims/exchanges
+            // To workaround this make finalPrice a bit higher (it still will be equal or lower than token price for last bidder)
+            uint256 weisForTokens = tokensSold.mul(finalPrice).div(E18);
+            finalPrice = weisForTokens.mul(E18).div(tokensToSell);
+            reservedTokens = calcReservedTokens(prePapyrusToken.tokensSold(), finalPrice);
+            tokensSold = totalReceived.mul(E18).div(finalPrice).add(reservedTokens);
+        }
         if (tokensSold < tokensToSell) {
             // Auction contract transfers all unsold tokens to Papyrus inventory multisig
             papyrusToken.transfer(wallet, tokensToSell.sub(tokensSold));
@@ -285,8 +308,7 @@ contract PapyrusSalePhase1 is Ownable {
         return reservedTokens;
     }
 
-    function calcAllowedAmount() constant private returns (uint256) {
-        uint256 tokenPrice = calcTokenPrice();
+    function calcAllowedWeisToInvest(uint256 tokenPrice) constant private returns (uint256) {
         // First of all calculate amount of tokens needed to perform exchanging for pre-sale participators
         uint256 reservedTokens = calcReservedTokens(prePapyrusToken.tokensSold(), tokenPrice);
         if (reservedTokens >= tokensToSell)

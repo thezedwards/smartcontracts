@@ -160,6 +160,17 @@ contract PrePapyrusToken is StandardToken, PrivateParticipation, MultiAccess {
         auctionFinish = _blockIndex;
     }
 
+    /// @dev Sets ether price in USD.
+    /// @param _priceEther Current price ETH/USD.
+    function setPriceEther(uint256 _priceEther)
+        onlyOwner
+        timedTransitions
+    {
+        require(stage == Stage.AuctionReadyToStart);
+        require(_priceEther != 0);
+        priceEther = _priceEther;
+    }
+
     /// @dev Returns correct stage, even if a function with timedTransitions modifier has not been called yet.
     /// @return Returns current auction stage.
     function updateStage()
