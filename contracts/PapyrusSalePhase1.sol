@@ -103,7 +103,7 @@ contract PapyrusSalePhase1 is Ownable {
         onlyOwner
         timedTransitions
     {
-        require(stage >= Stage.AuctionSetUp && stage < Stage.AuctionStarted);
+        require(stage == Stage.AuctionSetUp);
         require(_blockIndex > block.number && _blockIndex <= auctionClaimingStart);
         auctionStart = _blockIndex;
     }
