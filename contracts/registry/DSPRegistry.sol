@@ -17,6 +17,8 @@ contract DSPRegistry is Ownable {
         uint keysIndex;
         // DSP Address
         address dspAddress;
+
+        bytes32[3] url;
     }
 
     // This mapping keeps the records of this Registry.
@@ -29,12 +31,13 @@ contract DSPRegistry is Ownable {
     address[] public keys;
 
     // This is the function that actually insert a record.
-    function register(address key) onlyOwner {
+    function register(address key, bytes32[3] url) onlyOwner {
         if (records[key].time == 0) {
             records[key].time = now;
             records[key].owner = msg.sender;
             records[key].keysIndex = keys.length;
             records[key].dspAddress = key;
+            records[key].url = url;
             keys.length++;
             keys[keys.length - 1] = key;
             numRecords++;
@@ -44,9 +47,10 @@ contract DSPRegistry is Ownable {
     }
 
     // Updates the values of the given record.
-    function update(address key) onlyOwner {
+    function update(address key, bytes32[3] url) onlyOwner {
         // Only the owner can update his record.
         if (records[key].owner == msg.sender) {
+            records[key].url = url;
             // Something could be here
         }
     }
@@ -77,9 +81,10 @@ contract DSPRegistry is Ownable {
         return records[key].time != 0;
     }
 
-    function getDSP(address key) returns(address dspAddress, uint time) {
+    function getDSP(address key) returns(address dspAddress, bytes32[3] url, uint time) {
         DSP record = records[key];
         dspAddress = record.dspAddress;
+        url = record.url;
         time = record.time;
     }
 
@@ -99,13 +104,15 @@ contract DSPRegistry is Ownable {
 
     //@dev Get list of all registered dsp
     //@return Returns array of addresses registered as DSP with register times
-    function getAllDSP() returns(address[] addresses, uint[] times) {
+    function getAllDSP() returns(address[] addresses, bytes32[3][] urls, uint[] times) {
         addresses = new address[](numRecords);
         times = new uint[](numRecords);
+        urls = new bytes32[3][](numRecords);
         uint i;
         for(i = 0; i < numRecords; i++) {
             DSP dsp = records[keys[i]];
             addresses[i] = dsp.dspAddress;
+            urls[i] = dsp.url;
             times[i] = dsp.time;
         }
     }

@@ -140,16 +140,16 @@ contract PapyrusDAO {
 
     //@dev Retrieve information about registered DSP
     //@return Address of registered DSP and time when registered
-    function findDsp(address addr) constant returns(address dspAddress, uint time) {
+    function findDsp(address addr) constant returns(address dspAddress, bytes32[3] url, uint time) {
         return dspRegistry.getDSP(addr);
     }
 
     //@dev Register organisation as DSP
     //@param dspAddress address of wallet to register
-    function registerDsp(address dspAddress) {
+    function registerDsp(address dspAddress, bytes32[3] url) {
         if (!dspRegistry.isRegistered(dspAddress)) {
             if (receiveSecurityDeposit(dspAddress)) {
-                dspRegistry.register(dspAddress);
+                dspRegistry.register(dspAddress, url);
                 DSPRegistered(dspAddress);
             }
         }
