@@ -115,6 +115,7 @@ contract PrePapyrusToken is StandardToken, PrivateParticipation, MultiAccess {
         require(_auctionPrivateStart <= _auctionPublicStart && _auctionPublicStart <= _auctionFinish);
         require(_auctionPrivateStart > block.number);
         require(balanceOf(this) > 0);
+        wallet = _wallet;
         ceiling = _ceiling;
         priceEther = _priceEther;
         priceToken = _priceToken;
