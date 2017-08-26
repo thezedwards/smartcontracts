@@ -22,9 +22,11 @@ var addressPapyrusSalePhase1;
 var addressPapyrusDAO;
 
 var addressCoreAccount = web3.eth.accounts[0]; // TODO: Replace this with proper address
-var addressOwnerWallets_A = web3.eth.accounts[1]; // TODO: Replace this with proper address
-var addressOwnerWallets_B = web3.eth.accounts[2]; // TODO: Replace this with proper address
-var addressOwnerWallets_C = web3.eth.accounts[3]; // TODO: Replace this with proper address
+var addressOwnerWallets_A = web3.eth.accounts[2]; // TODO: Replace this with proper address
+var addressOwnerWallets_B = web3.eth.accounts[3]; // TODO: Replace this with proper address
+var addressOwnerWallets_C = web3.eth.accounts[4]; // TODO: Replace this with proper address
+var addressOwnerWallets_D = web3.eth.accounts[5]; // TODO: Replace this with proper address
+var addressOwnerWallets_E = web3.eth.accounts[6]; // TODO: Replace this with proper address
 
 function printAddresses() {
     console.log("Core cccount: " + addressCoreAccount);
@@ -52,30 +54,30 @@ function printAddresses() {
 module.exports = function(deployer) {
     // First of all deploy all necessary multisignature wallets
     // For now use daily non limit multisignature wallets with 3 owners
-    deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C], 2).then(function() {
+    deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], 3).then(function() {
         addressWalletPRP = MiltiSigWallet.address;
-        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C], 2);
+        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], 3);
     }).then(function() {
         addressWalletPPR_A = MiltiSigWallet.address;
-        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C], 2);
+        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], 3);
     }).then(function() {
         addressWalletPPR_B = MiltiSigWallet.address;
-        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C], 2);
+        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], 3);
     }).then(function() {
         addressWalletPPR_C = MiltiSigWallet.address;
-        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C], 2);
+        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], 3);
     }).then(function() {
         addressWalletPPR_D = MiltiSigWallet.address;
-        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C], 2);
+        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], 3);
     }).then(function() {
         addressWalletPPR_E = MiltiSigWallet.address;
-        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C], 2);
+        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], 3);
     }).then(function() {
         addressWalletPPR_F = MiltiSigWallet.address;
-        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C], 2);
+        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], 3);
     }).then(function() {
         addressWalletETH_A = MiltiSigWallet.address;
-        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C], 2);
+        return deployer.deploy(MiltiSigWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], 3);
     }).then(function() {
         addressWalletETH_B = MiltiSigWallet.address;
         // Then deploy another important smart-contract implementing KYC verifications
