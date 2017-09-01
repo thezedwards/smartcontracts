@@ -9,9 +9,10 @@ import "../registry/ArbiterRegistry.sol";
 import "../registry/DepositRegistry.sol";
 import "../registry/SecurityDepositRegistry.sol";
 import "../registry/SpendingDepositRegistry.sol";
+import "../dao/StateChannelListener.sol";
 
 
-contract PapyrusDAO {
+contract PapyrusDAO is StateChannelListener {
 
     ERC20 private token;
 
@@ -205,5 +206,13 @@ contract PapyrusDAO {
             //TODO check for duplicates
         }
         dispute.addArbiters(arbiters);
+    }
+
+    function applyRuntimeUpdate(MemberRole memberRole, int impressionsCount, int fraudCount) {
+
+    }
+
+    function applyAuditorsCheckUpdate(MemberRole memberRole, int fraudCountDelta) {
+
     }
 }
