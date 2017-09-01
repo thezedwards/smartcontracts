@@ -4,6 +4,7 @@ import "../zeppelin/ownership/Ownable.sol";
 import "../zeppelin/token/ERC20.sol";
 import "../registry/SSPRegistry.sol";
 import "../registry/DSPRegistry.sol";
+import "../registry/PublisherRegistry.sol";
 import "../registry/DisputeRegistry.sol";
 import "../registry/ArbiterRegistry.sol";
 import "../registry/DepositRegistry.sol";
@@ -20,6 +21,7 @@ contract PapyrusDAO is StateChannelListener {
         token = papyrusToken;
         sspRegistry = new SSPRegistry();
         dspRegistry = new DSPRegistry();
+        publisherRegistry = new PublisherRegistry();
         disputeRegistry = new DisputeRegistry();
         arbiterRegistry = new ArbiterRegistry();
         securityDepositRegistry = new SecurityDepositRegistry();
@@ -189,6 +191,46 @@ contract PapyrusDAO is StateChannelListener {
             return spendDeposit(fromDspAddress, toSspAddress, amount);
         } else {
             return false;
+        }
+    }
+
+    /*------------------ Publishers ---------------*/
+
+    PublisherRegistry private publisherRegistry;
+
+    event PublisherRegistered(address dspAddress);
+    event PublisherUnregistered(address dspAddress);
+
+    //@dev Get direct link to PublisherRegistry contract
+    function getPublisherRegistry() constant returns(address publisherRegistryAddress) {
+        return publisherRegistry;
+    }
+
+    //@dev Retrieve information about registered Publisher
+    //@return Address of registered Publisher and time when registered
+    function findPublisher(address addr) constant returns(address publisherAddress, bytes32[3] url, uint time) {
+        return publisherRegistry.getPublisher(addr);
+    }
+
+    //@dev Register organisation as Publisher
+    //@param dspPublisher address of wallet to register
+    function registerPublisher(address publisherAddress, bytes32[3] url) {
+        if (!publisherRegistry.isRegistered(publisherAddress)) {
+            if (receiveSecurityDeposit(publisherAddress)) {
+                publisherRegistry.register(publisherAddress, url);
+                PublisherRegistered(publisherAddress);
+            }
+        }
+    }
+
+    //@dev Unregister Publisher and return unused deposit
+    //@param Address of Publisher to be unregistered
+    function unregisterPublisher(address publisherAddress) {
+        if (publisherRegistry.isRegistered(publisherAddress)) {
+            returnDeposit(publisherAddress, spendingDepositRegistry);
+            returnDeposit(publisherAddress, securityDepositRegistry);
+            publisherRegistry.unregister(publisherAddress);
+            PublisherUnregistered(publisherAddress);
         }
     }
 
