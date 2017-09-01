@@ -4,6 +4,8 @@ import "../zeppelin/ownership/Ownable.sol";
 import "../zeppelin/token/ERC20.sol";
 import "../registry/SSPRegistry.sol";
 import "../registry/DSPRegistry.sol";
+import "../registry/DisputeRegistry.sol";
+import "../registry/ArbiterRegistry.sol";
 import "../registry/DepositRegistry.sol";
 import "../registry/SecurityDepositRegistry.sol";
 import "../registry/SpendingDepositRegistry.sol";
@@ -17,6 +19,8 @@ contract PapyrusDAO {
         token = papyrusToken;
         sspRegistry = new SSPRegistry();
         dspRegistry = new DSPRegistry();
+        disputeRegistry = new DisputeRegistry();
+        arbiterRegistry = new ArbiterRegistry();
         securityDepositRegistry = new SecurityDepositRegistry();
         spendingDepositRegistry = new SpendingDepositRegistry();
     }
@@ -185,5 +189,21 @@ contract PapyrusDAO {
         } else {
             return false;
         }
+    }
+
+    /*------------------ Disputes -----------------*/
+    DisputeRegistry private disputeRegistry;
+    ArbiterRegistry private arbiterRegistry;
+
+    uint8 constant NUMBER_OF_ARBITERS_FOR_DISPUTE = 5;
+
+    function startDispute(address subject) {
+        Dispute dispute = new Dispute(msg.sender, subject, token);
+        Arbiter[] arbiters;
+        for (uint i = 0; i < NUMBER_OF_ARBITERS_FOR_DISPUTE; i++) {
+            arbiters.push(arbiterRegistry.getRandomArbiter());
+            //TODO check for duplicates
+        }
+        dispute.addArbiters(arbiters);
     }
 }

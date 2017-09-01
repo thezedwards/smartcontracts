@@ -64,10 +64,14 @@ contract ArbiterRegistry is Ownable{
         karma = arbiter.karma();
     }
 
-    function getRandomArbiters(uint8 number) returns (address[] arbiterAddresses) {
+    function getRandomArbiters(uint8 number) onlyOwner returns (Arbiter[] arbiterAddresses) {
         for (uint8 i = 0; i < number; i++) {
 
         }
+    }
+
+    function getRandomArbiter() onlyOwner returns (Arbiter arbiter) {
+        //TODO
     }
 
     function sortTrusted() {
