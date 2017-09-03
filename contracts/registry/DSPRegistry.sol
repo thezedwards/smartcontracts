@@ -19,6 +19,8 @@ contract DSPRegistry is Ownable {
         address dspAddress;
 
         bytes32[3] url;
+
+        uint256[2] karma;
     }
 
     // This mapping keeps the records of this Registry.
@@ -47,12 +49,17 @@ contract DSPRegistry is Ownable {
     }
 
     // Updates the values of the given record.
-    function update(address key, bytes32[3] url) onlyOwner {
+    function updateUrl(address key, bytes32[3] url) onlyOwner {
         // Only the owner can update his record.
         if (records[key].owner == msg.sender) {
             records[key].url = url;
-            // Something could be here
         }
+    }
+
+    function applyKarmaDiff(address key, uint256[2] diff) {
+        DSP dsp = records[key];
+        dsp.karma[0] += diff[0];
+        dsp.karma[1] += diff[1];
     }
 
     // Unregister a given record

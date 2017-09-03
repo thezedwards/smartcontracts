@@ -250,11 +250,20 @@ contract PapyrusDAO is StateChannelListener {
         dispute.addArbiters(arbiters);
     }
 
-    function applyRuntimeUpdate(MemberRole memberRole, int impressionsCount, int fraudCount) {
-
+    function applyRuntimeUpdate(MemberRole memberRole, address memberAddress, uint impressionsCount, uint fraudCount) {
+        uint256[2] memory karmaDiff;
+        karmaDiff[0] = impressionsCount;
+        karmaDiff[1] = fraudCount;
+        if (MemberRole.DSP == memberRole) {
+            dspRegistry.applyKarmaDiff(memberAddress, karmaDiff);
+        } else if (MemberRole.SSP == memberRole) {
+            sspRegistry.applyKarmaDiff(memberAddress, karmaDiff);
+        } else if (MemberRole.Publisher == memberRole) {
+            publisherRegistry.applyKarmaDiff(memberAddress, karmaDiff);
+        }
     }
 
-    function applyAuditorsCheckUpdate(MemberRole memberRole, int fraudCountDelta) {
+    function applyAuditorsCheckUpdate(MemberRole memberRole, address memberAddress, uint fraudCountDelta) {
 
     }
 }

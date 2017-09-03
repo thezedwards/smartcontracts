@@ -17,6 +17,8 @@ contract SSPRegistry is Ownable {
         uint keysIndex;
         // SSP Address
         address sspAddress;
+
+        uint256[2] karma;
     }
 
     // This mapping keeps the records of this Registry.
@@ -49,6 +51,12 @@ contract SSPRegistry is Ownable {
         if (records[key].owner == msg.sender) {
             // Something could be here
         }
+    }
+
+    function applyKarmaDiff(address key, uint256[2] diff) {
+        SSP ssp = records[key];
+        ssp.karma[0] += diff[0];
+        ssp.karma[1] += diff[1];
     }
 
     // Unregister a given record
