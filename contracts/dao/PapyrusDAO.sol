@@ -3,7 +3,9 @@ pragma solidity ^0.4.11;
 import "../zeppelin/ownership/Ownable.sol";
 import "../zeppelin/token/ERC20.sol";
 import "../registry/SSPRegistry.sol";
+import "../registry/impl/SSPRegistryImpl.sol";
 import "../registry/DSPRegistry.sol";
+import "../registry/impl/DSPRegistryImpl.sol";
 import "../registry/PublisherRegistry.sol";
 import "../registry/DisputeRegistry.sol";
 import "../registry/ArbiterRegistry.sol";
@@ -12,20 +14,34 @@ import "../registry/SecurityDepositRegistry.sol";
 import "../registry/SpendingDepositRegistry.sol";
 import "../dao/StateChannelListener.sol";
 
-
-contract PapyrusDAO is StateChannelListener {
+contract PapyrusDAO is StateChannelListener, Ownable {
 
     ERC20 private token;
 
     function PapyrusDAO(ERC20 papyrusToken) {
         token = papyrusToken;
-        sspRegistry = new SSPRegistry();
-        dspRegistry = new DSPRegistry();
+        sspRegistry = new SSPRegistryImpl();
+        dspRegistry = new DSPRegistryImpl();
         publisherRegistry = new PublisherRegistry();
         disputeRegistry = new DisputeRegistry();
         arbiterRegistry = new ArbiterRegistry();
         securityDepositRegistry = new SecurityDepositRegistry();
         spendingDepositRegistry = new SpendingDepositRegistry();
+    }
+
+    event SSPRegistryReplaced(address from, address to);
+    event DSPRegistryReplaced(address from, address to);
+
+    function replaceSSPRegistry(SSPRegistry newRegistry) onlyOwner {
+        address old = sspRegistry;
+        sspRegistry = newRegistry;
+        SSPRegistryReplaced(old, newRegistry);
+    }
+
+    function replaceDSPRegistry(DSPRegistry newRegistry) onlyOwner {
+        address old = dspRegistry;
+        dspRegistry = newRegistry;
+        DSPRegistryReplaced(old, newRegistry);
     }
 
     /*------------- Abstract Deposit -------------*/
@@ -108,16 +124,16 @@ contract PapyrusDAO is StateChannelListener {
 
     //@dev Retrieve information about registered SSP
     //@return Address of registered SSP and time when registered
-    function findSsp(address sspAddress) constant returns(address owner, uint time) {
-        return sspRegistry.getSSP(sspAddress);
+    function findSsp(address sspAddr) constant returns(address sspAddress, uint16 publisherFee, uint256[2] karma) {
+        return sspRegistry.getSSP(sspAddr);
     }
 
     //@dev Register organisation as SSP
     //@param sspAddress address of wallet to register
-    function registerSsp(address sspAddress) {
+    function registerSsp(address sspAddress, uint16 publisherFee) {
         if (!sspRegistry.isRegistered(sspAddress)) {
             if (receiveSecurityDeposit(sspAddress)) {
-                sspRegistry.register(sspAddress);
+                sspRegistry.register(sspAddress, publisherFee);
                 SSPRegistered(sspAddress);
             }
         }

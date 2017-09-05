@@ -108,13 +108,6 @@ contract DepositRegistry is Ownable {
         }
     }
 
-    // Returns the registration time of the given record. The time could also
-    // be get by using the function getDeposit but in that case all record attributes
-    // are returned.
-    function getTime(address key) returns(uint) {
-        return records[key].time;
-    }
-
     function kill() onlyOwner {
         selfdestruct(owner);
     }
