@@ -7,6 +7,9 @@ import "../registry/impl/SSPRegistryImpl.sol";
 import "../registry/DSPRegistry.sol";
 import "../registry/impl/DSPRegistryImpl.sol";
 import "../registry/PublisherRegistry.sol";
+import "../registry/impl/PublisherRegistryImpl.sol";
+import "../registry/AuditorRegistry.sol";
+import "../registry/impl/AuditorRegistryImpl.sol";
 import "../registry/DisputeRegistry.sol";
 import "../registry/ArbiterRegistry.sol";
 import "../registry/DepositRegistry.sol";
@@ -22,7 +25,8 @@ contract PapyrusDAO is StateChannelListener, Ownable {
         token = papyrusToken;
         sspRegistry = new SSPRegistryImpl();
         dspRegistry = new DSPRegistryImpl();
-        publisherRegistry = new PublisherRegistry();
+        publisherRegistry = new PublisherRegistryImpl();
+        auditorRegistry = new AuditorRegistryImpl();
         disputeRegistry = new DisputeRegistry();
         arbiterRegistry = new ArbiterRegistry();
         securityDepositRegistry = new SecurityDepositRegistry();
@@ -31,6 +35,7 @@ contract PapyrusDAO is StateChannelListener, Ownable {
 
     event SSPRegistryReplaced(address from, address to);
     event DSPRegistryReplaced(address from, address to);
+    event PublisherRegistryReplaced(address from, address to);
 
     function replaceSSPRegistry(SSPRegistry newRegistry) onlyOwner {
         address old = sspRegistry;
@@ -42,6 +47,12 @@ contract PapyrusDAO is StateChannelListener, Ownable {
         address old = dspRegistry;
         dspRegistry = newRegistry;
         DSPRegistryReplaced(old, newRegistry);
+    }
+
+    function replacePublisherRegistry(PublisherRegistry newRegistry) onlyOwner {
+        address old = publisherRegistry;
+        publisherRegistry = newRegistry;
+        PublisherRegistryReplaced(old, publisherRegistry);
     }
 
     /*------------- Abstract Deposit -------------*/
@@ -163,7 +174,7 @@ contract PapyrusDAO is StateChannelListener, Ownable {
 
     //@dev Retrieve information about registered DSP
     //@return Address of registered DSP and time when registered
-    function findDsp(address addr) constant returns(address dspAddress, bytes32[3] url, uint time) {
+    function findDsp(address addr) constant returns(address dspAddress, bytes32[3] url, uint256[2] karma) {
         return dspRegistry.getDSP(addr);
     }
 
@@ -214,8 +225,8 @@ contract PapyrusDAO is StateChannelListener, Ownable {
 
     PublisherRegistry private publisherRegistry;
 
-    event PublisherRegistered(address dspAddress);
-    event PublisherUnregistered(address dspAddress);
+    event PublisherRegistered(address publisherAddress);
+    event PublisherUnregistered(address publisherAddress);
 
     //@dev Get direct link to PublisherRegistry contract
     function getPublisherRegistry() constant returns(address publisherRegistryAddress) {
@@ -224,12 +235,12 @@ contract PapyrusDAO is StateChannelListener, Ownable {
 
     //@dev Retrieve information about registered Publisher
     //@return Address of registered Publisher and time when registered
-    function findPublisher(address addr) constant returns(address publisherAddress, bytes32[3] url, uint time) {
+    function findPublisher(address addr) constant returns(address publisherAddress, bytes32[3] url, uint256[2] karma) {
         return publisherRegistry.getPublisher(addr);
     }
 
     //@dev Register organisation as Publisher
-    //@param dspPublisher address of wallet to register
+    //@param publisherAddress address of wallet to register
     function registerPublisher(address publisherAddress, bytes32[3] url) {
         if (!publisherRegistry.isRegistered(publisherAddress)) {
             if (receiveSecurityDeposit(publisherAddress)) {
@@ -250,6 +261,46 @@ contract PapyrusDAO is StateChannelListener, Ownable {
         }
     }
 
+    /*------------------ Auditors ---------------*/
+
+    AuditorRegistry private auditorRegistry;
+
+    event AuditorRegistered(address auditorAddress);
+    event AuditorUnregistered(address auditorAddress);
+
+    //@dev Get direct link to AuditorRegistry contract
+    function getAuditorRegistry() constant returns(address auditorRegistryAddress) {
+        return auditorRegistry;
+    }
+
+    //@dev Retrieve information about registered Auditor
+    //@return Address of registered Auditor and time when registered
+    function findAuditor(address addr) constant returns(address auditorAddress, uint256[2] karma) {
+        return auditorRegistry.getAuditor(addr);
+    }
+
+    //@dev Register organisation as Auditor
+    //@param auditorAddress address of wallet to register
+    function registerAuditor(address auditorAddress) {
+        if (!auditorRegistry.isRegistered(auditorAddress)) {
+            if (receiveSecurityDeposit(auditorAddress)) {
+                auditorRegistry.register(auditorAddress);
+                AuditorRegistered(auditorAddress);
+            }
+        }
+    }
+
+    //@dev Unregister Auditor and return unused deposit
+    //@param Address of Auditor to be unregistered
+    function unregisterAuditor(address auditorAddress) {
+        if (auditorRegistry.isRegistered(auditorAddress)) {
+            returnDeposit(auditorAddress, spendingDepositRegistry);
+            returnDeposit(auditorAddress, securityDepositRegistry);
+            auditorRegistry.unregister(auditorAddress);
+            AuditorUnregistered(auditorAddress);
+        }
+    }
+
     /*------------------ Disputes -----------------*/
     DisputeRegistry private disputeRegistry;
     ArbiterRegistry private arbiterRegistry;
@@ -266,20 +317,27 @@ contract PapyrusDAO is StateChannelListener, Ownable {
         dispute.addArbiters(arbiters);
     }
 
-    function applyRuntimeUpdate(MemberRole memberRole, address memberAddress, uint impressionsCount, uint fraudCount) {
-        uint256[2] memory karmaDiff;
+    function applyRuntimeUpdate(address from, address to, uint impressionsCount, uint fraudCount) {
+        uint256[2] karmaDiff;
         karmaDiff[0] = impressionsCount;
+        karmaDiff[1] = 0;
+        if (dspRegistry.isRegistered(from)) {
+            dspRegistry.applyKarmaDiff(from, karmaDiff);
+        } else if (sspRegistry.isRegistered(from)) {
+            sspRegistry.applyKarmaDiff(from, karmaDiff);
+        }
+
         karmaDiff[1] = fraudCount;
-        if (MemberRole.DSP == memberRole) {
-            dspRegistry.applyKarmaDiff(memberAddress, karmaDiff);
-        } else if (MemberRole.SSP == memberRole) {
-            sspRegistry.applyKarmaDiff(memberAddress, karmaDiff);
-        } else if (MemberRole.Publisher == memberRole) {
-            publisherRegistry.applyKarmaDiff(memberAddress, karmaDiff);
+        if (sspRegistry.isRegistered(to)) {
+            karmaDiff[0] = 0;
+            sspRegistry.applyKarmaDiff(to, karmaDiff);
+        } else if (publisherRegistry.isRegistered(to)) {
+            karmaDiff[0] = impressionsCount;
+            publisherRegistry.applyKarmaDiff(to, karmaDiff);
         }
     }
 
-    function applyAuditorsCheckUpdate(MemberRole memberRole, address memberAddress, uint fraudCountDelta) {
-
+    function applyAuditorsCheckUpdate(address from, address to, uint fraudCountDelta) {
+        //To be implemented
     }
 }

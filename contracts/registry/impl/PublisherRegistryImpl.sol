@@ -1,31 +1,27 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.0;
 
 import "../../zeppelin/ownership/Ownable.sol";
-import "../DSPRegistry.sol";
+import "../PublisherRegistry.sol";
 
-// This is the base contract that your contract DSPRegistry extends from.
-contract DSPRegistryImpl is DSPRegistry, Ownable {
-
-    uint public creationTime = now;
-
-    // This struct keeps all data for a DSP.
-    struct DSP {
+contract PublisherRegistryImpl is PublisherRegistry, Ownable{
+    // This struct keeps all data for a publisher.
+    struct Publisher {
         // Keeps the address of this record creator.
         address owner;
         // Keeps the time when this record was created.
         uint time;
         // Keeps the index of the keys array for fast lookup
         uint keysIndex;
-        // DSP Address
-        address dspAddress;
-
+        // publisher Address
+        address publisherAddress;
+    
         bytes32[3] url;
 
         uint256[2] karma;
     }
 
     // This mapping keeps the records of this Registry.
-    mapping(address => DSP) records;
+    mapping(address => Publisher) records;
 
     // Keeps the total numbers of records in this Registry.
     uint public numRecords;
@@ -39,7 +35,7 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
             records[key].time = now;
             records[key].owner = msg.sender;
             records[key].keysIndex = keys.length;
-            records[key].dspAddress = key;
+            records[key].publisherAddress = key;
             records[key].url = url;
             keys.length++;
             keys[keys.length - 1] = key;
@@ -57,10 +53,11 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
         }
     }
 
+
     function applyKarmaDiff(address key, uint256[2] diff) {
-        DSP dsp = records[key];
-        dsp.karma[0] += diff[0];
-        dsp.karma[1] += diff[1];
+        Publisher publisher = records[key];
+        publisher.karma[0] += diff[0];
+        publisher.karma[1] += diff[1];
     }
 
     // Unregister a given record
@@ -89,9 +86,9 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
         return records[key].time != 0;
     }
 
-    function getDSP(address key) returns(address dspAddress, bytes32[3] url, uint256[2] karma) {
-        DSP record = records[key];
-        dspAddress = record.dspAddress;
+    function getPublisher(address key) returns(address publisherAddress, bytes32[3] url, uint256[2] karma) {
+        Publisher record = records[key];
+        publisherAddress = record.publisherAddress;
         url = record.url;
         karma = record.karma;
     }
@@ -110,18 +107,18 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
         return records[key].time;
     }
 
-    //@dev Get list of all registered dsp
+    //@dev Get list of all registered publishers
     //@return Returns array of addresses registered as DSP with register times
-    function getAllDSP() returns(address[] addresses, bytes32[3][] urls, uint256[2][] karmas) {
+    function getAllPublishers() returns(address[] addresses, bytes32[3][] urls, uint256[2][] karmas) {
         addresses = new address[](numRecords);
         urls = new bytes32[3][](numRecords);
         karmas = new uint256[2][](numRecords);
         uint i;
         for(i = 0; i < numRecords; i++) {
-            DSP dsp = records[keys[i]];
-            addresses[i] = dsp.dspAddress;
-            urls[i] = dsp.url;
-            karmas[i] = dsp.karma;
+            Publisher publisher = records[keys[i]];
+            addresses[i] = publisher.publisherAddress;
+            urls[i] = publisher.url;
+            karmas[i] = publisher.karma;
         }
     }
 

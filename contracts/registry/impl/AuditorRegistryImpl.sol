@@ -1,31 +1,29 @@
 pragma solidity ^0.4.11;
 
 import "../../zeppelin/ownership/Ownable.sol";
-import "../DSPRegistry.sol";
+import "../AuditorRegistry.sol";
 
-// This is the base contract that your contract DSPRegistry extends from.
-contract DSPRegistryImpl is DSPRegistry, Ownable {
+// This is the base contract that your contract AuditorRegistry extends from.
+contract AuditorRegistryImpl is AuditorRegistry, Ownable {
 
     uint public creationTime = now;
 
-    // This struct keeps all data for a DSP.
-    struct DSP {
+    // This struct keeps all data for a Auditor.
+    struct Auditor {
         // Keeps the address of this record creator.
         address owner;
         // Keeps the time when this record was created.
         uint time;
         // Keeps the index of the keys array for fast lookup
         uint keysIndex;
-        // DSP Address
-        address dspAddress;
-
-        bytes32[3] url;
+        // Auditor Address
+        address auditorAddress;
 
         uint256[2] karma;
     }
 
     // This mapping keeps the records of this Registry.
-    mapping(address => DSP) records;
+    mapping(address => Auditor) records;
 
     // Keeps the total numbers of records in this Registry.
     uint public numRecords;
@@ -34,13 +32,12 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
     address[] public keys;
 
     // This is the function that actually insert a record.
-    function register(address key, bytes32[3] url) onlyOwner {
+    function register(address key) onlyOwner {
         if (records[key].time == 0) {
             records[key].time = now;
             records[key].owner = msg.sender;
             records[key].keysIndex = keys.length;
-            records[key].dspAddress = key;
-            records[key].url = url;
+            records[key].auditorAddress = key;
             keys.length++;
             keys[keys.length - 1] = key;
             numRecords++;
@@ -49,18 +46,10 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
         }
     }
 
-    // Updates the values of the given record.
-    function updateUrl(address key, bytes32[3] url) onlyOwner {
-        // Only the owner can update his record.
-        if (records[key].owner == msg.sender) {
-            records[key].url = url;
-        }
-    }
-
     function applyKarmaDiff(address key, uint256[2] diff) {
-        DSP dsp = records[key];
-        dsp.karma[0] += diff[0];
-        dsp.karma[1] += diff[1];
+        Auditor auditor = records[key];
+        auditor.karma[0] += diff[0];
+        auditor.karma[1] += diff[1];
     }
 
     // Unregister a given record
@@ -89,39 +78,36 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
         return records[key].time != 0;
     }
 
-    function getDSP(address key) returns(address dspAddress, bytes32[3] url, uint256[2] karma) {
-        DSP record = records[key];
-        dspAddress = record.dspAddress;
-        url = record.url;
+    function getAuditor(address key) returns(address auditorAddress, uint256[2] karma) {
+        Auditor record = records[key];
+        auditorAddress = record.auditorAddress;
         karma = record.karma;
     }
 
     // Returns the owner of the given record. The owner could also be get
-    // by using the function getDSP but in that case all record attributes
+    // by using the function getAuditor but in that case all record attributes
     // are returned.
     function getOwner(address key) returns(address) {
         return records[key].owner;
     }
 
     // Returns the registration time of the given record. The time could also
-    // be get by using the function getDSP but in that case all record attributes
+    // be get by using the function getAuditor but in that case all record attributes
     // are returned.
     function getTime(address key) returns(uint) {
         return records[key].time;
     }
 
-    //@dev Get list of all registered dsp
-    //@return Returns array of addresses registered as DSP with register times
-    function getAllDSP() returns(address[] addresses, bytes32[3][] urls, uint256[2][] karmas) {
+    //@dev Get list of all registered auditor
+    //@return Returns array of addresses registered as Auditor with register times
+    function getAllAuditors() returns(address[] addresses, uint256[2][] karmas) {
         addresses = new address[](numRecords);
-        urls = new bytes32[3][](numRecords);
         karmas = new uint256[2][](numRecords);
         uint i;
         for(i = 0; i < numRecords; i++) {
-            DSP dsp = records[keys[i]];
-            addresses[i] = dsp.dspAddress;
-            urls[i] = dsp.url;
-            karmas[i] = dsp.karma;
+            Auditor auditor = records[keys[i]];
+            addresses[i] = auditor.auditorAddress;
+            karmas[i] = auditor.karma;
         }
     }
 
