@@ -1,7 +1,7 @@
 pragma solidity ^0.4.11;
 
 import "../zeppelin/ownership/Ownable.sol";
-import "../dao/Dispute.sol";
+import "../dispute/Dispute.sol";
 
 contract DisputeRegistry is Ownable {
 
