@@ -24,5 +24,7 @@ contract StateChannelListener is RegistryProvider, ChannelApi{
         }
     }
 
-    function applyAuditorsCheckUpdate(address from, address to, uint fraudCountDelta);
+    function applyAuditorsCheckUpdate(address from, address to, uint fraudCountDelta) {
+        //To be implemented
+    }
 }

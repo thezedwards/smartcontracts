@@ -2,6 +2,13 @@ var PapyrusWallet = artifacts.require("./PapyrusWallet.sol");
 var PapyrusKYC = artifacts.require("./PapyrusKYC.sol");
 var PrePapyrusToken = artifacts.require("./PrePapyrusToken.sol");
 var PapyrusToken = artifacts.require("./PapyrusToken.sol");
+var PapyrusDAO = artifacts.require("./dao/PapyrusDAO.sol");
+var SSPRegistry = artifacts.require("./registry/impl/SSPRegistryImpl.sol");
+var DSPRegistry = artifacts.require("./registry/impl/DSPRegistryImpl.sol");
+var PublisherRegistry = artifacts.require("./registry/impl/PublisherRegistryImpl.sol");
+var AuditorRegistry = artifacts.require("./registry/impl/AuditorRegistryImpl.sol");
+var SecurityDepositRegistry = artifacts.require("./registry/impl/SecurityDepositRegistry.sol");
+var SpendingDepositRegistry = artifacts.require("./registry/impl/SpendingDepositRegistry.sol");
 
 var addressWalletPRP; // Containing 10% (5,000,000) of created PRP to pay bounty, bonuses, etc.
 var addressWalletPPR_A; // Containing PPR for Papyrus Foundation (10%)
@@ -23,6 +30,15 @@ var addressOwnerWallets_C = web3.eth.accounts[4]; // TODO: Replace this with pro
 var addressOwnerWallets_D = web3.eth.accounts[5]; // TODO: Replace this with proper address
 var addressOwnerWallets_E = web3.eth.accounts[6]; // TODO: Replace this with proper address
 
+var addressPapyrusDAO;
+var addressSSPRegistry;
+var addressDSPRegistry;
+var addressPublisherRegistry;
+var addressAuditorRegistry;
+var addressSecurityDepositRegistry;
+var addressSpendingDepositRegistry;
+
+
 function printAddresses() {
     console.log("Core cccount: " + addressCoreAccount);
     console.log("Wallets owner A: " + addressOwnerWallets_A);
@@ -43,6 +59,13 @@ function printAddresses() {
     console.log("  Papyrus KYC: " + addressPapyrusKYC);
     console.log("  PrePapyrus Token: " + addressPrePapyrusToken);
     console.log("  Papyrus Token: " + addressPapyrusToken);
+    console.log("  Papyrus DAO: " + addressPapyrusDAO);
+    console.log("    SSP Registry: " + addressSSPRegistry);
+    console.log("    DSP Registry: " + addressDSPRegistry);
+    console.log("    Publisher Registry: " + addressPublisherRegistry);
+    console.log("    Auditor Registry: " + addressAuditorRegistry);
+    console.log("    Security Deposit Registry: " + addressSecurityDepositRegistry);
+    console.log("    Spending Deposit Registry: " + addressSpendingDepositRegistry);
 }
 
 var CR = 3; // Confirmation count required for Papyrus Wallets
@@ -99,6 +122,28 @@ module.exports = function(deployer) {
         ]);
     }).then(function() {
         addressPapyrusToken = PapyrusToken.address;
+        return deployer.deploy(SSPRegistry);
+    }).then(function() {
+        addressSSPRegistry = SSPRegistry.address;
+        return deployer.deploy(DSPRegistry);
+    }).then(function() {
+        addressDSPRegistry = DSPRegistry.address;
+        return deployer.deploy(PublisherRegistry);
+    }).then(function() {
+        addressPublisherRegistry = PublisherRegistry.address;
+        return deployer.deploy(AuditorRegistry);
+    }).then(function() {
+        addressAuditorRegistry = AuditorRegistry.address;
+        return deployer.deploy(SecurityDepositRegistry);
+    }).then(function() {
+        addressSecurityDepositRegistry = SecurityDepositRegistry.address;
+        return deployer.deploy(SpendingDepositRegistry);
+    }).then(function() {
+        addressSpendingDepositRegistry = SpendingDepositRegistry.address;
+        return deployer.deploy(PapyrusDAO, addressPrePapyrusToken, addressSSPRegistry, addressDSPRegistry, addressPublisherRegistry,
+            addressAuditorRegistry, addressSecurityDepositRegistry, addressSpendingDepositRegistry);
+    }).then(function() {
+        addressPapyrusDAO = PapyrusDAO.address;
         printAddresses();
     });
 };

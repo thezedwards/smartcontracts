@@ -10,11 +10,6 @@ contract SSPRegistrar is SecurityDepositAware{
     event SSPRegistered(address sspAddress);
     event SSPUnregistered(address sspAddress);
 
-//    //@dev Get direct link to SSPRegistry contract
-//    function getSspRegistry() constant returns(address sspRegistryAddress) {
-//        return sspRegistry;
-//    }
-
     //@dev Retrieve information about registered SSP
     //@return Address of registered SSP and time when registered
     function findSsp(address sspAddr) constant returns(address sspAddress, uint16 publisherFee, uint256[2] karma) {
