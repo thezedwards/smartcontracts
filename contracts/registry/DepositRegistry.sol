@@ -1,9 +1,7 @@
 pragma solidity ^0.4.11;
 
-import "../zeppelin/ownership/Ownable.sol";
-
 // This is the base contract that your contract DepositRegistry extends from.
-contract DepositRegistry is Ownable {
+contract DepositRegistry {
     // This is the function that actually insert a record.
     function register(address key, uint256 amount);
 
@@ -19,7 +17,7 @@ contract DepositRegistry is Ownable {
 
     function hasEnough(address key, uint256 amount) constant returns(bool);
 
-    function spend(address key, uint256 amount) onlyOwner returns(bool);
+    function spend(address key, uint256 amount) returns(bool);
 
     function refill(address key, uint256 amount);
 

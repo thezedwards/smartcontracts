@@ -1,9 +1,10 @@
 pragma solidity ^0.4.11;
 
 import "../DepositRegistry.sol";
+import "../../dao/DaoOwnable.sol";
 
 // This is the base contract that your contract DepositRegistry extends from.
-contract DepositRegistryImpl is DepositRegistry {
+contract DepositRegistryImpl is DepositRegistry, DaoOwnable {
 
     // The owner of this registry.
     address public owner = msg.sender;
@@ -32,7 +33,7 @@ contract DepositRegistryImpl is DepositRegistry {
     address[] public keys;
 
     // This is the function that actually insert a record. 
-    function register(address key, uint256 amount) onlyOwner {
+    function register(address key, uint256 amount) onlyDaoOrOwner {
         if (records[key].time == 0) {
             records[key].time = now;
             records[key].owner = msg.sender;
@@ -47,7 +48,7 @@ contract DepositRegistryImpl is DepositRegistry {
     }
 
     // Unregister a given record
-    function unregister(address key) onlyOwner {
+    function unregister(address key) onlyDaoOrOwner {
         if (records[key].owner == msg.sender) {
             uint keysIndex = records[key].keysIndex;
             delete records[key];
@@ -89,7 +90,7 @@ contract DepositRegistryImpl is DepositRegistry {
         return deposit.amount >= amount;
     }
 
-    function spend(address key, uint256 amount) onlyOwner returns(bool){
+    function spend(address key, uint256 amount) onlyDaoOrOwner returns(bool){
         if (isRegistered(key) && hasEnough(key, amount)) {
             Deposit deposit = records[key];
             deposit.amount = deposit.amount - amount;
@@ -99,7 +100,7 @@ contract DepositRegistryImpl is DepositRegistry {
         }
     }
 
-    function refill(address key, uint256 amount) onlyOwner {
+    function refill(address key, uint256 amount) onlyDaoOrOwner {
         if (isRegistered(key)) {
             Deposit deposit = records[key];
             deposit.amount = deposit.amount + amount;

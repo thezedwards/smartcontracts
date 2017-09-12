@@ -40,7 +40,8 @@ var addressSpendingDepositRegistry;
 
 
 function printAddresses() {
-    console.log("Core cccount: " + addressCoreAccount);
+    console.log("====================================");
+    console.log("Core account: " + addressCoreAccount);
     console.log("Wallets owner A: " + addressOwnerWallets_A);
     console.log("Wallets owner B: " + addressOwnerWallets_B);
     console.log("Wallets owner C: " + addressOwnerWallets_C);
@@ -66,6 +67,10 @@ function printAddresses() {
     console.log("    Auditor Registry: " + addressAuditorRegistry);
     console.log("    Security Deposit Registry: " + addressSecurityDepositRegistry);
     console.log("    Spending Deposit Registry: " + addressSpendingDepositRegistry);
+    console.log("====================================");
+    console.log("DON'T FORGET TO SETUP DAO REGISTRIES: address of PapyrusDAO must be passed to all registry contracts");
+    console.log("   using DaoOwnable#transferDao. Otherwise registries won't accept calls from DAO!");
+    console.log("====================================");
 }
 
 var CR = 3; // Confirmation count required for Papyrus Wallets
@@ -144,6 +149,8 @@ module.exports = function(deployer) {
             addressAuditorRegistry, addressSecurityDepositRegistry, addressSpendingDepositRegistry);
     }).then(function() {
         addressPapyrusDAO = PapyrusDAO.address;
+        //TODO: After DAO is deployed, its address must be passed to all registry contracts
+        //TODO: using DaoOwnable#transferDao. Otherwise registries won't accept calls from DAO
         printAddresses();
     });
 };

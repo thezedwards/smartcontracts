@@ -2,7 +2,6 @@ pragma solidity ^0.4.11;
 
 // This is the base contract that your contract DSPRegistry extends from.
 contract DSPRegistry {
-
     // This is the function that actually insert a record.
     function register(address key, bytes32[3] url);
 

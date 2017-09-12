@@ -1,28 +1,27 @@
 pragma solidity ^0.4.11;
 
-import "../../zeppelin/ownership/Ownable.sol";
+import "../../dao/DaoOwnable.sol";
 import "../SSPRegistry.sol";
 
-
 // This is the base contract that your contract SSPRegistry extends from.
-contract SSPRegistryImpl is SSPRegistry, Ownable {
+contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
 
     uint public creationTime = now;
 
     // This struct keeps all data for a SSP.
     struct SSP {
-    // Keeps the address of this record creator.
-    address owner;
-    // Keeps the time when this record was created.
-    uint time;
-    // Keeps the index of the keys array for fast lookup
-    uint keysIndex;
-    // SSP Address
-    address sspAddress;
+        // Keeps the address of this record creator.
+        address owner;
+        // Keeps the time when this record was created.
+        uint time;
+        // Keeps the index of the keys array for fast lookup
+        uint keysIndex;
+        // SSP Address
+        address sspAddress;
 
-    uint16 publisherFee;
+        uint16 publisherFee;
 
-    uint256[2] karma;
+        uint256[2] karma;
     }
 
     // This mapping keeps the records of this Registry.
@@ -51,7 +50,7 @@ contract SSPRegistryImpl is SSPRegistry, Ownable {
     }
 
     // Updates the values of the given record.
-    function updatePublisherFee(address key, uint16 newFee) onlyOwner {
+    function updatePublisherFee(address key, uint16 newFee) onlyDaoOrOwner {
         // Only the owner can update his record.
         if (records[key].owner == msg.sender) {
             records[key].publisherFee = newFee;
@@ -65,7 +64,7 @@ contract SSPRegistryImpl is SSPRegistry, Ownable {
     }
 
     // Unregister a given record
-    function unregister(address key) {
+    function unregister(address key) onlyDaoOrOwner {
         if (records[key].owner == msg.sender) {
             uint keysIndex = records[key].keysIndex;
             delete records[key];

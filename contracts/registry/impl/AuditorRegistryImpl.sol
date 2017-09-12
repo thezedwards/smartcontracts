@@ -1,10 +1,10 @@
 pragma solidity ^0.4.11;
 
-import "../../zeppelin/ownership/Ownable.sol";
+import "../../dao/DaoOwnable.sol";
 import "../AuditorRegistry.sol";
 
 // This is the base contract that your contract AuditorRegistry extends from.
-contract AuditorRegistryImpl is AuditorRegistry, Ownable {
+contract AuditorRegistryImpl is AuditorRegistry, DaoOwnable {
 
     uint public creationTime = now;
 
@@ -32,7 +32,7 @@ contract AuditorRegistryImpl is AuditorRegistry, Ownable {
     address[] public keys;
 
     // This is the function that actually insert a record.
-    function register(address key) onlyOwner {
+    function register(address key) onlyDaoOrOwner {
         if (records[key].time == 0) {
             records[key].time = now;
             records[key].owner = msg.sender;
@@ -53,7 +53,7 @@ contract AuditorRegistryImpl is AuditorRegistry, Ownable {
     }
 
     // Unregister a given record
-    function unregister(address key) onlyOwner {
+    function unregister(address key) onlyDaoOrOwner {
         if (records[key].owner == msg.sender) {
             uint keysIndex = records[key].keysIndex;
             delete records[key];
@@ -65,7 +65,7 @@ contract AuditorRegistryImpl is AuditorRegistry, Ownable {
     }
 
     // Transfer ownership of a given record.
-    function transfer(address key, address newOwner) onlyOwner {
+    function transfer(address key, address newOwner) onlyDaoOrOwner {
         if (records[key].owner == msg.sender) {
             records[key].owner = newOwner;
         } else {

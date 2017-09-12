@@ -1,10 +1,10 @@
 pragma solidity ^0.4.11;
 
-import "../../zeppelin/ownership/Ownable.sol";
+import "../../dao/DaoOwnable.sol";
 import "../DSPRegistry.sol";
 
 // This is the base contract that your contract DSPRegistry extends from.
-contract DSPRegistryImpl is DSPRegistry, Ownable {
+contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
 
     uint public creationTime = now;
 
@@ -34,7 +34,7 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
     address[] public keys;
 
     // This is the function that actually insert a record.
-    function register(address key, bytes32[3] url) onlyOwner {
+    function register(address key, bytes32[3] url) onlyDaoOrOwner {
         if (records[key].time == 0) {
             records[key].time = now;
             records[key].owner = msg.sender;
@@ -50,7 +50,7 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
     }
 
     // Updates the values of the given record.
-    function updateUrl(address key, bytes32[3] url) onlyOwner {
+    function updateUrl(address key, bytes32[3] url) onlyDaoOrOwner {
         // Only the owner can update his record.
         if (records[key].owner == msg.sender) {
             records[key].url = url;
@@ -64,7 +64,7 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
     }
 
     // Unregister a given record
-    function unregister(address key) onlyOwner {
+    function unregister(address key) onlyDaoOrOwner {
         if (records[key].owner == msg.sender) {
             uint keysIndex = records[key].keysIndex;
             delete records[key];
@@ -76,7 +76,7 @@ contract DSPRegistryImpl is DSPRegistry, Ownable {
     }
 
     // Transfer ownership of a given record.
-    function transfer(address key, address newOwner) onlyOwner {
+    function transfer(address key, address newOwner) onlyDaoOrOwner {
         if (records[key].owner == msg.sender) {
             records[key].owner = newOwner;
         } else {

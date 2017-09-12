@@ -1,6 +1,6 @@
 pragma solidity ^0.4.11;
 
-import "../registry/impl/DepositRegistryImpl.sol";
+import "./DepositRegistryImpl.sol";
 
 contract SpendingDepositRegistry is DepositRegistryImpl{
 
