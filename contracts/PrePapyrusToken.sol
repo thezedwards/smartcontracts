@@ -56,7 +56,7 @@ contract PrePapyrusToken is StandardToken, MultiAccess {
         TransferableChanged(transferable);
     }
 
-    /// @dev Burns (destroys) tokens from specified address with specified amount.
+    /// @dev Burns (destroys) tokens from sender address with specified amount.
     /// @param _amount Amount of tokens should be burned.
     function burn(uint256 _amount) accessGranted {
         address from = msg.sender;
