@@ -36,7 +36,7 @@ However, we have added two additional functions `submitTransactions()` and `conf
   - `dataOffsets` (`uint[]`) - transactions data offsets used to grab needed data.
   - `dataLengths` (`uint[]`) - transactions data length used to grab needed data.
   - `data` (`bytes`) - transactions data payloads.
-- `submitTransactions` - allows an owner to confirm a batch of transactions. Can be used only by one of *owners of wallet*. Has following arguments:
+- `confirmTransactions` - allows an owner to confirm a batch of transactions. Can be used only by one of *owners of wallet*. Has following arguments:
   - `transactionIds` (`uint[]`) - transaction IDs.
 
 ## PrePapyrusToken.sol
