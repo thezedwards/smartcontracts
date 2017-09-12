@@ -44,7 +44,7 @@ contract PapyrusToken is StandardToken, Ownable {
         return super.transferFrom(_from, _to, _value);
     }
 
-    /// @dev Called by the owner to change ability to transfer tokens by users.
+    /// @dev Change ability to transfer tokens by users.
     function setTransferable(bool _transferable) onlyOwner {
         require(transferable != _transferable);
         transferable = _transferable;

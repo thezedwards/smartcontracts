@@ -1,5 +1,7 @@
 pragma solidity ^0.4.11;
 
+/* COMMENTED OUT FOR NOW
+
 import "./PrePapyrusToken.sol";
 
 /// @title Papyrus Sale Phase 1 dutch auction contract.
@@ -423,3 +425,5 @@ contract PapyrusSalePhase1 is Ownable {
     // Some pre-calculated constant values
     uint256 private constant E18 = 10**18;
 }
+
+*/
