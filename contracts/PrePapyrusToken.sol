@@ -34,17 +34,12 @@ contract PrePapyrusToken is StandardToken, MultiAccess {
     // If ether is sent to this address, send it back
     function() { revert(); }
 
-    // Check sender address before transfer
+    // Check transfer ability and sender address before transfer
     function transfer(address _to, uint _value) canTransfer returns (bool) {
         return super.transfer(_to, _value);
     }
 
-    // Check sender address before approve
-    function approve(address _spender, uint256 _value) canTransfer returns (bool) {
-        return super.approve(_spender, _value);
-    }
-
-    // Check sender address before transfer
+    // Check transfer ability and sender address before transfer
     function transferFrom(address _from, address _to, uint _value) canTransfer returns (bool) {
         return super.transferFrom(_from, _to, _value);
     }

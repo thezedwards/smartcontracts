@@ -2,7 +2,7 @@
 
 ## MultiAccess.sol
 
-Implements base smart contract that stores whitelist of addresses and boolean values that are true if an address should has access to some actions on child smart contracts.
+Implements base smart contract that stores whitelist of addresses and boolean values that are true if an address should have access to some actions on child smart contracts.
 
 #### Events
 
@@ -24,7 +24,7 @@ Implements base smart contract that stores whitelist of addresses and boolean va
 
 ## PapyrusWallet.sol
 
-As the base for Papyrus wallet we have choisen [MultiSigWalletWithDailyLimit](https://github.com/gnosis/MultiSigWallet) implementation from Gnosis.
+As the base for Papyrus wallet we have chosen [MultiSigWalletWithDailyLimit](https://github.com/gnosis/MultiSigWallet) implementation from Gnosis.
 
 However, we have added two additional functions `submitTransactions()` and `confirmTransactions()`. These functions are just batch versions of existing `submitTransaction()` and `confirmTransaction()` functions respectively. These functions can be used to submit or confirm several transactions per one call.
 
