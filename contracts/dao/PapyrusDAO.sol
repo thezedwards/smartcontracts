@@ -3,25 +3,20 @@ pragma solidity ^0.4.11;
 import "../zeppelin/ownership/Ownable.sol";
 import "../zeppelin/token/ERC20.sol";
 import "../registry/SSPRegistry.sol";
-import "../registry/impl/SSPRegistryImpl.sol";
 import "../registrar/SSPRegistrar.sol";
 import "../registry/DSPRegistry.sol";
-import "../registry/impl/DSPRegistryImpl.sol";
 import "../registrar/DSPRegistrar.sol";
 import "../registry/PublisherRegistry.sol";
-import "../registry/impl/PublisherRegistryImpl.sol";
 import "../registrar/PublisherRegistrar.sol";
 import "../registry/AuditorRegistry.sol";
-import "../registry/impl/AuditorRegistryImpl.sol";
 import "../registrar/AuditorRegistrar.sol";
 import "../registry/DepositRegistry.sol";
-import "../registry/SecurityDepositRegistry.sol";
-import "../registry/SpendingDepositRegistry.sol";
 import "../registry/DepositRegistry.sol";
 import "../channel/StateChannelListener.sol";
 import "./WithToken.sol";
 
 contract PapyrusDAO is WithToken,
+                       RegistryProvider,
                        StateChannelListener,
                        SSPRegistrar,
                        DSPRegistrar,
@@ -29,19 +24,28 @@ contract PapyrusDAO is WithToken,
                        AuditorRegistrar,
                        Ownable {
 
-    function PapyrusDAO(ERC20 papyrusToken) {
+    function PapyrusDAO(ERC20 papyrusToken,
+                        SSPRegistry _sspRegistry,
+                        DSPRegistry _dspRegistry,
+                        PublisherRegistry _publisherRegistry,
+                        AuditorRegistry _auditorRegistry,
+                        DepositRegistry _securityDepositRegistry,
+                        DepositRegistry _spendingDepositRegistry) {
         token = papyrusToken;
-        sspRegistry = new SSPRegistryImpl();
-        dspRegistry = new DSPRegistryImpl();
-        publisherRegistry = new PublisherRegistryImpl();
-        auditorRegistry = new AuditorRegistryImpl();
-        securityDepositRegistry = new SecurityDepositRegistry();
-        spendingDepositRegistry = new SpendingDepositRegistry();
+        sspRegistry = _sspRegistry;
+        dspRegistry = _dspRegistry;
+        publisherRegistry = _publisherRegistry;
+        auditorRegistry = _auditorRegistry;
+        securityDepositRegistry = _securityDepositRegistry;
+        spendingDepositRegistry = _spendingDepositRegistry;
     }
 
     event SSPRegistryReplaced(address from, address to);
     event DSPRegistryReplaced(address from, address to);
     event PublisherRegistryReplaced(address from, address to);
+    event AuditorRegistryReplaced(address from, address to);
+    event SecurityDepositRegistryReplaced(address from, address to);
+    event SpendingDepositRegistryReplaced(address from, address to);
 
     function replaceSSPRegistry(SSPRegistry newRegistry) onlyOwner {
         address old = sspRegistry;
@@ -59,5 +63,47 @@ contract PapyrusDAO is WithToken,
         address old = publisherRegistry;
         publisherRegistry = newRegistry;
         PublisherRegistryReplaced(old, publisherRegistry);
+    }
+
+    function replaceAuditorRegistry(AuditorRegistry newRegistry) onlyOwner {
+        address old = auditorRegistry;
+        auditorRegistry = newRegistry;
+        AuditorRegistryReplaced(old, auditorRegistry);
+    }
+
+    function replaceSecurityDepositRegistry(DepositRegistry newRegistry) onlyOwner {
+        address old = securityDepositRegistry;
+        securityDepositRegistry = newRegistry;
+        SecurityDepositRegistryReplaced(old, securityDepositRegistry);
+    }
+
+    function replaceSpendingDepositRegistry(DepositRegistry newRegistry) onlyOwner {
+        address old = spendingDepositRegistry;
+        spendingDepositRegistry = newRegistry;
+        SpendingDepositRegistryReplaced(old, spendingDepositRegistry);
+    }
+
+    function getSSPRegistry() returns (SSPRegistry) {
+        return sspRegistry;
+    }
+
+    function getDSPRegistry() returns (DSPRegistry) {
+        return dspRegistry;
+    }
+
+    function getPublisherRegistry() returns (PublisherRegistry) {
+        return publisherRegistry;
+    }
+
+    function getAuditorRegistry() returns (AuditorRegistry) {
+        return auditorRegistry;
+    }
+
+    function getSecurityDepositRegistry() returns (DepositRegistry) {
+        return securityDepositRegistry;
+    }
+
+    function getSpendingDepositRegistry() returns (DepositRegistry) {
+        return spendingDepositRegistry;
     }
 }

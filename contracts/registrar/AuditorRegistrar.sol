@@ -9,10 +9,10 @@ contract AuditorRegistrar is SecurityDepositAware{
     event AuditorRegistered(address auditorAddress);
     event AuditorUnregistered(address auditorAddress);
 
-    //@dev Get direct link to AuditorRegistry contract
-    function getAuditorRegistry() constant returns(address auditorRegistryAddress) {
-        return auditorRegistry;
-    }
+//    //@dev Get direct link to AuditorRegistry contract
+//    function getAuditorRegistry() constant returns(address auditorRegistryAddress) {
+//        return auditorRegistry;
+//    }
 
     //@dev Retrieve information about registered Auditor
     //@return Address of registered Auditor and time when registered

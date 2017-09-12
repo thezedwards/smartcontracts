@@ -10,10 +10,10 @@ contract DSPRegistrar is SecurityDepositAware, SpendingDepositAware{
     event DSPRegistered(address dspAddress);
     event DSPUnregistered(address dspAddress);
 
-    //@dev Get direct link to DSPRegistry contract
-    function getDspRegistry() constant returns(address dspRegistryAddress) {
-        return dspRegistry;
-    }
+//    //@dev Get direct link to DSPRegistry contract
+//    function getDspRegistry() constant returns(address dspRegistryAddress) {
+//        return dspRegistry;
+//    }
 
     //@dev Retrieve information about registered DSP
     //@return Address of registered DSP and time when registered

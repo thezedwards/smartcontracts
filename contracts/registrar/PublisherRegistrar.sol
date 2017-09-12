@@ -9,10 +9,10 @@ contract PublisherRegistrar is SecurityDepositAware{
     event PublisherRegistered(address publisherAddress);
     event PublisherUnregistered(address publisherAddress);
 
-    //@dev Get direct link to PublisherRegistry contract
-    function getPublisherRegistry() constant returns(address publisherRegistryAddress) {
-        return publisherRegistry;
-    }
+//    //@dev Get direct link to PublisherRegistry contract
+//    function getPublisherRegistry() constant returns(address publisherRegistryAddress) {
+//        return publisherRegistry;
+//    }
 
     //@dev Retrieve information about registered Publisher
     //@return Address of registered Publisher and time when registered
