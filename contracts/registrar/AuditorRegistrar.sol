@@ -8,6 +8,7 @@ contract AuditorRegistrar is SecurityDepositAware{
 
     event AuditorRegistered(address auditorAddress);
     event AuditorUnregistered(address auditorAddress);
+    event AuditorAlreadyRegistered(address auditorAddress);
 
     //@dev Retrieve information about registered Auditor
     //@return Address of registered Auditor and time when registered
@@ -23,6 +24,8 @@ contract AuditorRegistrar is SecurityDepositAware{
                 auditorRegistry.register(auditorAddress);
                 AuditorRegistered(auditorAddress);
             }
+        } else {
+            AuditorAlreadyRegistered(auditorAddress);
         }
     }
 

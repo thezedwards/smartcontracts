@@ -68,9 +68,14 @@ function printAddresses() {
     console.log("    Security Deposit Registry: " + addressSecurityDepositRegistry);
     console.log("    Spending Deposit Registry: " + addressSpendingDepositRegistry);
     console.log("====================================");
-    console.log("DON'T FORGET TO SETUP DAO REGISTRIES: address of PapyrusDAO must be passed to all registry contracts");
-    console.log("   using DaoOwnable#transferDao. Otherwise registries won't accept calls from DAO!");
-    console.log("====================================");
+}
+
+function linkDao(registryContract) {
+    registryContract.transferDao(addressPapyrusDAO).then(function(result) {
+        console.log("Dao transferred");
+    }).catch(function(err) {
+        console.log("Error while transferring: " + err);
+    });
 }
 
 var CR = 3; // Confirmation count required for Papyrus Wallets
@@ -149,8 +154,12 @@ module.exports = function(deployer) {
             addressAuditorRegistry, addressSecurityDepositRegistry, addressSpendingDepositRegistry);
     }).then(function() {
         addressPapyrusDAO = PapyrusDAO.address;
-        //TODO: After DAO is deployed, its address must be passed to all registry contracts
-        //TODO: using DaoOwnable#transferDao. Otherwise registries won't accept calls from DAO
+        linkDao(SSPRegistry.at(addressSSPRegistry));
+        linkDao(DSPRegistry.at(addressDSPRegistry));
+        linkDao(PublisherRegistry.at(addressPublisherRegistry));
+        linkDao(AuditorRegistry.at(addressAuditorRegistry));
+        linkDao(SecurityDepositRegistry.at(addressSecurityDepositRegistry));
+        linkDao(SpendingDepositRegistry.at(addressSpendingDepositRegistry));
         printAddresses();
     });
 };
