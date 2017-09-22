@@ -1,5 +1,9 @@
 # Base Smart Contracts
 
+We use [OpenZeppelin](https://github.com/OpenZeppelin/zeppelin-solidity) smart contracts as base for some of Papyrus smart contracts. Currently commit 725ed40a57e8973b3ae6e2f39f9c887d0056ca39 is used.
+
+Also we use [MultiSigWalletWithDailyLimit](https://github.com/gnosis/MultiSigWallet) implementation from Gnosis as base for Papyrus wallet. Commit 4b98bdfd9a375538491cd3ece7c2fdf8f857291d is used.
+
 ## MultiAccess.sol
 
 Implements base smart contract that stores whitelist of addresses and boolean values that are true if an address should have access to some actions on child smart contracts.
