@@ -9,10 +9,12 @@ import org.web3j.crypto.WalletFile;
 public class PapyrusMember {
     public final WalletFile walletFile;
     public final Credentials credentials;
+    public final String refillTransaction;
 
-    public PapyrusMember(WalletFile walletFile, Credentials credentials) {
+    public PapyrusMember(WalletFile walletFile, Credentials credentials, String refillTransaction) {
         this.walletFile = walletFile;
         this.credentials = credentials;
+        this.refillTransaction = refillTransaction;
     }
 
     public String getAddress() {
