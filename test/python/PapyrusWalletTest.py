@@ -7,7 +7,7 @@ web3 = Web3(HTTPProvider('http://dev.papyrus.global:80'))
 
 
 # Read necessary ABIs
-abiPrePapyrusToken = json.load(open('bin/contracts/PrePapyrusToken.abi', 'r'))
+abiPapyrusPrototypeToken = json.load(open('bin/contracts/PapyrusPrototypeToken.abi', 'r'))
 abiPapyrusWallet = json.load(open('bin/contracts/PapyrusWallet.abi', 'r'))
 
 # Addresses of wallet holders
@@ -23,14 +23,14 @@ web3.personal.unlockAccount(walletHolderD, 'KjsahiKJ7891a')
 web3.personal.unlockAccount(walletHolderE, 'Aj8asjda8a9AB')
 
 # Addresses of existing smart contracts
-prePapyrusTokenAddress = '0x0c06ba38df7537e25ded9b3d1fdfeb90dff05f15'
+prpTokenAddress = '0x0c06ba38df7537e25ded9b3d1fdfeb90dff05f15'
 walletAddress = '0x3ebb35533aeb4e435997a9c3f6be8cdc78576cbf'
 
 # Preparing contracts
-prePapyrusToken = web3.eth.contract(abiPrePapyrusToken, prePapyrusTokenAddress)
+prpToken = web3.eth.contract(abiPapyrusPrototypeToken, prpTokenAddress)
 wallet = web3.eth.contract(abiPapyrusWallet, walletAddress)
 
-#print(prePapyrusToken.call().balanceOf(walletAddress))
+#print(prpToken.call().balanceOf(walletAddress))
 
 class InvestmentApproval:
     address: str
@@ -55,9 +55,9 @@ def waitForNextBlock():
         sleep(0.1)
 
 def makeTokensTransferable():
-    if prePapyrusToken.call().transferable() == False:
-        data = prePapyrusToken.encodeABI('setTransferable', [True])
-        web3.eth.sendTransaction({'from': web3.eth.coinbase, 'to': prePapyrusTokenAddress, 'data': data})
+    if prpToken.call().transferable() == False:
+        data = prpToken.encodeABI('setTransferable', [True])
+        web3.eth.sendTransaction({'from': web3.eth.coinbase, 'to': prpTokenAddress, 'data': data})
         waitForNextBlock()
 
 def submitTransactionToWallet(addressFrom, addressTo, txValue, txData):
@@ -97,14 +97,14 @@ def confirmTransactionsOnWallet(transactionIds=[]):
 # Before starting tests make sure PRP are transferable
 makeTokensTransferable()
 
-dataSendToD = prePapyrusToken.encodeABI('transfer', [walletHolderD, web3.toWei(1, 'ether')])
-dataSendToE = prePapyrusToken.encodeABI('transfer', [walletHolderE, web3.toWei(1, 'ether')])
+dataSendToD = prpToken.encodeABI('transfer', [walletHolderD, web3.toWei(1, 'ether')])
+dataSendToE = prpToken.encodeABI('transfer', [walletHolderE, web3.toWei(1, 'ether')])
 
 print('Submitting single transaction to Papyrus Wallet:')
 
 balance = web3.eth.getBalance(walletHolderA)
 #print(wallet.call().transactionCount())
-submitTransactionToWallet(walletHolderA, prePapyrusTokenAddress, 0, dataSendToD)
+submitTransactionToWallet(walletHolderA, prpTokenAddress, 0, dataSendToD)
 print(balance - web3.eth.getBalance(walletHolderA))
 #print(wallet.call().transactionCount())
 
@@ -112,22 +112,22 @@ print('Submitting batched transaction to Papyrus Wallet:')
 
 balance = web3.eth.getBalance(walletHolderA)
 #print(wallet.call().transactionCount())
-submitTransactionsToWallet(walletHolderA, [prePapyrusTokenAddress, prePapyrusTokenAddress], [0, 0], [dataSendToD, dataSendToE])
+submitTransactionsToWallet(walletHolderA, [prpTokenAddress, prpTokenAddress], [0, 0], [dataSendToD, dataSendToE])
 print(balance - web3.eth.getBalance(walletHolderA))
 #print(wallet.call().transactionCount())
 
 print('Confirming single transaction on Papyrus Wallet:')
 
-#print(prePapyrusToken.call().balanceOf(walletHolderD))
-#print(prePapyrusToken.call().balanceOf(walletHolderE))
+#print(prpToken.call().balanceOf(walletHolderD))
+#print(prpToken.call().balanceOf(walletHolderE))
 confirmTransactionOnWallet(15)
-#print(prePapyrusToken.call().balanceOf(walletHolderD))
-#print(prePapyrusToken.call().balanceOf(walletHolderE))
+#print(prpToken.call().balanceOf(walletHolderD))
+#print(prpToken.call().balanceOf(walletHolderE))
 
 print('Confirming complex transaction on Papyrus Wallet:')
 
-#print(prePapyrusToken.call().balanceOf(walletHolderD))
-#print(prePapyrusToken.call().balanceOf(walletHolderE))
+#print(prpToken.call().balanceOf(walletHolderD))
+#print(prpToken.call().balanceOf(walletHolderE))
 confirmTransactionsOnWallet([16, 17])
-#print(prePapyrusToken.call().balanceOf(walletHolderD))
-#print(prePapyrusToken.call().balanceOf(walletHolderE))
+#print(prpToken.call().balanceOf(walletHolderD))
+#print(prpToken.call().balanceOf(walletHolderE))

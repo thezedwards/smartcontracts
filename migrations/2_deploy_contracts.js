@@ -1,6 +1,6 @@
 var PapyrusWallet = artifacts.require("./PapyrusWallet.sol");
 var PapyrusKYC = artifacts.require("./PapyrusKYC.sol");
-var PrePapyrusToken = artifacts.require("./PrePapyrusToken.sol");
+var PapyrusPrototypeToken = artifacts.require("./PapyrusPrototypeToken.sol");
 var PapyrusToken = artifacts.require("./PapyrusToken.sol");
 var PapyrusDAO = artifacts.require("./dao/PapyrusDAO.sol");
 var SSPRegistry = artifacts.require("./registry/impl/SSPRegistryImpl.sol");
@@ -20,7 +20,7 @@ var addressWalletPPR_F; // Containing PPR for Papyrus DAO (10%)
 var addressWalletETH_A; // Containing received ETH during TGE 1 auction and 90% (45,000,000) of created PRP
 
 var addressPapyrusKYC;
-var addressPrePapyrusToken;
+var addressPapyrusPrototypeToken;
 var addressPapyrusToken;
 
 var addressCoreAccount = web3.eth.accounts[0]; // TODO: Replace this with proper address
@@ -58,7 +58,7 @@ function printAddresses() {
     console.log("  ETH holder (TGE1): " + addressWalletETH_A);
     console.log("Contracts:");
     console.log("  Papyrus KYC: " + addressPapyrusKYC);
-    console.log("  PrePapyrus Token: " + addressPrePapyrusToken);
+    console.log("  Papyrus Prototype Token: " + addressPapyrusPrototypeToken);
     console.log("  Papyrus Token: " + addressPapyrusToken);
     console.log("  Papyrus DAO: " + addressPapyrusDAO);
     console.log("    SSP Registry: " + addressSSPRegistry);
@@ -105,10 +105,10 @@ module.exports = function(deployer) {
         return deployer.deploy(PapyrusKYC);
     }).then(function() {
         addressPapyrusKYC = PapyrusKYC.address;
-        // Deploy smart-contract implementing PRP token and pre-sale auction
-        return deployer.deploy(PrePapyrusToken, [addressWalletPRP, addressWalletETH_A], [web3.toWei(5000000, "ether"), web3.toWei(45000000, "ether")]);
+        // Deploy smart-contract implementing PRP token
+        return deployer.deploy(PapyrusPrototypeToken, [addressWalletPRP, addressWalletETH_A], [web3.toWei(5000000, "ether"), web3.toWei(45000000, "ether")]);
     }).then(function() {
-        addressPrePapyrusToken = PrePapyrusToken.address;
+        addressPapyrusPrototypeToken = PapyrusPrototypeToken.address;
         // Deploy smart-contract implementing PPR token
         return deployer.deploy(PapyrusToken, [
             addressWalletPPR_A,
@@ -145,7 +145,7 @@ module.exports = function(deployer) {
         return deployer.deploy(SpendingDepositRegistry);
     }).then(function() {
         addressSpendingDepositRegistry = SpendingDepositRegistry.address;
-        return deployer.deploy(PapyrusDAO, addressPrePapyrusToken, addressSSPRegistry, addressDSPRegistry, addressPublisherRegistry,
+        return deployer.deploy(PapyrusDAO, addressPapyrusPrototypeToken, addressSSPRegistry, addressDSPRegistry, addressPublisherRegistry,
             addressAuditorRegistry, addressSecurityDepositRegistry, addressSpendingDepositRegistry);
     }).then(function() {
         addressPapyrusDAO = PapyrusDAO.address;
