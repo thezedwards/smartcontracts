@@ -39,6 +39,7 @@ sourceSets {
 
 dependencies {
     compile('org.web3j:core:2.3.0')
+    testCompile('org.testng:testng:6.11')
 }
 
 task migrate {
