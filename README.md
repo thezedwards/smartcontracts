@@ -6,7 +6,7 @@ Also we use [MultiSigWalletWithDailyLimit](https://github.com/gnosis/MultiSigWal
 
 ## SafeMath.sol
 
-Implements helper functions which make simple arithmetic operations with overflow checking. Based on OpenZeppelin `SafeMath` smart contract. Note that functionS throw when overflow is detected.
+Implements helper functions which make simple arithmetic operations with overflow checking. Based on OpenZeppelin `SafeMath` smart contract. Note that functions throw when overflow is detected.
 
 #### Functions
 
