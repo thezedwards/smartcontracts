@@ -40,6 +40,7 @@ sourceSets {
 dependencies {
     compile('org.web3j:core:2.3.0')
     testCompile('org.testng:testng:6.11')
+    testCompile('org.apache.commons:commons-lang3:3.6')
 }
 
 task migrate {
@@ -64,7 +65,7 @@ task wrappers(dependsOn:'compileContracts') {
     def contracts=[
             "PapyrusWallet",
             "PapyrusKYC",
-            "PrePapyrusToken",
+            "PapyrusPrototypeToken",
             "PapyrusToken",
             "PapyrusDAO",
             "SSPRegistryImpl",

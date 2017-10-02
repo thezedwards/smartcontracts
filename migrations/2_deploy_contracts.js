@@ -1,4 +1,4 @@
-var PapyrusWallet = artifacts.require("./PapyrusWallet.sol");
+var MultiSigWalletWithDailyLimit = artifacts.require("./gnosis/MultiSigWalletWithDailyLimit.sol");
 var PapyrusKYC = artifacts.require("./PapyrusKYC.sol");
 var PapyrusPrototypeToken = artifacts.require("./PapyrusPrototypeToken.sol");
 var PapyrusToken = artifacts.require("./PapyrusToken.sol");
@@ -84,29 +84,29 @@ var DL = 0; // Daily limit used for Papyrus Wallets (in weis)
 module.exports = function(deployer) {
     // First of all deploy all necessary multi signature wallets
     // For now use daily non limit multi signature wallets with 5 owners and zero daily limit
-    deployer.deploy(PapyrusWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL).then(function() {
-        addressWalletPRP = PapyrusWallet.address;
-        return deployer.deploy(PapyrusWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
+    deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL).then(function() {
+        addressWalletPRP = MultiSigWalletWithDailyLimit.address;
+        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
     }).then(function() {
-        addressWalletPPR_A = PapyrusWallet.address;
-        return deployer.deploy(PapyrusWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
+        addressWalletPPR_A = MultiSigWalletWithDailyLimit.address;
+        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
     }).then(function() {
-        addressWalletPPR_B = PapyrusWallet.address;
-        return deployer.deploy(PapyrusWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
+        addressWalletPPR_B = MultiSigWalletWithDailyLimit.address;
+        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
     }).then(function() {
-        addressWalletPPR_C = PapyrusWallet.address;
-        return deployer.deploy(PapyrusWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
+        addressWalletPPR_C = MultiSigWalletWithDailyLimit.address;
+        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
     }).then(function() {
-        addressWalletPPR_D = PapyrusWallet.address;
-        return deployer.deploy(PapyrusWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
+        addressWalletPPR_D = MultiSigWalletWithDailyLimit.address;
+        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
     }).then(function() {
-        addressWalletPPR_E = PapyrusWallet.address;
-        return deployer.deploy(PapyrusWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
+        addressWalletPPR_E = MultiSigWalletWithDailyLimit.address;
+        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
     }).then(function() {
-        addressWalletPPR_F = PapyrusWallet.address;
-        return deployer.deploy(PapyrusWallet, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
+        addressWalletPPR_F = MultiSigWalletWithDailyLimit.address;
+        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
     }).then(function() {
-        addressWalletETH_A = PapyrusWallet.address;
+        addressWalletETH_A = MultiSigWalletWithDailyLimit.address;
         return deployer.deploy(PapyrusKYC);
     }).then(function() {
         addressPapyrusKYC = PapyrusKYC.address;

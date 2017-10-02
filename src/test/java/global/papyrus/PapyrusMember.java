@@ -1,5 +1,6 @@
 package global.papyrus;
 
+import org.web3j.abi.datatypes.Address;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletFile;
 
@@ -9,15 +10,29 @@ import org.web3j.crypto.WalletFile;
 public class PapyrusMember {
     public final WalletFile walletFile;
     public final Credentials credentials;
-    public final String refillTransaction;
+    public String refillTransaction;
+    public String mintTransaction;
 
-    public PapyrusMember(WalletFile walletFile, Credentials credentials, String refillTransaction) {
+    public PapyrusMember(WalletFile walletFile, Credentials credentials) {
         this.walletFile = walletFile;
         this.credentials = credentials;
-        this.refillTransaction = refillTransaction;
     }
 
-    public String getAddress() {
+    public PapyrusMember withRefillTransaction(String refillTransaction) {
+        this.refillTransaction = refillTransaction;
+        return this;
+    }
+
+    public PapyrusMember withMintTransaction(String mintTransaction) {
+        this.mintTransaction = mintTransaction;
+        return this;
+    }
+
+    public String getAddressHex() {
         return "0x" + walletFile.getAddress();
+    }
+
+    public Address getAddress() {
+        return new Address("0x" + walletFile.getAddress());
     }
 }
