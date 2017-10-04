@@ -163,6 +163,7 @@ module.exports = function(deployer) {
         linkDao(AuditorRegistry.at(addressAuditorRegistry));
         linkDao(SecurityDepositRegistry.at(addressSecurityDepositRegistry));
         linkDao(SpendingDepositRegistry.at(addressSpendingDepositRegistry));
+        PapyrusPrototypeToken.at(addressPapyrusPrototypeToken).setTransferable(true);
         printAddresses();
     });
 };
