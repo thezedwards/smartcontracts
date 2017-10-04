@@ -57,7 +57,7 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
         }
     }
 
-    function applyKarmaDiff(address key, uint256[2] diff) {
+    function applyKarmaDiff(address key, uint256[2] diff) onlyDaoOrOwner{
         DSP dsp = records[key];
         dsp.karma[0] += diff[0];
         dsp.karma[1] += diff[1];
@@ -85,11 +85,11 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
     }
 
     // Tells whether a given key is registered.
-    function isRegistered(address key) returns(bool) {
+    function isRegistered(address key) constant returns(bool) {
         return records[key].time != 0;
     }
 
-    function getDSP(address key) returns(address dspAddress, bytes32[3] url, uint256[2] karma) {
+    function getDSP(address key) constant returns(address dspAddress, bytes32[3] url, uint256[2] karma) {
         DSP record = records[key];
         dspAddress = record.dspAddress;
         url = record.url;
@@ -99,20 +99,20 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
     // Returns the owner of the given record. The owner could also be get
     // by using the function getDSP but in that case all record attributes
     // are returned.
-    function getOwner(address key) returns(address) {
+    function getOwner(address key) constant returns(address) {
         return records[key].owner;
     }
 
     // Returns the registration time of the given record. The time could also
     // be get by using the function getDSP but in that case all record attributes
     // are returned.
-    function getTime(address key) returns(uint) {
+    function getTime(address key) constant returns(uint) {
         return records[key].time;
     }
 
     //@dev Get list of all registered dsp
     //@return Returns array of addresses registered as DSP with register times
-    function getAllDSP() returns(address[] addresses, bytes32[3][] urls, uint256[2][] karmas) {
+    function getAllDSP() constant returns(address[] addresses, bytes32[3][] urls, uint256[2][] karmas) {
         addresses = new address[](numRecords);
         urls = new bytes32[3][](numRecords);
         karmas = new uint256[2][](numRecords);

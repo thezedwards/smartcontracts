@@ -4,7 +4,7 @@ import "../registry/PublisherRegistry.sol";
 import "./SecurityDepositAware.sol";
 
 contract PublisherRegistrar is SecurityDepositAware{
-    PublisherRegistry internal publisherRegistry;
+    PublisherRegistry public publisherRegistry;
 
     event PublisherRegistered(address publisherAddress);
     event PublisherUnregistered(address publisherAddress);
@@ -15,14 +15,17 @@ contract PublisherRegistrar is SecurityDepositAware{
         return publisherRegistry.getPublisher(addr);
     }
 
+    function isPublisherRegistered(address key) constant returns(bool) {
+        return publisherRegistry.isRegistered(key);
+    }
+
     //@dev Register organisation as Publisher
     //@param publisherAddress address of wallet to register
     function registerPublisher(address publisherAddress, bytes32[3] url) {
         if (!publisherRegistry.isRegistered(publisherAddress)) {
-            if (receiveSecurityDeposit(publisherAddress)) {
-                publisherRegistry.register(publisherAddress, url);
-                PublisherRegistered(publisherAddress);
-            }
+            receiveSecurityDeposit(publisherAddress);
+            publisherRegistry.register(publisherAddress, url);
+            PublisherRegistered(publisherAddress);
         }
     }
 

@@ -5,7 +5,7 @@ import "./SecurityDepositAware.sol";
 import "./SpendingDepositAware.sol";
 
 contract DSPRegistrar is SecurityDepositAware, SpendingDepositAware{
-    DSPRegistry internal dspRegistry;
+    DSPRegistry public dspRegistry;
 
     event DSPRegistered(address dspAddress);
     event DSPUnregistered(address dspAddress);
@@ -20,11 +20,14 @@ contract DSPRegistrar is SecurityDepositAware, SpendingDepositAware{
     //@param dspAddress address of wallet to register
     function registerDsp(address dspAddress, bytes32[3] url) {
         if (!dspRegistry.isRegistered(dspAddress)) {
-            if (receiveSecurityDeposit(dspAddress)) {
-                dspRegistry.register(dspAddress, url);
-                DSPRegistered(dspAddress);
-            }
+            receiveSecurityDeposit(dspAddress);
+            dspRegistry.register(dspAddress, url);
+            DSPRegistered(dspAddress);
         }
+    }
+
+    function isDspRegistered(address key) constant returns(bool) {
+        return dspRegistry.isRegistered(key);
     }
 
     //@dev Unregister DSP and return unused deposit

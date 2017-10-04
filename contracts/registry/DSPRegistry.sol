@@ -14,13 +14,13 @@ contract DSPRegistry {
     function unregister(address key);
 
     // Tells whether a given key is registered.
-    function isRegistered(address key) returns(bool);
+    function isRegistered(address key) constant returns(bool);
 
-    function getDSP(address key) returns(address dspAddress, bytes32[3] url, uint256[2] karma);
+    function getDSP(address key) constant returns(address dspAddress, bytes32[3] url, uint256[2] karma);
 
     //@dev Get list of all registered dsp
     //@return Returns array of addresses registered as DSP with register times
-    function getAllDSP() returns(address[] addresses, bytes32[3][] urls, uint256[2][] karmas) ;
+    function getAllDSP() constant returns(address[] addresses, bytes32[3][] urls, uint256[2][] karmas) ;
 
     function kill();
 }

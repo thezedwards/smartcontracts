@@ -20,15 +20,15 @@ contract RegistryProvider {
 
     function replaceSpendingDepositRegistry(DepositRegistry newRegistry);
 
-    function getSSPRegistry() constant returns (SSPRegistry);
+    function getSSPRegistry() internal constant returns (SSPRegistry);
 
-    function getDSPRegistry() constant returns (DSPRegistry);
+    function getDSPRegistry() internal constant returns (DSPRegistry);
 
-    function getPublisherRegistry() constant returns (PublisherRegistry);
+    function getPublisherRegistry() internal constant returns (PublisherRegistry);
 
-    function getAuditorRegistry() constant returns (AuditorRegistry);
+    function getAuditorRegistry() internal constant returns (AuditorRegistry);
 
-    function getSecurityDepositRegistry() constant returns (DepositRegistry);
+    function getSecurityDepositRegistry() internal constant returns (DepositRegistry);
 
-    function getSpendingDepositRegistry() constant returns (DepositRegistry);
+    function getSpendingDepositRegistry() internal constant returns (DepositRegistry);
 }

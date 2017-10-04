@@ -34,7 +34,7 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
     address[] public keys;
 
     // This is the function that actually insert a record.
-    function register(address key, uint16 publisherFee) {
+    function register(address key, uint16 publisherFee) onlyDaoOrOwner {
         if (records[key].time == 0) {
             records[key].time = now;
             records[key].owner = msg.sender;
@@ -57,7 +57,7 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
         }
     }
 
-    function applyKarmaDiff(address key, uint256[2] diff) {
+    function applyKarmaDiff(address key, uint256[2] diff) onlyDaoOrOwner {
         SSP ssp = records[key];
         ssp.karma[0] += diff[0];
         ssp.karma[1] += diff[1];
@@ -76,7 +76,7 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
     }
 
     // Transfer ownership of a given record.
-    function transfer(address key, address newOwner) {
+    function transfer(address key, address newOwner) onlyDaoOrOwner {
         if (records[key].owner == msg.sender) {
             records[key].owner = newOwner;
         } else {
@@ -85,11 +85,11 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
     }
 
     // Tells whether a given key is registered.
-    function isRegistered(address key) returns(bool) {
+    function isRegistered(address key) constant returns(bool) {
         return records[key].time != 0;
     }
 
-    function getSSP(address key) returns(address sspAddress, uint16 publisherFee, uint256[2] karma) {
+    function getSSP(address key) constant returns(address sspAddress, uint16 publisherFee, uint256[2] karma) {
         SSP record = records[key];
         sspAddress = record.sspAddress;
         publisherFee = record.publisherFee;
@@ -99,11 +99,11 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
     // Returns the owner of the given record. The owner could also be get
     // by using the function getSSP but in that case all record attributes
     // are returned.
-    function getOwner(address key) returns(address) {
+    function getOwner(address key) constant returns(address) {
         return records[key].owner;
     }
 
-    function getAllSSP() returns(address[] addresses, uint16[] publisherFees, uint256[2][] karmas) {
+    function getAllSSP() constant returns(address[] addresses, uint16[] publisherFees, uint256[2][] karmas) {
         addresses = new address[](numRecords);
         publisherFees = new uint16[](numRecords);
         karmas = new uint256[2][](numRecords);
@@ -119,7 +119,7 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
     // Returns the registration time of the given record. The time could also
     // be get by using the function getSSP but in that case all record attributes
     // are returned.
-    function getTime(address key) returns(uint) {
+    function getTime(address key) constant returns(uint) {
         return records[key].time;
     }
 

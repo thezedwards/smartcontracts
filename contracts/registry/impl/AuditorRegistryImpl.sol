@@ -46,7 +46,7 @@ contract AuditorRegistryImpl is AuditorRegistry, DaoOwnable {
         }
     }
 
-    function applyKarmaDiff(address key, uint256[2] diff) {
+    function applyKarmaDiff(address key, uint256[2] diff) onlyDaoOrOwner {
         Auditor auditor = records[key];
         auditor.karma[0] += diff[0];
         auditor.karma[1] += diff[1];
@@ -74,11 +74,11 @@ contract AuditorRegistryImpl is AuditorRegistry, DaoOwnable {
     }
 
     // Tells whether a given key is registered.
-    function isRegistered(address key) returns(bool) {
+    function isRegistered(address key) constant returns(bool) {
         return records[key].time != 0;
     }
 
-    function getAuditor(address key) returns(address auditorAddress, uint256[2] karma) {
+    function getAuditor(address key) constant returns(address auditorAddress, uint256[2] karma) {
         Auditor record = records[key];
         auditorAddress = record.auditorAddress;
         karma = record.karma;
@@ -87,20 +87,20 @@ contract AuditorRegistryImpl is AuditorRegistry, DaoOwnable {
     // Returns the owner of the given record. The owner could also be get
     // by using the function getAuditor but in that case all record attributes
     // are returned.
-    function getOwner(address key) returns(address) {
+    function getOwner(address key) constant returns(address) {
         return records[key].owner;
     }
 
     // Returns the registration time of the given record. The time could also
     // be get by using the function getAuditor but in that case all record attributes
     // are returned.
-    function getTime(address key) returns(uint) {
+    function getTime(address key) constant returns(uint) {
         return records[key].time;
     }
 
     //@dev Get list of all registered auditor
     //@return Returns array of addresses registered as Auditor with register times
-    function getAllAuditors() returns(address[] addresses, uint256[2][] karmas) {
+    function getAllAuditors() constant returns(address[] addresses, uint256[2][] karmas) {
         addresses = new address[](numRecords);
         karmas = new uint256[2][](numRecords);
         uint i;

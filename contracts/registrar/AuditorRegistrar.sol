@@ -4,7 +4,7 @@ import "../registry/AuditorRegistry.sol";
 import "./SecurityDepositAware.sol";
 
 contract AuditorRegistrar is SecurityDepositAware{
-    AuditorRegistry internal auditorRegistry;
+    AuditorRegistry public auditorRegistry;
 
     event AuditorRegistered(address auditorAddress);
     event AuditorUnregistered(address auditorAddress);
@@ -15,14 +15,17 @@ contract AuditorRegistrar is SecurityDepositAware{
         return auditorRegistry.getAuditor(addr);
     }
 
+    function isAuditorRegistered(address key) constant returns(bool) {
+        return auditorRegistry.isRegistered(key);
+    }
+
     //@dev Register organisation as Auditor
     //@param auditorAddress address of wallet to register
     function registerAuditor(address auditorAddress) {
         if (!auditorRegistry.isRegistered(auditorAddress)) {
-            if (receiveSecurityDeposit(auditorAddress)) {
-                auditorRegistry.register(auditorAddress);
-                AuditorRegistered(auditorAddress);
-            }
+            receiveSecurityDeposit(auditorAddress);
+            auditorRegistry.register(auditorAddress);
+            AuditorRegistered(auditorAddress);
         }
     }
 

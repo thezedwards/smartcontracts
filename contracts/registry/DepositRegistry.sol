@@ -9,11 +9,11 @@ contract DepositRegistry {
     function unregister(address key);
 
     // Tells whether a given key is registered.
-    function isRegistered(address key) returns(bool);
+    function isRegistered(address key) constant returns(bool);
 
-    function getDeposit(address key) returns(uint256 amount);
+    function getDeposit(address key) constant returns(uint256 amount);
 
-    function getDepositRecord(address key) returns(address owner, uint time, uint256 amount);
+    function getDepositRecord(address key) constant returns(address owner, uint time, uint256 amount);
 
     function hasEnough(address key, uint256 amount) constant returns(bool);
 

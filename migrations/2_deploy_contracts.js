@@ -1,3 +1,5 @@
+var fs = require('fs');
+
 var MultiSigWalletWithDailyLimit = artifacts.require("./gnosis/MultiSigWalletWithDailyLimit.sol");
 var PapyrusKYC = artifacts.require("./PapyrusKYC.sol");
 var PapyrusPrototypeToken = artifacts.require("./PapyrusPrototypeToken.sol");
@@ -68,6 +70,7 @@ function printAddresses() {
     console.log("    Security Deposit Registry: " + addressSecurityDepositRegistry);
     console.log("    Spending Deposit Registry: " + addressSpendingDepositRegistry);
     console.log("====================================");
+    fs.writeFileSync("contracts.properties", "dao=" + addressPapyrusDAO + "\n" + "token=" + addressPapyrusPrototypeToken);
 }
 
 function linkDao(registryContract) {

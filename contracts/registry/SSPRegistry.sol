@@ -13,11 +13,11 @@ contract SSPRegistry {
     function unregister(address key);
 
     // Tells whether a given key is registered.
-    function isRegistered(address key) returns(bool);
+    function isRegistered(address key) constant returns(bool);
 
-    function getSSP(address key) returns(address sspAddress, uint16 publisherFee, uint256[2] karma);
+    function getSSP(address key) constant returns(address sspAddress, uint16 publisherFee, uint256[2] karma);
 
-    function getAllSSP() returns(address[] addresses, uint16[] publisherFees, uint256[2][] karmas);
+    function getAllSSP() constant returns(address[] addresses, uint16[] publisherFees, uint256[2][] karmas);
 
     function kill();
 }

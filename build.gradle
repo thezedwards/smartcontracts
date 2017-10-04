@@ -11,7 +11,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'org.web3j:core:2.3.0'
+        classpath 'org.web3j:core:2.3.1'
     }
 }
 
@@ -38,9 +38,8 @@ sourceSets {
 }
 
 dependencies {
-    compile('org.web3j:core:2.3.0')
+    compile('org.web3j:core:2.3.1')
     testCompile('org.testng:testng:6.11')
-    testCompile('org.apache.commons:commons-lang3:3.6')
 }
 
 task migrate {
@@ -63,13 +62,15 @@ task compileContracts {
 
 task wrappers(dependsOn:'compileContracts') {
     def contracts=[
-            "PapyrusWallet",
             "PapyrusKYC",
             "PapyrusPrototypeToken",
             "PapyrusToken",
             "PapyrusDAO",
             "SSPRegistryImpl",
             "DSPRegistryImpl",
+            "DSPRegistry",
+            "DSPRegistrar",
+            "SSPRegistrar",
             "PublisherRegistryImpl",
             "AuditorRegistryImpl",
             "SecurityDepositRegistry",
@@ -82,8 +83,6 @@ task wrappers(dependsOn:'compileContracts') {
         for (def contract : contracts) {
             def binFile = file("${SOLC_DIR}/${contract}.bin")
             def abiFile = file("${SOLC_DIR}/${contract}.abi")
-            def targetFile = file("${SRC_GEN_DIR}/${SRC_GEN_PACKAGE.replaceAll('\\.', '/')}/${contract}.java")
-            if (targetFile.exists() && targetFile.lastModified() >= Math.max(binFile.lastModified(), abiFile.lastModified())) continue
             println("Generating ${contract}.java")
             def binary = GFileUtils.readFile(binFile)
             def abi = GFileUtils.readFile(abiFile)
@@ -92,6 +91,11 @@ task wrappers(dependsOn:'compileContracts') {
         }
         return upToDate
     }
+}
+
+test {
+    systemProperties['owner.addr'] = '0xbcb960702272e89b76cfed5395404f345a4a0fdc'
+    useTestNG()
 }
 
 compileJava.dependsOn.add(wrappers)

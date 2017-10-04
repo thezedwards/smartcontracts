@@ -84,27 +84,27 @@ contract PapyrusDAO is WithToken,
         SpendingDepositRegistryReplaced(old, spendingDepositRegistry);
     }
 
-    function getSSPRegistry() constant returns (SSPRegistry) {
+    function getSSPRegistry() internal constant returns (SSPRegistry) {
         return sspRegistry;
     }
 
-    function getDSPRegistry() constant returns (DSPRegistry) {
+    function getDSPRegistry() internal constant returns (DSPRegistry) {
         return dspRegistry;
     }
 
-    function getPublisherRegistry() constant returns (PublisherRegistry) {
+    function getPublisherRegistry() internal constant returns (PublisherRegistry) {
         return publisherRegistry;
     }
 
-    function getAuditorRegistry() constant returns (AuditorRegistry) {
+    function getAuditorRegistry() internal constant returns (AuditorRegistry) {
         return auditorRegistry;
     }
 
-    function getSecurityDepositRegistry() constant returns (DepositRegistry) {
+    function getSecurityDepositRegistry() internal constant returns (DepositRegistry) {
         return securityDepositRegistry;
     }
 
-    function getSpendingDepositRegistry() constant returns (DepositRegistry) {
+    function getSpendingDepositRegistry() internal constant returns (DepositRegistry) {
         return spendingDepositRegistry;
     }
 }

@@ -1,4 +1,4 @@
-package global.papyrus;
+package global.papyrus.utils;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;

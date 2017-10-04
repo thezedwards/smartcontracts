@@ -14,13 +14,13 @@ contract PublisherRegistry {
     function unregister(address key);
 
     // Tells whether a given key is registered.
-    function isRegistered(address key) returns(bool);
+    function isRegistered(address key) constant returns(bool);
 
-    function getPublisher(address key) returns(address publisherAddress, bytes32[3] url, uint256[2] karma);
+    function getPublisher(address key) constant returns(address publisherAddress, bytes32[3] url, uint256[2] karma);
 
     //@dev Get list of all registered publishers
     //@return Returns array of addresses registered as DSP with register times
-    function getAllPublishers() returns(address[] addresses, bytes32[3][] urls, uint256[2][] karmas);
+    function getAllPublishers() constant returns(address[] addresses, bytes32[3][] urls, uint256[2][] karmas);
 
     function kill();
 }

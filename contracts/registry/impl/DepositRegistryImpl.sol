@@ -69,16 +69,16 @@ contract DepositRegistryImpl is DepositRegistry, DaoOwnable {
     }
 
     // Tells whether a given key is registered.
-    function isRegistered(address key) returns(bool) {
+    function isRegistered(address key) constant returns(bool) {
         return records[key].time != 0;
     }
 
-    function getDeposit(address key) returns(uint256 amount) {
+    function getDeposit(address key) constant returns(uint256 amount) {
         Deposit record = records[key];
         amount = record.amount;
     }
 
-    function getDepositRecord(address key) returns(address owner, uint time, uint256 amount) {
+    function getDepositRecord(address key) constant returns(address owner, uint time, uint256 amount) {
         Deposit record = records[key];
         owner = record.owner;
         time = record.time;

@@ -3,9 +3,10 @@ pragma solidity ^0.4.11;
 import "../registry/SSPRegistry.sol";
 import "../registry/SSPRegistry.sol";
 import "./SecurityDepositAware.sol";
+import "../registry/impl/SecurityDepositRegistry.sol";
 
 contract SSPRegistrar is SecurityDepositAware{
-    SSPRegistry internal sspRegistry;
+    SSPRegistry public sspRegistry;
 
     event SSPRegistered(address sspAddress);
     event SSPUnregistered(address sspAddress);
@@ -20,11 +21,14 @@ contract SSPRegistrar is SecurityDepositAware{
     //@param sspAddress address of wallet to register
     function registerSsp(address sspAddress, uint16 publisherFee) {
         if (!sspRegistry.isRegistered(sspAddress)) {
-            if (receiveSecurityDeposit(sspAddress)) {
-                sspRegistry.register(sspAddress, publisherFee);
-                SSPRegistered(sspAddress);
-            }
+            receiveSecurityDeposit(sspAddress);
+            sspRegistry.register(sspAddress, publisherFee);
+            SSPRegistered(sspAddress);
         }
+    }
+
+    function isSspRegistered(address key) constant returns(bool) {
+        return sspRegistry.isRegistered(key);
     }
 
     //@dev Unregister SSP and return unused deposit
@@ -35,5 +39,9 @@ contract SSPRegistrar is SecurityDepositAware{
             sspRegistry.unregister(sspAddress);
             SSPUnregistered(sspAddress);
         }
+    }
+
+    function getSspRegistryFromRegistrar() constant returns (SSPRegistry) {
+        return sspRegistry;
     }
 }
