@@ -1,6 +1,6 @@
 pragma solidity ^0.4.11;
 
-import "../zeppelin/ownership/Ownable.sol";
+import "../common/Ownable.sol";
 import "../dispute/Arbiter.sol";
 
 // This is the base contract that your contract ArbiterRegistry extends from.

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.11;
 
-import "../zeppelin/ownership/Ownable.sol";
+import "../common/Ownable.sol";
 
 contract DaoOwnable is Ownable{
 

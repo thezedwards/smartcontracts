@@ -1,7 +1,7 @@
 pragma solidity ^0.4.11;
 
-import "../zeppelin/ownership/Ownable.sol";
-import "../zeppelin/token/ERC20.sol";
+import "../common/Ownable.sol";
+import "../common/ERC20.sol";
 import "./Dispute.sol";
 
 contract Arbiter is Ownable {

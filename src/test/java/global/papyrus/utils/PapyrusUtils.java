@@ -94,7 +94,7 @@ public class PapyrusUtils {
 
     public static CompletableFuture<TransactionReceipt> mintPrp(String to, long prpAmount) {
         return Web3jUtils.asCf(loadDaoContract(new ClientTransactionManager(web3j, ownerAddr)).token()).thenCompose(tokenAddr ->
-            Web3jUtils.asCf(loadTokenContract(tokenAddr.toString(), new ClientTransactionManager(web3j, ownerAddr)).mint(new Address(to), new Uint256(prpAmount)))
+            Web3jUtils.asCf(loadTokenContract(tokenAddr.toString(), new ClientTransactionManager(web3j, ownerAddr)).mint(new Address(to), new Uint256(prpAmount), new Uint256(0)))
         );
     }
 
