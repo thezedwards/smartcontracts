@@ -40,6 +40,7 @@ import static org.web3j.tx.Transfer.GAS_LIMIT;
  * Created by andreyvlasenko on 23/09/17.
  */
 public class PapyrusUtils {
+    public static final int depositAmount = 10;
     public static final BigInteger ethPrice = BigInteger.valueOf(1_000_000_000_000_000_000L);
     public static final BigInteger gasPrice = ManagedTransaction.GAS_PRICE;
     public static final BigInteger gasLimit = BigInteger.valueOf(10_000_000);
@@ -55,16 +56,20 @@ public class PapyrusUtils {
 
     public static CompletableFuture<PapyrusMember> createNewMember(double initialBalance, long initialPrpBalance) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, CipherException, IOException {
         return parity.ethCoinbase().sendAsync()
+                //New account with some Ether
                 .thenCombine(parity.personalNewAccount(randomCitizenPassword).sendAsync(),
                     (coinbase, newAccount) -> transferEther(coinbase.getAddress(), newAccount.getAccountId(), initialBalance)
                         .thenApply(transaction -> new PapyrusMember(newAccount.getAccountId(), web3j)
                             .withRefillTransaction(transaction.getTransactionHash())
                         )
                 )
-                .thenCompose(papyrusMember -> papyrusMember) //Flat map
+                //Flat map
+                .thenCompose(papyrusMember -> papyrusMember)
+                //Mint some tokens for new member
                 .thenCompose(papyrusMember -> mintPrp(papyrusMember.address, initialPrpBalance)
                         .thenApply(transaction -> papyrusMember.withMintTransaction(transaction.getTransactionHash()))
                 )
+                //And unlock it
                 .thenCompose(member -> parity.personalUnlockAccount(member.address, randomCitizenPassword).sendAsync()
                         .thenApply(unlocked -> member)
                 );

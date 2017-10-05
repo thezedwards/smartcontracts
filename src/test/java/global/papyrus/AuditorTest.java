@@ -6,6 +6,7 @@ import global.papyrus.utils.PapyrusMember;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.CipherException;
 
@@ -24,8 +25,10 @@ import static java.util.Arrays.asList;
 /**
  * Created by andreyvlasenko on 04/10/17.
  */
-public class AuditorTest {
+public class AuditorTest extends DepositTest{
     private PapyrusMember auditor;
+    private PapyrusDAO dao;
+    private PapyrusPrototypeToken token;
 
     @BeforeClass
     public void registerUser() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
@@ -34,19 +37,43 @@ public class AuditorTest {
                     allTransactionsMinedAsync(asList(papyrusMember.refillTransaction, papyrusMember.mintTransaction));
                     return papyrusMember;
                 }).join();
+        dao = loadDaoContract(auditor.transactionManager);
+        token = asCf(dao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), auditor.transactionManager)).join();
+        initDepositContract();
     }
 
     @Test
     public void testRegister() throws ExecutionException, InterruptedException {
-        PapyrusDAO dao = loadDaoContract(auditor.transactionManager);
-        PapyrusPrototypeToken token = loadTokenContract(dao.token().get().toString(), auditor.transactionManager);
-
         asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
         asCf(dao.registerAuditor(auditor.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
         asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
         asCf(dao.registerAuditor(auditor.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
+        testDepositsTaken();
 //        asCf(dao.findAuditor(auditor.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), auditor.address)).join();
+    }
+
+    @Test
+    public void testUnregister() throws ExecutionException, InterruptedException {
+        asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
+        asCf(dao.unregisterAuditor(auditor.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
+        testDepositsReturned();
+    }
+
+    @Override
+    protected PapyrusMember member() {
+        return auditor;
+    }
+
+    @Override
+    protected PapyrusDAO dao() {
+        return dao;
+    }
+
+    @Override
+    protected PapyrusPrototypeToken token() {
+        return token;
     }
 }
