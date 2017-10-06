@@ -1,32 +1,31 @@
 pragma solidity ^0.4.11;
 
 import "../registry/SSPRegistry.sol";
-import "../registry/SSPRegistry.sol";
+import "../registry/SSPTypeAware.sol";
 import "./SecurityDepositAware.sol";
-import "../registry/impl/SecurityDepositRegistry.sol";
 
-contract SSPRegistrar is SecurityDepositAware{
+contract SSPRegistrar is SSPTypeAware, SecurityDepositAware{
     SSPRegistry public sspRegistry;
 
     event SSPRegistered(address sspAddress);
     event SSPUnregistered(address sspAddress);
+    event SSPParametersChanged(address sspAddress);
 
     //@dev Retrieve information about registered SSP
     //@return Address of registered SSP and time when registered
-    function findSsp(address sspAddr) constant returns(address sspAddress, uint16 publisherFee, uint256[2] karma) {
+    function findSsp(address sspAddr) constant returns(address sspAddress, SSPType sspType, uint16 publisherFee, uint256[2] karma, address recordOwner) {
         return sspRegistry.getSSP(sspAddr);
     }
 
     //@dev Register organisation as SSP
     //@param sspAddress address of wallet to register
-    function registerSsp(address sspAddress, uint16 publisherFee) {
-        if (!sspRegistry.isRegistered(sspAddress)) {
-            receiveSecurityDeposit(sspAddress);
-            sspRegistry.register(sspAddress, publisherFee);
-            SSPRegistered(sspAddress);
-        }
+    function registerSsp(address sspAddress, SSPType sspType, uint16 publisherFee) {
+        receiveSecurityDeposit(sspAddress);
+        sspRegistry.register(sspAddress, sspType, publisherFee, msg.sender);
+        SSPRegistered(sspAddress);
     }
 
+    //@dev check if SSP registered
     function isSspRegistered(address key) constant returns(bool) {
         return sspRegistry.isRegistered(key);
     }
@@ -34,14 +33,23 @@ contract SSPRegistrar is SecurityDepositAware{
     //@dev Unregister SSP and return unused deposit
     //@param Address of SSP to be unregistered
     function unregisterSsp(address sspAddress) {
-        if (sspRegistry.isRegistered(sspAddress)) {
-            returnDeposit(sspAddress, securityDepositRegistry);
-            sspRegistry.unregister(sspAddress);
-            SSPUnregistered(sspAddress);
-        }
+        returnDeposit(sspAddress, securityDepositRegistry);
+        sspRegistry.unregister(sspAddress, msg.sender);
+        SSPUnregistered(sspAddress);
     }
 
-    function getSspRegistryFromRegistrar() constant returns (SSPRegistry) {
-        return sspRegistry;
+    //@dev Change publisher fee of SSP
+    //@param address of SSP to change
+    //@param new publisher fee
+    function updatePublisherFee(address key, uint16 newFee) {
+        sspRegistry.updatePublisherFee(key, newFee, msg.sender);
+        SSPParametersChanged(key);
+    }
+
+    //@dev transfer ownership of this SSP record
+    //@param address of SSP
+    //@param address of new owner
+    function transfer(address key, address newOwner) {
+        sspRegistry.transfer(key, newOwner, msg.sender);
     }
 }

@@ -2,12 +2,11 @@ pragma solidity ^0.4.11;
 
 import "../DepositRegistry.sol";
 import "../../dao/DaoOwnable.sol";
+import '../../common/SafeMath.sol';
 
 // This is the base contract that your contract DepositRegistry extends from.
 contract DepositRegistryImpl is DepositRegistry, DaoOwnable {
-
-    // The owner of this registry.
-    address public owner = msg.sender;
+    using SafeMath for uint256;
 
     uint public creationTime = now;
 
@@ -33,38 +32,40 @@ contract DepositRegistryImpl is DepositRegistry, DaoOwnable {
     address[] public keys;
 
     // This is the function that actually insert a record. 
-    function register(address key, uint256 amount) onlyDaoOrOwner {
+    function register(address key, uint256 amount, address depositOwner) onlyDaoOrOwner {
         if (records[key].time == 0) {
             records[key].time = now;
-            records[key].owner = msg.sender;
+            records[key].owner = depositOwner;
             records[key].keysIndex = keys.length;
             keys.length++;
             keys[keys.length - 1] = key;
             records[key].amount = amount;
             numDeposits++;
         } else {
-            throw;
+            revert();
         }
     }
 
     // Unregister a given record
-    function unregister(address key) onlyDaoOrOwner {
-        if (records[key].owner == msg.sender) {
+    function unregister(address key, address sender) onlyDaoOrOwner {
+        if (records[key].owner == sender) {
             uint keysIndex = records[key].keysIndex;
             delete records[key];
             numDeposits--;
             keys[keysIndex] = keys[keys.length - 1];
             records[keys[keysIndex]].keysIndex = keysIndex;
             keys.length--;
+        } else {
+            revert();
         }
     }
 
     // Transfer ownership of a given record.
-    function transfer(address key, address newOwner) {
-        if (records[key].owner == msg.sender) {
+    function transfer(address key, address newOwner, address sender) {
+        if (records[key].owner == sender) {
             records[key].owner = newOwner;
         } else {
-            throw;
+            revert();
         }
     }
 
@@ -73,40 +74,36 @@ contract DepositRegistryImpl is DepositRegistry, DaoOwnable {
         return records[key].time != 0;
     }
 
+    function getDepositOwner(address key) constant returns (address) {
+        return records[key].owner;
+    }
+
     function getDeposit(address key) constant returns(uint256 amount) {
-        Deposit record = records[key];
+        Deposit storage record = records[key];
         amount = record.amount;
     }
 
-    function getDepositRecord(address key) constant returns(address owner, uint time, uint256 amount) {
-        Deposit record = records[key];
+    function getDepositRecord(address key) constant returns(address owner, uint time, uint256 amount, address depositOwner) {
+        Deposit storage record = records[key];
         owner = record.owner;
         time = record.time;
         amount = record.amount;
+        depositOwner = record.owner;
     }
 
     function hasEnough(address key, uint256 amount) constant returns(bool) {
-        Deposit deposit = records[key];
+        Deposit storage deposit = records[key];
         return deposit.amount >= amount;
     }
 
-    function spend(address key, uint256 amount) onlyDaoOrOwner returns(bool){
-        if (isRegistered(key) && hasEnough(key, amount)) {
-            Deposit deposit = records[key];
-            deposit.amount = deposit.amount - amount;
-            return true;
-        } else {
-            return false;
-        }
+    function spend(address key, uint256 amount) onlyDaoOrOwner {
+        require(isRegistered(key));
+        records[key].amount = records[key].amount.sub(amount);
     }
 
     function refill(address key, uint256 amount) onlyDaoOrOwner {
-        if (isRegistered(key)) {
-            Deposit deposit = records[key];
-            deposit.amount = deposit.amount + amount;
-        } else {
-            throw;
-        }
+        require(isRegistered(key));
+        records[key].amount = records[key].amount.add(amount);
     }
 
     function kill() onlyOwner {

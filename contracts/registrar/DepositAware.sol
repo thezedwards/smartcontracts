@@ -4,12 +4,14 @@ import "../registry/DepositRegistry.sol";
 import "../dao/WithToken.sol";
 
 contract DepositAware is WithToken{
-    function returnDeposit(address depositSender, DepositRegistry depositRegistry) internal {
-        if (depositRegistry.isRegistered(depositSender)) {}
-        uint256 amount = depositRegistry.getDeposit(depositSender);
-        if (amount > 0) {
-            token.transfer(depositSender, amount);
-            depositRegistry.unregister(depositSender);
+    function returnDeposit(address depositAccount, DepositRegistry depositRegistry) internal {
+        if (depositRegistry.isRegistered(depositAccount)) {
+            uint256 amount = depositRegistry.getDeposit(depositAccount);
+            address depositOwner = depositRegistry.getDepositOwner(depositAccount);
+            if (amount > 0) {
+                token.transfer(depositOwner, amount);
+                depositRegistry.unregister(depositAccount, msg.sender);
+            }
         }
     }
 }

@@ -45,10 +45,10 @@ public class PublisherTest extends DepositTest{
     @Test
     public void testRegister() throws ExecutionException, InterruptedException {
         asCf(dao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(dao.registerPublisher(publisher.getAddress(), generateUrl(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerPublisher(publisher.getAddress(), generateUrl(5))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
         asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
-        asCf(dao.registerPublisher(publisher.getAddress(), generateUrl(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerPublisher(publisher.getAddress(), generateUrl(5))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
         testDepositsTaken();
 //        asCf(dao.findAuditor(publisher.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), publisher.address)).join();

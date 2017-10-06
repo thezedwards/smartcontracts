@@ -28,8 +28,8 @@ contract DaoOwnable is Ownable{
      */
     function transferDao(address newDao) onlyOwner {
         require(newDao != address(0));
-        DaoOwnershipTransferred(owner, newDao);
         dao = newDao;
+        DaoOwnershipTransferred(owner, newDao);
     }
 
 }

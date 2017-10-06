@@ -8,9 +8,8 @@ contract SecurityDepositAware is DepositAware{
 
     DepositRegistry public securityDepositRegistry;
 
-    function receiveSecurityDeposit(address depositSender) internal {
-        require(token.balanceOf(depositSender) >= SECURITY_DEPOSIT_SIZE && token.allowance(depositSender, this) >= SECURITY_DEPOSIT_SIZE);
-        token.transferFrom(depositSender, this, SECURITY_DEPOSIT_SIZE);
-        securityDepositRegistry.register(depositSender, SECURITY_DEPOSIT_SIZE);
+    function receiveSecurityDeposit(address depositAccount) internal {
+        token.transferFrom(msg.sender, this, SECURITY_DEPOSIT_SIZE);
+        securityDepositRegistry.register(depositAccount, SECURITY_DEPOSIT_SIZE, msg.sender);
     }
 }

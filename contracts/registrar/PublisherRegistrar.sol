@@ -8,10 +8,11 @@ contract PublisherRegistrar is SecurityDepositAware{
 
     event PublisherRegistered(address publisherAddress);
     event PublisherUnregistered(address publisherAddress);
+    event PublisherParametersChanged(address publisherAddress);
 
     //@dev Retrieve information about registered Publisher
     //@return Address of registered Publisher and time when registered
-    function findPublisher(address addr) constant returns(address publisherAddress, bytes32[3] url, uint256[2] karma) {
+    function findPublisher(address addr) constant returns(address publisherAddress, bytes32[5] url, uint256[2] karma, address recordOwner) {
         return publisherRegistry.getPublisher(addr);
     }
 
@@ -21,21 +22,24 @@ contract PublisherRegistrar is SecurityDepositAware{
 
     //@dev Register organisation as Publisher
     //@param publisherAddress address of wallet to register
-    function registerPublisher(address publisherAddress, bytes32[3] url) {
-        if (!publisherRegistry.isRegistered(publisherAddress)) {
-            receiveSecurityDeposit(publisherAddress);
-            publisherRegistry.register(publisherAddress, url);
-            PublisherRegistered(publisherAddress);
-        }
+    function registerPublisher(address publisherAddress, bytes32[5] url) {
+        receiveSecurityDeposit(publisherAddress);
+        publisherRegistry.register(publisherAddress, url, msg.sender);
+        PublisherRegistered(publisherAddress);
     }
 
     //@dev Unregister Publisher and return unused deposit
     //@param Address of Publisher to be unregistered
     function unregisterPublisher(address publisherAddress) {
-        if (publisherRegistry.isRegistered(publisherAddress)) {
-            returnDeposit(publisherAddress, securityDepositRegistry);
-            publisherRegistry.unregister(publisherAddress);
-            PublisherUnregistered(publisherAddress);
-        }
+        returnDeposit(publisherAddress, securityDepositRegistry);
+        publisherRegistry.unregister(publisherAddress, msg.sender);
+        PublisherUnregistered(publisherAddress);
+    }
+
+    //@dev transfer ownership of this Publisher record
+    //@param address of Publisher
+    //@param address of new owner
+    function transfer(address key, address newOwner) {
+        publisherRegistry.transfer(key, newOwner, msg.sender);
     }
 }

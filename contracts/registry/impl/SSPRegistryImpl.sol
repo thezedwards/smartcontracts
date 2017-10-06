@@ -19,6 +19,8 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
         // SSP Address
         address sspAddress;
 
+        SSPType sspType;
+
         uint16 publisherFee;
 
         uint256[2] karma;
@@ -34,54 +36,47 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
     address[] public keys;
 
     // This is the function that actually insert a record.
-    function register(address key, uint16 publisherFee) onlyDaoOrOwner {
-        if (records[key].time == 0) {
-            records[key].time = now;
-            records[key].owner = msg.sender;
-            records[key].keysIndex = keys.length;
-            records[key].sspAddress = key;
-            records[key].publisherFee = publisherFee;
-            keys.length++;
-            keys[keys.length - 1] = key;
-            numRecords++;
-        } else {
-            throw;
-        }
+    function register(address key, uint16 publisherFee, SSPType sspType, address recordOwner) onlyDaoOrOwner {
+        require(records[key].time == 0);
+        records[key].time = now;
+        records[key].owner = recordOwner;
+        records[key].keysIndex = keys.length;
+        records[key].sspAddress = key;
+        records[key].sspType = sspType;
+        records[key].publisherFee = publisherFee;
+        keys.length++;
+        keys[keys.length - 1] = key;
+        numRecords++;
     }
 
     // Updates the values of the given record.
-    function updatePublisherFee(address key, uint16 newFee) onlyDaoOrOwner {
+    function updatePublisherFee(address key, uint16 newFee, address sender) onlyDaoOrOwner {
         // Only the owner can update his record.
-        if (records[key].owner == msg.sender) {
-            records[key].publisherFee = newFee;
-        }
+        require(records[key].owner == sender);
+        records[key].publisherFee = newFee;
     }
 
     function applyKarmaDiff(address key, uint256[2] diff) onlyDaoOrOwner {
-        SSP ssp = records[key];
+        SSP storage ssp = records[key];
         ssp.karma[0] += diff[0];
         ssp.karma[1] += diff[1];
     }
 
     // Unregister a given record
-    function unregister(address key) onlyDaoOrOwner {
-        if (records[key].owner == msg.sender) {
-            uint keysIndex = records[key].keysIndex;
-            delete records[key];
-            numRecords--;
-            keys[keysIndex] = keys[keys.length - 1];
-            records[keys[keysIndex]].keysIndex = keysIndex;
-            keys.length--;
-        }
+    function unregister(address key, address sender) onlyDaoOrOwner {
+        require(records[key].owner == sender);
+        uint keysIndex = records[key].keysIndex;
+        delete records[key];
+        numRecords--;
+        keys[keysIndex] = keys[keys.length - 1];
+        records[keys[keysIndex]].keysIndex = keysIndex;
+        keys.length--;
     }
 
     // Transfer ownership of a given record.
-    function transfer(address key, address newOwner) onlyDaoOrOwner {
-        if (records[key].owner == msg.sender) {
-            records[key].owner = newOwner;
-        } else {
-            throw;
-        }
+    function transfer(address key, address newOwner, address sender) onlyDaoOrOwner {
+        require(records[key].owner == sender);
+        records[key].owner = newOwner;
     }
 
     // Tells whether a given key is registered.
@@ -89,11 +84,13 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
         return records[key].time != 0;
     }
 
-    function getSSP(address key) constant returns(address sspAddress, uint16 publisherFee, uint256[2] karma) {
-        SSP record = records[key];
+    function getSSP(address key) constant returns(address sspAddress, SSPType sspType, uint16 publisherFee, uint256[2] karma, address recordOwner) {
+        SSP storage record = records[key];
         sspAddress = record.sspAddress;
+        sspType = record.sspType;
         publisherFee = record.publisherFee;
         karma = record.karma;
+        recordOwner = owner;
     }
 
     // Returns the owner of the given record. The owner could also be get
@@ -103,16 +100,19 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
         return records[key].owner;
     }
 
-    function getAllSSP() constant returns(address[] addresses, uint16[] publisherFees, uint256[2][] karmas) {
+    function getAllSSP() constant returns(address[] addresses, SSPType[] sspTypes, uint16[] publisherFees, uint256[2][] karmas, address[] recordOwners) {
         addresses = new address[](numRecords);
+        sspTypes = new SSPType[](numRecords);
         publisherFees = new uint16[](numRecords);
         karmas = new uint256[2][](numRecords);
+        recordOwners = new address[](numRecords);
         uint i;
         for(i = 0; i < numRecords; i++) {
-            SSP ssp = records[keys[i]];
+            SSP storage ssp = records[keys[i]];
             addresses[i] = ssp.sspAddress;
+            sspTypes[i] = ssp.sspType;
             publisherFees[i] = ssp.publisherFee;
-            karmas[i] = ssp.karma;
+            recordOwners[i] = ssp.owner;
         }
     }
 

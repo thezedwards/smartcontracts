@@ -1,10 +1,15 @@
 pragma solidity ^0.4.11;
 
+import "../common/Ownable.sol";
 import "./ChannelApi.sol";
 import "../dao/RegistryProvider.sol";
 
-contract StateChannelListener is RegistryProvider, ChannelApi{
-    function applyRuntimeUpdate(address from, address to, uint impressionsCount, uint fraudCount) {
+contract StateChannelListener is RegistryProvider, ChannelApi, Ownable{
+    address channelContractAddress;
+
+    event ChannelContractAddressChanged(address indexed previousAddress, address indexed newAddress);
+
+    function applyRuntimeUpdate(address from, address to, uint impressionsCount, uint fraudCount) onlyChannelContract {
         uint256[2] karmaDiff;
         karmaDiff[0] = impressionsCount;
         karmaDiff[1] = 0;
@@ -24,7 +29,18 @@ contract StateChannelListener is RegistryProvider, ChannelApi{
         }
     }
 
-    function applyAuditorsCheckUpdate(address from, address to, uint fraudCountDelta) {
+    function applyAuditorsCheckUpdate(address from, address to, uint fraudCountDelta) onlyChannelContract {
         //To be implemented
+    }
+
+    function updateChannelContractAddress(address newChannelContract) onlyOwner public {
+        require(newChannelContract != address(0));
+        OwnershipTransferred(channelContractAddress, newChannelContract);
+        channelContractAddress = newChannelContract;
+    }
+
+    modifier onlyChannelContract() {
+        require(msg.sender == channelContractAddress);
+        _;
     }
 }

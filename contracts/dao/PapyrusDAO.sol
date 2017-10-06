@@ -29,8 +29,7 @@ contract PapyrusDAO is WithToken,
                         DSPRegistry _dspRegistry,
                         PublisherRegistry _publisherRegistry,
                         AuditorRegistry _auditorRegistry,
-                        DepositRegistry _securityDepositRegistry,
-                        DepositRegistry _spendingDepositRegistry
+                        DepositRegistry _securityDepositRegistry
     ) {
         token = papyrusToken;
         sspRegistry = _sspRegistry;
@@ -38,7 +37,6 @@ contract PapyrusDAO is WithToken,
         publisherRegistry = _publisherRegistry;
         auditorRegistry = _auditorRegistry;
         securityDepositRegistry = _securityDepositRegistry;
-        spendingDepositRegistry = _spendingDepositRegistry;
     }
 
     event SSPRegistryReplaced(address from, address to);
@@ -46,7 +44,6 @@ contract PapyrusDAO is WithToken,
     event PublisherRegistryReplaced(address from, address to);
     event AuditorRegistryReplaced(address from, address to);
     event SecurityDepositRegistryReplaced(address from, address to);
-    event SpendingDepositRegistryReplaced(address from, address to);
 
     function replaceSSPRegistry(SSPRegistry newRegistry) onlyOwner {
         address old = sspRegistry;
@@ -78,12 +75,6 @@ contract PapyrusDAO is WithToken,
         SecurityDepositRegistryReplaced(old, securityDepositRegistry);
     }
 
-    function replaceSpendingDepositRegistry(DepositRegistry newRegistry) onlyOwner {
-        address old = spendingDepositRegistry;
-        spendingDepositRegistry = newRegistry;
-        SpendingDepositRegistryReplaced(old, spendingDepositRegistry);
-    }
-
     function getSSPRegistry() internal constant returns (SSPRegistry) {
         return sspRegistry;
     }
@@ -102,9 +93,5 @@ contract PapyrusDAO is WithToken,
 
     function getSecurityDepositRegistry() internal constant returns (DepositRegistry) {
         return securityDepositRegistry;
-    }
-
-    function getSpendingDepositRegistry() internal constant returns (DepositRegistry) {
-        return spendingDepositRegistry;
     }
 }

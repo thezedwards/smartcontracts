@@ -10,7 +10,6 @@ var DSPRegistry = artifacts.require("./registry/impl/DSPRegistryImpl.sol");
 var PublisherRegistry = artifacts.require("./registry/impl/PublisherRegistryImpl.sol");
 var AuditorRegistry = artifacts.require("./registry/impl/AuditorRegistryImpl.sol");
 var SecurityDepositRegistry = artifacts.require("./registry/impl/SecurityDepositRegistry.sol");
-var SpendingDepositRegistry = artifacts.require("./registry/impl/SpendingDepositRegistry.sol");
 
 var addressWalletPRP; // Containing 10% (5,000,000) of created PRP to pay bounty, bonuses, etc.
 var addressWalletPPR_A; // Containing PPR for Papyrus Foundation (10%)
@@ -38,7 +37,6 @@ var addressDSPRegistry;
 var addressPublisherRegistry;
 var addressAuditorRegistry;
 var addressSecurityDepositRegistry;
-var addressSpendingDepositRegistry;
 
 
 function printAddresses() {
@@ -150,11 +148,8 @@ module.exports = function(deployer) {
         return deployer.deploy(SecurityDepositRegistry);
     }).then(function() {
         addressSecurityDepositRegistry = SecurityDepositRegistry.address;
-        return deployer.deploy(SpendingDepositRegistry);
-    }).then(function() {
-        addressSpendingDepositRegistry = SpendingDepositRegistry.address;
         return deployer.deploy(PapyrusDAO, addressPapyrusPrototypeToken, addressSSPRegistry, addressDSPRegistry, addressPublisherRegistry,
-            addressAuditorRegistry, addressSecurityDepositRegistry, addressSpendingDepositRegistry);
+            addressAuditorRegistry, addressSecurityDepositRegistry);
     }).then(function() {
         addressPapyrusDAO = PapyrusDAO.address;
         linkDao(SSPRegistry.at(addressSSPRegistry));
@@ -162,7 +157,6 @@ module.exports = function(deployer) {
         linkDao(PublisherRegistry.at(addressPublisherRegistry));
         linkDao(AuditorRegistry.at(addressAuditorRegistry));
         linkDao(SecurityDepositRegistry.at(addressSecurityDepositRegistry));
-        linkDao(SpendingDepositRegistry.at(addressSpendingDepositRegistry));
         PapyrusPrototypeToken.at(addressPapyrusPrototypeToken).setTransferable(true);
         printAddresses();
     });

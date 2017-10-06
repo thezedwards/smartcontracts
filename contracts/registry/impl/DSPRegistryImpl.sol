@@ -19,7 +19,9 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
         // DSP Address
         address dspAddress;
 
-        bytes32[3] url;
+        DSPType dspType;
+
+        bytes32[5] url;
 
         uint256[2] karma;
     }
@@ -34,54 +36,48 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
     address[] public keys;
 
     // This is the function that actually insert a record.
-    function register(address key, bytes32[3] url) onlyDaoOrOwner {
-        if (records[key].time == 0) {
-            records[key].time = now;
-            records[key].owner = msg.sender;
-            records[key].keysIndex = keys.length;
-            records[key].dspAddress = key;
-            records[key].url = url;
-            keys.length++;
-            keys[keys.length - 1] = key;
-            numRecords++;
-        } else {
-            throw;
-        }
+    function register(address key, DSPType dspType, bytes32[5] url, address recordOwner) onlyDaoOrOwner {
+        require(records[key].time == 0);
+        records[key].time = now;
+        records[key].owner = recordOwner;
+        records[key].keysIndex = keys.length;
+        records[key].dspAddress = key;
+        records[key].dspType = dspType;
+        records[key].url = url;
+        keys.length++;
+        keys[keys.length - 1] = key;
+        numRecords++;
     }
 
     // Updates the values of the given record.
-    function updateUrl(address key, bytes32[3] url) onlyDaoOrOwner {
+    function updateUrl(address key, bytes32[5] url, address sender) onlyDaoOrOwner {
         // Only the owner can update his record.
-        if (records[key].owner == msg.sender) {
-            records[key].url = url;
-        }
+        require(records[key].owner == sender);
+        records[key].url = url;
     }
 
     function applyKarmaDiff(address key, uint256[2] diff) onlyDaoOrOwner{
-        DSP dsp = records[key];
+        DSP storage dsp = records[key];
         dsp.karma[0] += diff[0];
         dsp.karma[1] += diff[1];
     }
 
     // Unregister a given record
-    function unregister(address key) onlyDaoOrOwner {
-        if (records[key].owner == msg.sender) {
-            uint keysIndex = records[key].keysIndex;
-            delete records[key];
-            numRecords--;
-            keys[keysIndex] = keys[keys.length - 1];
-            records[keys[keysIndex]].keysIndex = keysIndex;
-            keys.length--;
-        }
+    function unregister(address key, address sender) onlyDaoOrOwner {
+        require(records[key].owner == sender);
+        uint keysIndex = records[key].keysIndex;
+        delete records[key];
+        numRecords--;
+        keys[keysIndex] = keys[keys.length - 1];
+        records[keys[keysIndex]].keysIndex = keysIndex;
+        keys.length--;
+
     }
 
     // Transfer ownership of a given record.
-    function transfer(address key, address newOwner) onlyDaoOrOwner {
-        if (records[key].owner == msg.sender) {
-            records[key].owner = newOwner;
-        } else {
-            throw;
-        }
+    function transfer(address key, address newOwner, address sender) onlyDaoOrOwner {
+        require(records[key].owner == sender);
+        records[key].owner = newOwner;
     }
 
     // Tells whether a given key is registered.
@@ -89,11 +85,13 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
         return records[key].time != 0;
     }
 
-    function getDSP(address key) constant returns(address dspAddress, bytes32[3] url, uint256[2] karma) {
-        DSP record = records[key];
+    function getDSP(address key) constant returns(address dspAddress, DSPType dspType, bytes32[5] url, uint256[2] karma, address recordOwner) {
+        DSP storage record = records[key];
         dspAddress = record.dspAddress;
         url = record.url;
+        dspType = record.dspType;
         karma = record.karma;
+        recordOwner = record.owner;
     }
 
     // Returns the owner of the given record. The owner could also be get
@@ -112,16 +110,20 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
 
     //@dev Get list of all registered dsp
     //@return Returns array of addresses registered as DSP with register times
-    function getAllDSP() constant returns(address[] addresses, bytes32[3][] urls, uint256[2][] karmas) {
+    function getAllDSP() constant returns(address[] addresses, DSPType[] dspTypes, bytes32[5][] urls, uint256[2][] karmas, address[] recordOwners) {
         addresses = new address[](numRecords);
-        urls = new bytes32[3][](numRecords);
+        dspTypes = new DSPType[](numRecords);
+        urls = new bytes32[5][](numRecords);
         karmas = new uint256[2][](numRecords);
+        recordOwners = new address[](numRecords);
         uint i;
         for(i = 0; i < numRecords; i++) {
-            DSP dsp = records[keys[i]];
+            DSP storage dsp = records[keys[i]];
             addresses[i] = dsp.dspAddress;
+            dspTypes[i] = dsp.dspType;
             urls[i] = dsp.url;
             karmas[i] = dsp.karma;
+            recordOwners[i] = dsp.owner;
         }
     }
 

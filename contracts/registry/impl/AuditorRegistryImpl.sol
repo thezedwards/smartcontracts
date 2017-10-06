@@ -32,45 +32,38 @@ contract AuditorRegistryImpl is AuditorRegistry, DaoOwnable {
     address[] public keys;
 
     // This is the function that actually insert a record.
-    function register(address key) onlyDaoOrOwner {
-        if (records[key].time == 0) {
-            records[key].time = now;
-            records[key].owner = msg.sender;
-            records[key].keysIndex = keys.length;
-            records[key].auditorAddress = key;
-            keys.length++;
-            keys[keys.length - 1] = key;
-            numRecords++;
-        } else {
-            throw;
-        }
+    function register(address key, address recordOwner) onlyDaoOrOwner {
+        require(records[key].time == 0);
+        records[key].time = now;
+        records[key].owner = recordOwner;
+        records[key].keysIndex = keys.length;
+        records[key].auditorAddress = key;
+        keys.length++;
+        keys[keys.length - 1] = key;
+        numRecords++;
     }
 
     function applyKarmaDiff(address key, uint256[2] diff) onlyDaoOrOwner {
-        Auditor auditor = records[key];
+        Auditor storage auditor = records[key];
         auditor.karma[0] += diff[0];
         auditor.karma[1] += diff[1];
     }
 
     // Unregister a given record
-    function unregister(address key) onlyDaoOrOwner {
-        if (records[key].owner == msg.sender) {
-            uint keysIndex = records[key].keysIndex;
-            delete records[key];
-            numRecords--;
-            keys[keysIndex] = keys[keys.length - 1];
-            records[keys[keysIndex]].keysIndex = keysIndex;
-            keys.length--;
-        }
+    function unregister(address key, address sender) onlyDaoOrOwner {
+        require(records[key].owner == sender);
+        uint keysIndex = records[key].keysIndex;
+        delete records[key];
+        numRecords--;
+        keys[keysIndex] = keys[keys.length - 1];
+        records[keys[keysIndex]].keysIndex = keysIndex;
+        keys.length--;
     }
 
     // Transfer ownership of a given record.
-    function transfer(address key, address newOwner) onlyDaoOrOwner {
-        if (records[key].owner == msg.sender) {
-            records[key].owner = newOwner;
-        } else {
-            throw;
-        }
+    function transfer(address key, address newOwner, address sender) onlyDaoOrOwner {
+        require(records[key].owner == sender);
+        records[key].owner = newOwner;
     }
 
     // Tells whether a given key is registered.
@@ -78,10 +71,11 @@ contract AuditorRegistryImpl is AuditorRegistry, DaoOwnable {
         return records[key].time != 0;
     }
 
-    function getAuditor(address key) constant returns(address auditorAddress, uint256[2] karma) {
-        Auditor record = records[key];
+    function getAuditor(address key) constant returns(address auditorAddress, uint256[2] karma, address recordOwner) {
+        Auditor storage record = records[key];
         auditorAddress = record.auditorAddress;
         karma = record.karma;
+        recordOwner = record.owner;
     }
 
     // Returns the owner of the given record. The owner could also be get
@@ -100,14 +94,16 @@ contract AuditorRegistryImpl is AuditorRegistry, DaoOwnable {
 
     //@dev Get list of all registered auditor
     //@return Returns array of addresses registered as Auditor with register times
-    function getAllAuditors() constant returns(address[] addresses, uint256[2][] karmas) {
+    function getAllAuditors() constant returns(address[] addresses, uint256[2][] karmas, address[] recordOwners) {
         addresses = new address[](numRecords);
         karmas = new uint256[2][](numRecords);
+        recordOwners = new address[](numRecords);
         uint i;
         for(i = 0; i < numRecords; i++) {
-            Auditor auditor = records[keys[i]];
+            Auditor storage auditor = records[keys[i]];
             addresses[i] = auditor.auditorAddress;
             karmas[i] = auditor.karma;
+            recordOwners[i] = auditor.owner;
         }
     }
 

@@ -42,9 +42,9 @@ public class DSPTest extends DepositTest{
     @Test
     public void testRegister() throws ExecutionException, InterruptedException {
         asCf(dao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(dao.registerDsp(dsp.getAddress(), generateUrl(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerDsp(dsp.getAddress(), generateUrl(5))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
-        asCf(dao.registerDsp(dsp.getAddress(), generateUrl(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerDsp(dsp.getAddress(), generateUrl(5))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
         testDepositsTaken();
 //        asCf(dao.findDsp(dsp.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), dsp.address)).join();
