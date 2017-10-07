@@ -49,7 +49,7 @@ contract DSPRegistrar is DSPTypeAware, SecurityDepositAware {
     //@dev transfer ownership of this DSP record
     //@param address of DSP
     //@param address of new owner
-    function transfer(address key, address newOwner) {
+    function transferDSPRecord(address key, address newOwner) {
         dspRegistry.transfer(key, newOwner, msg.sender);
     }
 }

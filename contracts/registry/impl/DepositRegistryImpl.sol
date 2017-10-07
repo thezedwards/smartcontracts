@@ -33,40 +33,31 @@ contract DepositRegistryImpl is DepositRegistry, DaoOwnable {
 
     // This is the function that actually insert a record. 
     function register(address key, uint256 amount, address depositOwner) onlyDaoOrOwner {
-        if (records[key].time == 0) {
-            records[key].time = now;
-            records[key].owner = depositOwner;
-            records[key].keysIndex = keys.length;
-            keys.length++;
-            keys[keys.length - 1] = key;
-            records[key].amount = amount;
-            numDeposits++;
-        } else {
-            revert();
-        }
+        require(records[key].time == 0);
+        records[key].time = now;
+        records[key].owner = depositOwner;
+        records[key].keysIndex = keys.length;
+        keys.length++;
+        keys[keys.length - 1] = key;
+        records[key].amount = amount;
+        numDeposits++;
     }
 
     // Unregister a given record
     function unregister(address key, address sender) onlyDaoOrOwner {
-        if (records[key].owner == sender) {
-            uint keysIndex = records[key].keysIndex;
-            delete records[key];
-            numDeposits--;
-            keys[keysIndex] = keys[keys.length - 1];
-            records[keys[keysIndex]].keysIndex = keysIndex;
-            keys.length--;
-        } else {
-            revert();
-        }
+        require(records[key].owner == sender);
+        uint keysIndex = records[key].keysIndex;
+        delete records[key];
+        numDeposits--;
+        keys[keysIndex] = keys[keys.length - 1];
+        records[keys[keysIndex]].keysIndex = keysIndex;
+        keys.length--;
     }
 
     // Transfer ownership of a given record.
-    function transfer(address key, address newOwner, address sender) {
-        if (records[key].owner == sender) {
-            records[key].owner = newOwner;
-        } else {
-            revert();
-        }
+    function transfer(address key, address newOwner, address sender) onlyDaoOrOwner {
+        require(records[key].owner == sender);
+        records[key].owner = newOwner;
     }
 
     // Tells whether a given key is registered.

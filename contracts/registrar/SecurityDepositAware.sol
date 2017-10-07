@@ -12,4 +12,8 @@ contract SecurityDepositAware is DepositAware{
         token.transferFrom(msg.sender, this, SECURITY_DEPOSIT_SIZE);
         securityDepositRegistry.register(depositAccount, SECURITY_DEPOSIT_SIZE, msg.sender);
     }
+
+    function transferSecurityDeposit(address depositAccount, address newOwner) {
+        securityDepositRegistry.transfer(depositAccount, newOwner, msg.sender);
+    }
 }

@@ -39,7 +39,7 @@ contract AuditorRegistrar is SecurityDepositAware{
     //@dev transfer ownership of this Auditor record
     //@param address of Auditor
     //@param address of new owner
-    function transfer(address key, address newOwner) {
+    function transferAuditorRecord(address key, address newOwner) {
         auditorRegistry.transfer(key, newOwner, msg.sender);
     }
 }

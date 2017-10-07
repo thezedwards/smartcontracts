@@ -39,7 +39,7 @@ contract PublisherRegistrar is SecurityDepositAware{
     //@dev transfer ownership of this Publisher record
     //@param address of Publisher
     //@param address of new owner
-    function transfer(address key, address newOwner) {
+    function transferPublisherRecord(address key, address newOwner) {
         publisherRegistry.transfer(key, newOwner, msg.sender);
     }
 }

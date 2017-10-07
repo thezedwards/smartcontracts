@@ -49,7 +49,7 @@ contract SSPRegistrar is SSPTypeAware, SecurityDepositAware{
     //@dev transfer ownership of this SSP record
     //@param address of SSP
     //@param address of new owner
-    function transfer(address key, address newOwner) {
+    function transferSSPRecord(address key, address newOwner) {
         sspRegistry.transfer(key, newOwner, msg.sender);
     }
 }
