@@ -10,7 +10,7 @@ contract StateChannelListener is RegistryProvider, ChannelApi, Ownable{
     event ChannelContractAddressChanged(address indexed previousAddress, address indexed newAddress);
 
     function applyRuntimeUpdate(address from, address to, uint impressionsCount, uint fraudCount) onlyChannelContract {
-        uint256[2] karmaDiff;
+        uint256[2] storage karmaDiff;
         karmaDiff[0] = impressionsCount;
         karmaDiff[1] = 0;
         if (getDSPRegistry().isRegistered(from)) {
@@ -35,7 +35,7 @@ contract StateChannelListener is RegistryProvider, ChannelApi, Ownable{
 
     function updateChannelContractAddress(address newChannelContract) onlyOwner public {
         require(newChannelContract != address(0));
-        OwnershipTransferred(channelContractAddress, newChannelContract);
+        ChannelContractAddressChanged(channelContractAddress, newChannelContract);
         channelContractAddress = newChannelContract;
     }
 

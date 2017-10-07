@@ -11,13 +11,12 @@ contract SpendingDepositAware is DepositAware {
         if (spendingDepositRegistry.isRegistered(depositSender)) {
             spendingDepositRegistry.refill(depositSender, amount);
         } else {
-            spendingDepositRegistry.register(depositSender, amount);
+            spendingDepositRegistry.register(depositSender, amount, msg.sender);
         }
     }
 
     function spendDeposit(address spender, address receiver, uint256 amount) internal returns (bool){
-        if (spendingDepositRegistry.spend(spender, amount)) {
-            token.transfer(receiver, amount);
-        }
+        spendingDepositRegistry.spend(spender, amount);
+        token.transfer(receiver, amount);
     }
 }
