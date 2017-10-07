@@ -39,6 +39,7 @@ contract PapyrusDAO is WithToken,
         securityDepositRegistry = _securityDepositRegistry;
     }
 
+    event DepositsTransferred(address newDao, uint256 sum);
     event SSPRegistryReplaced(address from, address to);
     event DSPRegistryReplaced(address from, address to);
     event PublisherRegistryReplaced(address from, address to);
@@ -93,5 +94,11 @@ contract PapyrusDAO is WithToken,
 
     function getSecurityDepositRegistry() internal constant returns (DepositRegistry) {
         return securityDepositRegistry;
+    }
+
+    function transferDepositsToNewDao(address newDao) onlyOwner {
+        uint256 depositSum = token.balanceOf(this);
+        token.transfer(newDao, depositSum);
+        DepositsTransferred(newDao, depositSum);
     }
 }
