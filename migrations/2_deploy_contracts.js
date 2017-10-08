@@ -10,6 +10,10 @@ var DSPRegistry = artifacts.require("./registry/impl/DSPRegistryImpl.sol");
 var PublisherRegistry = artifacts.require("./registry/impl/PublisherRegistryImpl.sol");
 var AuditorRegistry = artifacts.require("./registry/impl/AuditorRegistryImpl.sol");
 var SecurityDepositRegistry = artifacts.require("./registry/impl/SecurityDepositRegistry.sol");
+var ECRecovery = artifacts.require("./zeppelin/ECRecovery.sol");
+var ChannelLibrary = artifacts.require("./channel/ChannelLibrary.sol");
+var EndpointRegistryContract = artifacts.require("./channel/EndpointRegistryContract.sol");
+var ChannelManagerContract = artifacts.require("./channel/ChannelManagerContract.sol");
 
 var addressWalletPRP; // Containing 10% (5,000,000) of created PRP to pay bounty, bonuses, etc.
 var addressWalletPPR_A; // Containing PPR for Papyrus Foundation (10%)
@@ -37,6 +41,10 @@ var addressDSPRegistry;
 var addressPublisherRegistry;
 var addressAuditorRegistry;
 var addressSecurityDepositRegistry;
+var addressECRecovery;
+var addressChannelLibrary;
+var addressEndpointRegistry;
+var addressChannelManager;
 
 
 function printAddresses() {
@@ -66,15 +74,19 @@ function printAddresses() {
     console.log("    Publisher Registry: " + addressPublisherRegistry);
     console.log("    Auditor Registry: " + addressAuditorRegistry);
     console.log("    Security Deposit Registry: " + addressSecurityDepositRegistry);
+    console.log("  Endpoint Registry: " + addressEndpointRegistry);
+    console.log("  Channel Manager: " + addressChannelManager);
+    console.log("    Channel Library: " + addressChannelLibrary);
+    console.log("      ECRecovery: " + addressECRecovery);
     console.log("====================================");
     fs.writeFileSync("contracts.properties", "dao=" + addressPapyrusDAO + "\n" + "token=" + addressPapyrusPrototypeToken);
 }
 
-function linkDao(registryContract) {
+function linkDao(registryName, registryContract) {
     registryContract.transferDao(addressPapyrusDAO).then(function(result) {
-        console.log("Dao transferred");
+        console.log("Dao linked to " + registryName);
     }).catch(function(err) {
-        console.log("Error while transferring: " + err);
+        console.log("Error while linking Dao to " + registryName + " : " + err);
     });
 }
 
@@ -132,7 +144,7 @@ module.exports = function(deployer) {
         ]);
     }).then(function() {
         addressPapyrusToken = PapyrusToken.address;
-        // return deployer.deploy(DSPRegistry);
+        return deployer.deploy(DSPRegistry);
     }).then(function() {
         addressDSPRegistry = DSPRegistry.address;
         return deployer.deploy(SSPRegistry);
@@ -151,12 +163,38 @@ module.exports = function(deployer) {
             addressAuditorRegistry, addressSecurityDepositRegistry);
     }).then(function() {
         addressPapyrusDAO = PapyrusDAO.address;
-        linkDao(SSPRegistry.at(addressSSPRegistry));
-        linkDao(DSPRegistry.at(addressDSPRegistry));
-        linkDao(PublisherRegistry.at(addressPublisherRegistry));
-        linkDao(AuditorRegistry.at(addressAuditorRegistry));
-        linkDao(SecurityDepositRegistry.at(addressSecurityDepositRegistry));
-        PapyrusPrototypeToken.at(addressPapyrusPrototypeToken).setTransferable(true);
+        return deployer.deploy(ECRecovery);
+    }).then(function () {
+        addressECRecovery = ECRecovery.address;
+        deployer.link(ECRecovery, ChannelLibrary);
+        return deployer.deploy(ChannelLibrary);
+    }).then(function () {
+        addressChannelLibrary = ChannelLibrary.address;
+        return deployer.deploy(EndpointRegistryContract);
+    }).then(function () {
+        addressEndpointRegistry = EndpointRegistryContract.address;
+        deployer.link(ChannelLibrary, ChannelManagerContract);
+        return deployer.deploy(ChannelManagerContract, addressPapyrusPrototypeToken);
+    }).then(function () {
+        addressChannelManager = ChannelManagerContract.address;
+        linkDao("SSPRegistry", SSPRegistry.at(addressSSPRegistry));
+        linkDao("DSPRegistry", DSPRegistry.at(addressDSPRegistry));
+        linkDao("PublisherRegistry", PublisherRegistry.at(addressPublisherRegistry));
+        linkDao("AuditorRegistry", AuditorRegistry.at(addressAuditorRegistry));
+        linkDao("SecurityDepositRegistry", SecurityDepositRegistry.at(addressSecurityDepositRegistry));
+        PapyrusDAO.at(addressPapyrusDAO).replaceChannelContractAddress(addressChannelManager).then(function(result) {
+            console.log("Dao linked to ChannelManagerContract");
+        }).catch(function(err) {
+            console.log("Error while linking Dao to ChannelManagerContract : " + err);
+        });
+    }).then(function () {
+        //TODO: Must be removed before deploying to anything public
+        PapyrusPrototypeToken.at(addressPapyrusPrototypeToken).setTransferable(true).then(function(result) {
+            console.log("[WARNING] PapyrusPrototypeToken set transferable!");
+        }).catch(function(err) {
+            console.log("Error while setting PapyrusPrototypeToken transferable");
+        });
+    }).then(function () {
         printAddresses();
     });
 };
