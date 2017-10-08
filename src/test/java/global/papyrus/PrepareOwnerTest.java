@@ -31,7 +31,7 @@ public class PrepareOwnerTest {
                 .join();
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void checkEtherBalance() {
         web3j.ethGetBalance(ownerAddr, DefaultBlockParameterName.LATEST).sendAsync()
                 .thenAccept(balanceResponse -> System.out.println(balanceResponse.getBalance().toString())).join();
