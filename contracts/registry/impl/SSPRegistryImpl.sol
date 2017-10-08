@@ -36,7 +36,7 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
     address[] public keys;
 
     // This is the function that actually insert a record.
-    function register(address key, uint16 publisherFee, SSPType sspType, address recordOwner) onlyDaoOrOwner {
+    function register(address key, SSPType sspType, uint16 publisherFee, address recordOwner) onlyDaoOrOwner {
         require(records[key].time == 0);
         records[key].time = now;
         records[key].owner = recordOwner;
@@ -112,6 +112,7 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
             addresses[i] = ssp.sspAddress;
             sspTypes[i] = ssp.sspType;
             publisherFees[i] = ssp.publisherFee;
+            karmas[i] = ssp.karma;
             recordOwners[i] = ssp.owner;
         }
     }

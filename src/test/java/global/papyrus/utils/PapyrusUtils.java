@@ -115,12 +115,12 @@ public class PapyrusUtils {
         return PapyrusDAO.load(addresses.getProperty("dao"), web3j, tm, gasPrice, gasLimit);
     }
 
-    public static DSPRegistryImpl loadDspRegistryImpl(String contractAddress, TransactionManager tm) {
-        return DSPRegistryImpl.load(contractAddress, web3j, tm, gasPrice, gasLimit);
+    public static DSPRegistry loadDspRegistryImpl(String contractAddress, TransactionManager tm) {
+        return DSPRegistry.load(contractAddress, web3j, tm, gasPrice, gasLimit);
     }
 
-    public static SSPRegistryImpl loadSspRegistryImpl(String contractAddress, TransactionManager tm) {
-        return SSPRegistryImpl.load(contractAddress, web3j, tm, gasPrice, gasLimit);
+    public static SSPRegistry loadSspRegistryImpl(String contractAddress, TransactionManager tm) {
+        return SSPRegistry.load(contractAddress, web3j, tm, gasPrice, gasLimit);
     }
 
     public static DSPRegistry loadDspRegistry(String contractAddress, TransactionManager tm) {

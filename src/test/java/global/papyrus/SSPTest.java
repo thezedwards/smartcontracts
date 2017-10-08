@@ -10,6 +10,7 @@ import org.testng.annotations.Test;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.generated.Uint16;
 import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.abi.datatypes.generated.Uint8;
 import org.web3j.crypto.CipherException;
 
 import java.io.IOException;
@@ -31,6 +32,16 @@ public class SSPTest extends DepositTest{
     private PapyrusDAO dao;
     private PapyrusPrototypeToken token;
 
+    enum SSPType {
+        Gate(0), Direct(1);
+
+        public final Uint8 code;
+
+        SSPType(int code) {
+            this.code = new Uint8(code);
+        }
+    }
+
     @BeforeClass
     public void registerUser() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException, ExecutionException, InterruptedException {
         ssp = createNewMember(1, 100)
@@ -46,10 +57,10 @@ public class SSPTest extends DepositTest{
     @Test
     public void testRegister() throws ExecutionException, InterruptedException {
         asCf(dao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(dao.registerSsp(ssp.getAddress(), new Uint16(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerSsp(ssp.getAddress(), SSPType.Gate.code, new Uint16(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
         asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
-        asCf(dao.registerSsp(ssp.getAddress(), new Uint16(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerSsp(ssp.getAddress(), SSPType.Gate.code, new Uint16(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
         testDepositsTaken();
 //        asCf(dao.findSsp(ssp.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), ssp.address)).join();

@@ -7,7 +7,7 @@ module.exports = {
             host: 'dev.papyrus.global',
             port: 80,
             network_id: '*', // Match any network id
-            from: "0xbcb960702272e89b76cfed5395404f345a4a0fdc"
+            from: "0x3a4cac8ae75136b1e54cce14b8e1c11b8de39544"
         }
     }
 };

@@ -4,7 +4,7 @@ import "../common/Ownable.sol";
 import "./ChannelApi.sol";
 import "../dao/RegistryProvider.sol";
 
-contract StateChannelListener is RegistryProvider, ChannelApi, Ownable{
+contract StateChannelListener is RegistryProvider, ChannelApi {
     address channelContractAddress;
 
     event ChannelContractAddressChanged(address indexed previousAddress, address indexed newAddress);
@@ -31,12 +31,6 @@ contract StateChannelListener is RegistryProvider, ChannelApi, Ownable{
 
     function applyAuditorsCheckUpdate(address from, address to, uint fraudCountDelta) onlyChannelContract {
         //To be implemented
-    }
-
-    function updateChannelContractAddress(address newChannelContract) onlyOwner public {
-        require(newChannelContract != address(0));
-        ChannelContractAddressChanged(channelContractAddress, newChannelContract);
-        channelContractAddress = newChannelContract;
     }
 
     modifier onlyChannelContract() {

@@ -66,15 +66,14 @@ task wrappers(dependsOn:'compileContracts') {
             "PapyrusPrototypeToken",
             "PapyrusToken",
             "PapyrusDAO",
-            "SSPRegistryImpl",
-            "DSPRegistryImpl",
+            "SSPRegistry",
+            "DSPRegistry",
             "DSPRegistry",
             "DSPRegistrar",
             "SSPRegistrar",
-            "PublisherRegistryImpl",
-            "AuditorRegistryImpl",
-            "SecurityDepositRegistry",
-            "SpendingDepositRegistry"
+            "PublisherRegistry",
+            "AuditorRegistry",
+            "SecurityDepositRegistry"
     ]
 
     doLast {
@@ -94,7 +93,7 @@ task wrappers(dependsOn:'compileContracts') {
 }
 
 test {
-    systemProperties['owner.addr'] = '0xbcb960702272e89b76cfed5395404f345a4a0fdc'
+    systemProperties['owner.addr'] = '0x3a4cac8ae75136b1e54cce14b8e1c11b8de39544'
     useTestNG()
 }
 

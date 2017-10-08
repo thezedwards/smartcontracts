@@ -66,7 +66,6 @@ function printAddresses() {
     console.log("    Publisher Registry: " + addressPublisherRegistry);
     console.log("    Auditor Registry: " + addressAuditorRegistry);
     console.log("    Security Deposit Registry: " + addressSecurityDepositRegistry);
-    console.log("    Spending Deposit Registry: " + addressSpendingDepositRegistry);
     console.log("====================================");
     fs.writeFileSync("contracts.properties", "dao=" + addressPapyrusDAO + "\n" + "token=" + addressPapyrusPrototypeToken);
 }
@@ -133,12 +132,12 @@ module.exports = function(deployer) {
         ]);
     }).then(function() {
         addressPapyrusToken = PapyrusToken.address;
+        // return deployer.deploy(DSPRegistry);
+    }).then(function() {
+        addressDSPRegistry = DSPRegistry.address;
         return deployer.deploy(SSPRegistry);
     }).then(function() {
         addressSSPRegistry = SSPRegistry.address;
-        return deployer.deploy(DSPRegistry);
-    }).then(function() {
-        addressDSPRegistry = DSPRegistry.address;
         return deployer.deploy(PublisherRegistry);
     }).then(function() {
         addressPublisherRegistry = PublisherRegistry.address;

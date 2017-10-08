@@ -76,6 +76,12 @@ contract PapyrusDAO is WithToken,
         SecurityDepositRegistryReplaced(old, securityDepositRegistry);
     }
 
+    function replaceChannelContractAddress(address newChannelContract) onlyOwner public {
+        require(newChannelContract != address(0));
+        ChannelContractAddressChanged(channelContractAddress, newChannelContract);
+        channelContractAddress = newChannelContract;
+    }
+
     function getSSPRegistry() internal constant returns (SSPRegistry) {
         return sspRegistry;
     }
@@ -100,5 +106,9 @@ contract PapyrusDAO is WithToken,
         uint256 depositSum = token.balanceOf(this);
         token.transfer(newDao, depositSum);
         DepositsTransferred(newDao, depositSum);
+    }
+
+    function kill() onlyOwner {
+        selfdestruct(owner);
     }
 }
