@@ -44,8 +44,7 @@ contract DepositRegistryImpl is DepositRegistry, DaoOwnable {
     }
 
     // Unregister a given record
-    function unregister(address key, address sender) onlyDaoOrOwner {
-        require(records[key].owner == sender);
+    function unregister(address key) onlyDaoOrOwner {
         uint keysIndex = records[key].keysIndex;
         delete records[key];
         numDeposits--;

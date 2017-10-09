@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
+import static global.papyrus.utils.Web3jUtils.asCf;
 import static org.web3j.tx.ManagedTransaction.GAS_PRICE;
 import static org.web3j.tx.Transfer.GAS_LIMIT;
 
@@ -44,6 +45,8 @@ public class PapyrusUtils {
     public static final BigInteger ethPrice = BigInteger.valueOf(1_000_000_000_000_000_000L);
     public static final BigInteger gasPrice = ManagedTransaction.GAS_PRICE;
     public static final BigInteger gasLimit = BigInteger.valueOf(10_000_000);
+    //Year must be enough for testing purposes
+    public static final BigInteger unlockPeriod = BigInteger.valueOf(60 * 60 * 24 * 365);
     public static final String randomCitizenPassword = "mypasswd";
     public static final Parity parity = Parity.build(new HttpService("http://dev.papyrus.global:80/"));
     public static final Web3j web3j = Web3j.build(new HttpService("http://dev.papyrus.global:80/"));
@@ -70,7 +73,7 @@ public class PapyrusUtils {
                         .thenApply(transaction -> papyrusMember.withMintTransaction(transaction.getTransactionHash()))
                 )
                 //And unlock it
-                .thenCompose(member -> parity.personalUnlockAccount(member.address, randomCitizenPassword).sendAsync()
+                .thenCompose(member -> parity.personalUnlockAccount(member.address, randomCitizenPassword, unlockPeriod).sendAsync()
                         .thenApply(unlocked -> member)
                 );
     }
@@ -115,16 +118,20 @@ public class PapyrusUtils {
         return PapyrusDAO.load(addresses.getProperty("dao"), web3j, tm, gasPrice, gasLimit);
     }
 
-    public static DSPRegistry loadDspRegistryImpl(String contractAddress, TransactionManager tm) {
-        return DSPRegistry.load(contractAddress, web3j, tm, gasPrice, gasLimit);
-    }
-
-    public static SSPRegistry loadSspRegistryImpl(String contractAddress, TransactionManager tm) {
+    public static SSPRegistry loadSspRegistry(String contractAddress, TransactionManager tm) {
         return SSPRegistry.load(contractAddress, web3j, tm, gasPrice, gasLimit);
     }
 
     public static DSPRegistry loadDspRegistry(String contractAddress, TransactionManager tm) {
         return DSPRegistry.load(contractAddress, web3j, tm, gasPrice, gasLimit);
+    }
+
+    public static AuditorRegistry loadAuditorRegistry(String contractAddress, TransactionManager tm) {
+        return AuditorRegistry.load(contractAddress, web3j, tm, gasPrice, gasLimit);
+    }
+
+    public static PublisherRegistry loadPublisherRegistry(String contractAddress, TransactionManager tm) {
+        return PublisherRegistry.load(contractAddress, web3j, tm, gasPrice, gasLimit);
     }
 
     public static DSPRegistrar loadDspRegistrar(TransactionManager tm) {
@@ -139,6 +146,10 @@ public class PapyrusUtils {
         return new Address(addresses.getProperty("dao"));
     }
 
+    public static Address ownerAddress() {
+        return new Address(ownerAddr);
+    }
+
     public static BigInteger toWei(double amount) {
         return BigDecimal.valueOf(amount).multiply(new BigDecimal(ethPrice)).toBigIntegerExact();
     }
@@ -151,6 +162,10 @@ public class PapyrusUtils {
         return new StaticArray<>(Stream.generate(() -> UUID.randomUUID().toString().replaceAll("-", "")).limit(length)
                 .map(str -> new Bytes32(str.getBytes()))
                 .toArray(Bytes32[]::new));
+    }
+
+    public static CompletableFuture<Integer> balanceOf(PapyrusPrototypeToken token, Address address) {
+        return asCf(token.balanceOf(address)).thenApply(uint -> uint.getValue().intValue());
     }
 
     public static Properties loadAddresses() {

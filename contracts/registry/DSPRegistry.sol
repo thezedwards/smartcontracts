@@ -18,6 +18,8 @@ contract DSPRegistry is DSPTypeAware{
     // Transfer ownership of a given record.
     function transfer(address key, address newOwner, address sender);
 
+    function getOwner(address key) constant returns(address);
+
     // Tells whether a given key is registered.
     function isRegistered(address key) constant returns(bool);
 

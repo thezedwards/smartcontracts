@@ -10,7 +10,7 @@ contract DepositAware is WithToken{
             address depositOwner = depositRegistry.getDepositOwner(depositAccount);
             if (amount > 0) {
                 token.transfer(depositOwner, amount);
-                depositRegistry.unregister(depositAccount, msg.sender);
+                depositRegistry.unregister(depositAccount);
             }
         }
     }

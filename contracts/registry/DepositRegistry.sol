@@ -6,7 +6,7 @@ contract DepositRegistry {
     function register(address key, uint256 amount, address depositOwner);
 
     // Unregister a given record
-    function unregister(address key, address sender);
+    function unregister(address key);
 
     function transfer(address key, address newOwner, address sender);
 

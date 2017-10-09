@@ -9,16 +9,15 @@ import org.testng.annotations.BeforeMethod;
 import org.web3j.abi.datatypes.Address;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
-import static global.papyrus.utils.PapyrusUtils.depositAmount;
-import static global.papyrus.utils.PapyrusUtils.loadSecurityDepositRegistry;
+import static global.papyrus.utils.PapyrusUtils.*;
 import static global.papyrus.utils.Web3jUtils.asCf;
 
 public abstract class DepositTest {
 
     private int memberBalanceBeforeTest;
     private int daoBalanceBeforeTest;
+    private int registrarBalanceBeforeTest;
     private SecurityDepositRegistry depositRegistry;
 
     protected void initDepositContract() {
@@ -28,44 +27,73 @@ public abstract class DepositTest {
     }
 
     @BeforeMethod
-    public void rememberBalances() throws ExecutionException, InterruptedException {
-        daoBalanceBeforeTest = balanceOf(new Address(dao().getContractAddress())).get();
-        memberBalanceBeforeTest = balanceOf(member().getAddress()).get();
+    public void rememberBalances() {
+        daoBalanceBeforeTest = asCf(balanceOf(token(), new Address(dao().getContractAddress()))).join();
+        memberBalanceBeforeTest = asCf(balanceOf(token(), member().getAddress())).join();
+        registrarBalanceBeforeTest = asCf(balanceOf(token(), registrar().getAddress())).join();
     }
 
-    protected void testDepositsTaken() {
+    protected void assertDepositsTaken() {
         CompletableFuture.allOf(
-            balanceOf(member().getAddress()).thenAccept(
-                    balance -> Assert.assertEquals(balance.intValue(), memberBalanceBeforeTest - depositAmount)
-            ),
-            balanceOf(new Address(dao().getContractAddress())).thenAccept(
-                    balance -> Assert.assertEquals(balance.intValue(), daoBalanceBeforeTest + depositAmount)
-            ),
-            asCf(depositRegistry.getDeposit(member().getAddress())).thenAccept(deposit ->
-                    Assert.assertEquals(deposit.getValue().intValue(), depositAmount)
-            )
+                assertMemberBalance(member(), memberBalanceBeforeTest - depositAmount),
+                assertMemberBalance(registrar(), registrarBalanceBeforeTest),
+                assertDaoBalance(daoBalanceBeforeTest + depositAmount),
+                assertRegistryRecord(member(), depositAmount),
+                assertRegistryRecord(registrar(), 0)
         ).join();
     }
 
-    protected void testDepositsReturned() {
+    protected void assertDepositsReturned() {
         CompletableFuture.allOf(
-                balanceOf(member().getAddress()).thenAccept(
-                        balance -> Assert.assertEquals(balance.intValue(), memberBalanceBeforeTest + depositAmount)
-                ),
-                balanceOf(new Address(dao().getContractAddress())).thenAccept(
-                        balance -> Assert.assertEquals(balance.intValue(), daoBalanceBeforeTest - depositAmount)
-                ),
-                asCf(depositRegistry.getDeposit(member().getAddress())).thenAccept(deposit ->
-                        Assert.assertEquals(deposit.getValue().intValue(), 0)
-                )
+                assertMemberBalance(member(), memberBalanceBeforeTest + depositAmount),
+                assertMemberBalance(registrar(), registrarBalanceBeforeTest),
+                assertDaoBalance(daoBalanceBeforeTest - depositAmount),
+                assertRegistryRecord(member(), 0),
+                assertRegistryRecord(registrar(), 0)
         ).join();
     }
 
-    protected CompletableFuture<Integer> balanceOf(Address address) {
-        return asCf(token().balanceOf(address)).thenApply(uint -> uint.getValue().intValue());
+    protected void assertRegistrarDepositsTaken() {
+        CompletableFuture.allOf(
+                assertMemberBalance(member(), memberBalanceBeforeTest),
+                assertMemberBalance(registrar(), registrarBalanceBeforeTest - depositAmount),
+                assertDaoBalance(daoBalanceBeforeTest + depositAmount),
+                assertRegistryRecord(member(), depositAmount),
+                assertRegistryRecord(registrar(), 0)
+        ).join();
+    }
+
+    protected void assertRegistrarDepositsReturned() {
+        CompletableFuture.allOf(
+                assertMemberBalance(member(), memberBalanceBeforeTest),
+                assertMemberBalance(registrar(), registrarBalanceBeforeTest + depositAmount),
+                assertDaoBalance(daoBalanceBeforeTest - depositAmount),
+                assertRegistryRecord(member(), 0),
+                assertRegistryRecord(registrar(), 0)
+        ).join();
+    }
+
+    protected CompletableFuture<Void> assertMemberBalance(PapyrusMember member, int balance) {
+        return balanceOf(token(), member.getAddress()).thenAccept(
+                realBalance -> Assert.assertEquals(realBalance.intValue(), balance)
+        );
+    }
+
+    protected CompletableFuture<Void> assertDaoBalance(int daoBalance) {
+        return balanceOf(token(), new Address(dao().getContractAddress())).thenAccept(
+                balance -> Assert.assertEquals(balance.intValue(), daoBalance)
+        );
+    }
+
+    protected CompletableFuture<Void> assertRegistryRecord(PapyrusMember member, int amount) {
+        return asCf(depositRegistry.getDeposit(member.getAddress())).thenAccept(deposit ->
+                Assert.assertEquals(deposit.getValue().intValue(), amount)
+        );
     }
 
     protected abstract PapyrusMember member();
+
+    protected abstract PapyrusMember registrar();
 
     protected abstract PapyrusDAO dao();
 

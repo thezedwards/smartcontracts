@@ -1,9 +1,7 @@
 var fs = require('fs');
 
 var MultiSigWalletWithDailyLimit = artifacts.require("./gnosis/MultiSigWalletWithDailyLimit.sol");
-var PapyrusKYC = artifacts.require("./PapyrusKYC.sol");
 var PapyrusPrototypeToken = artifacts.require("./PapyrusPrototypeToken.sol");
-var PapyrusToken = artifacts.require("./PapyrusToken.sol");
 var PapyrusDAO = artifacts.require("./dao/PapyrusDAO.sol");
 var SSPRegistry = artifacts.require("./registry/impl/SSPRegistryImpl.sol");
 var DSPRegistry = artifacts.require("./registry/impl/DSPRegistryImpl.sol");
@@ -16,12 +14,6 @@ var EndpointRegistryContract = artifacts.require("./channel/EndpointRegistryCont
 var ChannelManagerContract = artifacts.require("./channel/ChannelManagerContract.sol");
 
 var addressWalletPRP; // Containing 10% (5,000,000) of created PRP to pay bounty, bonuses, etc.
-var addressWalletPPR_A; // Containing PPR for Papyrus Foundation (10%)
-var addressWalletPPR_B; // Containing PPR for Papyrus Founding Team (10%)
-var addressWalletPPR_C; // Containing PPR for Papyrus Network Growth (15%)
-var addressWalletPPR_D; // Containing PPR for Papyrus Pre-sale & Sale Phase 1 auctions (35%)
-var addressWalletPPR_E; // Containing PPR for Papyrus Sale Phase 2 auction (20%)
-var addressWalletPPR_F; // Containing PPR for Papyrus DAO (10%)
 var addressWalletETH_A; // Containing received ETH during TGE 1 auction and 90% (45,000,000) of created PRP
 
 var addressPapyrusKYC;
@@ -51,18 +43,8 @@ function printAddresses() {
     console.log("====================================");
     console.log("Core account: " + addressCoreAccount);
     console.log("Wallets owner A: " + addressOwnerWallets_A);
-    console.log("Wallets owner B: " + addressOwnerWallets_B);
-    console.log("Wallets owner C: " + addressOwnerWallets_C);
-    console.log("Wallets owner D: " + addressOwnerWallets_D);
-    console.log("Wallets owner E: " + addressOwnerWallets_E);
     console.log("Wallets:");
     console.log("  PRP holder: " + addressWalletPRP);
-    console.log("  PPR holder A: " + addressWalletPPR_A);
-    console.log("  PPR holder B: " + addressWalletPPR_B);
-    console.log("  PPR holder C: " + addressWalletPPR_C);
-    console.log("  PPR holder D: " + addressWalletPPR_D);
-    console.log("  PPR holder E: " + addressWalletPPR_E);
-    console.log("  PPR holder F: " + addressWalletPPR_F);
     console.log("  ETH holder (TGE1): " + addressWalletETH_A);
     console.log("Contracts:");
     console.log("  Papyrus KYC: " + addressPapyrusKYC);
@@ -100,50 +82,11 @@ module.exports = function(deployer) {
         addressWalletPRP = MultiSigWalletWithDailyLimit.address;
         return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
     }).then(function() {
-        addressWalletPPR_A = MultiSigWalletWithDailyLimit.address;
-        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
-    }).then(function() {
-        addressWalletPPR_B = MultiSigWalletWithDailyLimit.address;
-        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
-    }).then(function() {
-        addressWalletPPR_C = MultiSigWalletWithDailyLimit.address;
-        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
-    }).then(function() {
-        addressWalletPPR_D = MultiSigWalletWithDailyLimit.address;
-        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
-    }).then(function() {
-        addressWalletPPR_E = MultiSigWalletWithDailyLimit.address;
-        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
-    }).then(function() {
-        addressWalletPPR_F = MultiSigWalletWithDailyLimit.address;
-        return deployer.deploy(MultiSigWalletWithDailyLimit, [addressOwnerWallets_A, addressOwnerWallets_B, addressOwnerWallets_C, addressOwnerWallets_D, addressOwnerWallets_E], CR, DL);
-    }).then(function() {
         addressWalletETH_A = MultiSigWalletWithDailyLimit.address;
-        return deployer.deploy(PapyrusKYC);
-    }).then(function() {
-        addressPapyrusKYC = PapyrusKYC.address;
         // Deploy smart-contract implementing PRP token
         return deployer.deploy(PapyrusPrototypeToken, [addressWalletPRP, addressWalletETH_A], [web3.toWei(5000000, "ether"), web3.toWei(45000000, "ether")]);
     }).then(function() {
         addressPapyrusPrototypeToken = PapyrusPrototypeToken.address;
-        // Deploy smart-contract implementing PPR token
-        return deployer.deploy(PapyrusToken, [
-            addressWalletPPR_A,
-            addressWalletPPR_B,
-            addressWalletPPR_C,
-            addressWalletPPR_D,
-            addressWalletPPR_E,
-            addressWalletPPR_F
-        ], [
-            web3.toWei(100000000, "ether"),
-            web3.toWei(100000000, "ether"),
-            web3.toWei(150000000, "ether"),
-            web3.toWei(350000000, "ether"),
-            web3.toWei(200000000, "ether"),
-            web3.toWei(100000000, "ether")
-        ]);
-    }).then(function() {
-        addressPapyrusToken = PapyrusToken.address;
         return deployer.deploy(DSPRegistry);
     }).then(function() {
         addressDSPRegistry = DSPRegistry.address;
@@ -174,7 +117,7 @@ module.exports = function(deployer) {
     }).then(function () {
         addressEndpointRegistry = EndpointRegistryContract.address;
         deployer.link(ChannelLibrary, ChannelManagerContract);
-        return deployer.deploy(ChannelManagerContract, addressPapyrusPrototypeToken);
+        return deployer.deploy(ChannelManagerContract, addressPapyrusPrototypeToken, addressPapyrusDAO);
     }).then(function () {
         addressChannelManager = ChannelManagerContract.address;
         linkDao("SSPRegistry", SSPRegistry.at(addressSSPRegistry));
