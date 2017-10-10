@@ -96,7 +96,7 @@ test {
     testLogging {
         showStandardStreams = true
     }
-    systemProperties['owner.addr'] = '0x3a4cac8ae75136b1e54cce14b8e1c11b8de39544'
+    systemProperties['owner.addr'] = '0x1ad984d4c05971c7c36356c3c8bc46e5c4520c94'
     useTestNG()
 }
 
