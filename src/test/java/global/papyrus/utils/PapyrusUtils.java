@@ -79,7 +79,7 @@ public class PapyrusUtils {
                         .thenApply(transaction -> papyrusMember.withMintTransaction(transaction.getTransactionHash()))
                 )
                 //And unlock it
-                .thenCompose(member -> parity.personalUnlockAccount(member.address, randomCitizenPassword, unlockPeriod).sendAsync()
+                .thenCompose(member -> parity.personalUnlockAccount(member.address, randomCitizenPassword).sendAsync()
                         .thenApply(unlocked -> member)
                 );
     }
