@@ -20,25 +20,25 @@ import java.util.concurrent.ExecutionException;
 import static global.papyrus.utils.PapyrusUtils.*;
 import static global.papyrus.utils.Web3jUtils.asCf;
 
-public class ActivityTrack extends Object {
+public class ActivityTrack {
     @Test
     public void createTrack() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException, ExecutionException, InterruptedException {
         try {
             PapyrusMember dsp = createNewMember(0.3d, 10).join();
             PapyrusMember ssp = createNewMember(0.3d, 10).join();
-            PapyrusMember publisher = createNewMember(0.3d, 10).join();
+            PapyrusMember auditor = createNewMember(0.3d, 10).join();
 
             System.out.println("DSP - " + dsp.address + ", mintTx - " + dsp.mintTransaction);
             System.out.println("SSP - " + ssp.address + ", mintTx - " + ssp.mintTransaction);
-            System.out.println("Publisher - " + publisher.address + ", mintTx - " + publisher.mintTransaction);
+            System.out.println("Auditor - " + auditor.address + ", mintTx - " + auditor.mintTransaction);
 
             PapyrusDAO dspDao = loadDaoContract(dsp.transactionManager);
             PapyrusDAO sspDao = loadDaoContract(ssp.transactionManager);
-            PapyrusDAO publisherDao = loadDaoContract(publisher.transactionManager);
+            PapyrusDAO auditorDao = loadDaoContract(auditor.transactionManager);
 
             PapyrusPrototypeToken dspToken = asCf(dspDao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), dsp.transactionManager)).join();
             PapyrusPrototypeToken sspToken = asCf(sspDao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), ssp.transactionManager)).join();
-            PapyrusPrototypeToken publisherToken = asCf(publisherDao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), publisher.transactionManager)).join();
+            PapyrusPrototypeToken auditorToken = asCf(auditorDao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), auditor.transactionManager)).join();
 
             CompletableFuture.allOf(
                     asCf(dspToken.approve(daoAddress(), new Uint256(10))).thenCompose(wtw ->
@@ -57,17 +57,17 @@ public class ActivityTrack extends Object {
                                             System.out.println("SSP Registered in system, tx - " + transactionReceipt.getTransactionHash());
                                         });
                                     })),
-                    asCf(publisherToken.approve(daoAddress(), new Uint256(10))).thenCompose(wtw ->
-                            asCf(publisherDao.registerPublisher(publisher.getAddress(), generateUrl(5))).thenAccept(
+                    asCf(auditorToken.approve(daoAddress(), new Uint256(10))).thenCompose(wtw ->
+                            asCf(auditorDao.registerAuditor(auditor.getAddress())).thenAccept(
                                     transactionReceipt -> {
-                                        asCf(publisherDao.isPublisherRegistered(publisher.getAddress())).thenAccept(res -> {
+                                        asCf(auditorDao.isAuditorRegistered(auditor.getAddress())).thenAccept(res -> {
                                             Assert.assertTrue(res.getValue());
-                                            System.out.println("Publisher Registered in system, tx - " + transactionReceipt.getTransactionHash());
+                                            System.out.println("Auditor Registered in system, tx - " + transactionReceipt.getTransactionHash());
                                         });
                                     }))
             ).join();
 
-            mintPrp(dsp.address, 10).thenAccept(transactionReceipt -> System.out.println("Tokens for DSP minted, tx - " + transactionReceipt.getTransactionHash())).join();
+            mintPrp(dsp.address, ethPrice.longValue()).thenAccept(transactionReceipt -> System.out.println("Tokens for DSP minted, tx - " + transactionReceipt.getTransactionHash())).join();
         } catch (Exception e) {
             e.printStackTrace();
         }
