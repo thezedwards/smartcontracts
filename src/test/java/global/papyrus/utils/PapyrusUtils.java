@@ -43,8 +43,6 @@ import static org.web3j.tx.Transfer.GAS_LIMIT;
 public class PapyrusUtils {
     public static final int depositAmount = 10;
     public static final BigInteger ethPrice = BigInteger.valueOf(1_000_000_000_000_000_000L);
-    public static final BigInteger gasPrice = ManagedTransaction.GAS_PRICE;
-    public static final BigInteger gasLimit = BigInteger.valueOf(10_000_000);
     //Year must be enough for testing purposes
     public static final BigInteger unlockPeriod = BigInteger.valueOf(60 * 60 * 24 * 365);
     public static final String randomCitizenPassword = "mypasswd";
@@ -52,6 +50,8 @@ public class PapyrusUtils {
     public static final Properties addresses = loadAddresses();
     public static final Parity parity = Parity.build(new HttpService(addresses.getProperty("url")));
     public static final Web3j web3j = Web3j.build(new HttpService(addresses.getProperty("url")));
+    public static final BigInteger gasPrice = BigInteger.valueOf(Long.parseLong(addresses.getProperty("gasprice")));
+    public static final BigInteger gasLimit = BigInteger.valueOf(Long.parseLong(addresses.getProperty("gaslimit")));
 
     private PapyrusUtils() {/**/}
 
