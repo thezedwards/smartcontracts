@@ -23,6 +23,7 @@ import static java.util.Arrays.asList;
 /**
  * Created by andreyvlasenko on 27/09/17.
  */
+@Test(enabled = false)
 public class DSPTest extends DepositTest{
     private PapyrusMember dsp;
     private PapyrusMember dspRegistrar;
@@ -42,7 +43,7 @@ public class DSPTest extends DepositTest{
         }
     }
 
-    @BeforeClass
+    @BeforeClass(enabled = false)
     public void registerUser() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
         dsp = createNewMember(2, 100)
                 .thenApply(papyrusMember -> {
@@ -66,31 +67,31 @@ public class DSPTest extends DepositTest{
         initDepositContract();
     }
 
-    @Test
+    @Test(enabled = false)
     public void testRegister() throws ExecutionException, InterruptedException {
         testDspRegistration(dao, token);
         assertDepositsTaken();
     }
 
-    @Test(dependsOnMethods = {"testRegister"})
+    @Test(dependsOnMethods = {"testRegister"}, enabled = false)
     public void testUnregister() throws ExecutionException, InterruptedException {
         testDspUnregistration(dao, daoRegistrar);
         assertDepositsReturned();
     }
 
-    @Test(dependsOnMethods = {"testUnregister"})
+    @Test(dependsOnMethods = {"testUnregister"}, enabled = false)
     public void testRegisterWithRegistrar() {
         testDspRegistration(daoRegistrar, tokenRegistrar);
         assertRegistrarDepositsTaken();
     }
 
-    @Test(dependsOnMethods = {"testRegisterWithRegistrar"})
+    @Test(dependsOnMethods = {"testRegisterWithRegistrar"}, enabled = false)
     public void testUnregisterWithRegistrar() {
         testDspUnregistration(daoRegistrar, dao);
         assertRegistrarDepositsReturned();
     }
 
-    @Test(dependsOnMethods = {"testUnregisterWithRegistrar"})
+    @Test(dependsOnMethods = {"testUnregisterWithRegistrar"}, enabled = false)
     public void testTransferOwnership() {
         testDspRegistration(daoRegistrar, tokenRegistrar);
         assertRegistrarDepositsTaken();
@@ -109,7 +110,7 @@ public class DSPTest extends DepositTest{
         assertRegistrarDepositsReturned();
     }
 
-    @Test(dependsOnMethods = {"testTransferOwnership"})
+    @Test(dependsOnMethods = {"testTransferOwnership"}, enabled = false)
     public void testTransferOwnershipAndDeposit() {
         testDspRegistration(daoRegistrar, tokenRegistrar);
         assertRegistrarDepositsTaken();

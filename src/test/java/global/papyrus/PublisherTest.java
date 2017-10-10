@@ -25,6 +25,7 @@ import static java.util.Arrays.asList;
 /**
  * Created by andreyvlasenko on 04/10/17.
  */
+@Test(enabled = false)
 public class PublisherTest extends DepositTest{
     private PapyrusMember publisher;
     private PapyrusMember publisherRegistrar;
@@ -34,7 +35,7 @@ public class PublisherTest extends DepositTest{
     private PapyrusPrototypeToken tokenRegistrar;
     private PublisherRegistry publisherRegistry;
 
-    @BeforeClass
+    @BeforeClass(enabled = false)
     public void registerUser() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
         publisher = createNewMember(2, 100)
                 .thenApply(papyrusMember -> {
@@ -58,31 +59,31 @@ public class PublisherTest extends DepositTest{
         initDepositContract();
     }
 
-    @Test
+    @Test(enabled = false)
     public void testRegister() throws ExecutionException, InterruptedException {
         testPublisherRegistration(dao, token);
         assertDepositsTaken();
     }
 
-    @Test(dependsOnMethods = {"testRegister"})
+    @Test(dependsOnMethods = {"testRegister"}, enabled = false)
     public void testUnregister() throws ExecutionException, InterruptedException {
         testPublisherUnregistration(dao, daoRegistrar);
         assertDepositsReturned();
     }
 
-    @Test(dependsOnMethods = {"testUnregister"})
+    @Test(dependsOnMethods = {"testUnregister"}, enabled = false)
     public void testRegisterWithRegistrar() {
         testPublisherRegistration(daoRegistrar, tokenRegistrar);
         assertRegistrarDepositsTaken();
     }
 
-    @Test(dependsOnMethods = {"testRegisterWithRegistrar"})
+    @Test(dependsOnMethods = {"testRegisterWithRegistrar"}, enabled = false)
     public void testUnregisterWithRegistrar() {
         testPublisherUnregistration(daoRegistrar, dao);
         assertRegistrarDepositsReturned();
     }
 
-    @Test(dependsOnMethods = {"testUnregisterWithRegistrar"})
+    @Test(dependsOnMethods = {"testUnregisterWithRegistrar"}, enabled = false)
     public void testTransferOwnership() {
         testPublisherRegistration(daoRegistrar, tokenRegistrar);
         assertRegistrarDepositsTaken();
@@ -101,7 +102,7 @@ public class PublisherTest extends DepositTest{
         assertRegistrarDepositsReturned();
     }
 
-    @Test(dependsOnMethods = {"testTransferOwnership"})
+    @Test(dependsOnMethods = {"testTransferOwnership"}, enabled = false)
     public void testTransferOwnershipAndDeposit() {
         testPublisherRegistration(daoRegistrar, tokenRegistrar);
         assertRegistrarDepositsTaken();

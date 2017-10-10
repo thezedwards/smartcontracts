@@ -21,6 +21,7 @@ import static global.papyrus.utils.PapyrusUtils.*;
 import static global.papyrus.utils.Web3jUtils.asCf;
 import static java.util.Arrays.asList;
 
+@Test(enabled = false)
 public class TestTransferDepositNewDao {
     private PapyrusMember auditor;
     private PapyrusDAO dao;
@@ -29,7 +30,7 @@ public class TestTransferDepositNewDao {
     private PapyrusPrototypeToken ownerToken;
     private int daoBalance;
 
-    @BeforeClass
+    @BeforeClass(enabled = false)
     public void registerUser() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
         auditor = createNewMember(2, 100)
                 .thenApply(papyrusMember -> {
@@ -46,7 +47,7 @@ public class TestTransferDepositNewDao {
         asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
     }
 
-    @Test
+    @Test(enabled = false)
     public void transferDepositsToAnotherAddress() {
         daoBalance = asCf(balanceOf(token, daoAddress())).join();
         int ownerBalance = asCf(balanceOf(token, ownerAddress())).join();
@@ -69,7 +70,7 @@ public class TestTransferDepositNewDao {
         ).join();
     }
 
-    @AfterClass
+    @AfterClass(enabled = false)
     public void unregisterUser() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
         asCf(ownerToken.transfer(daoAddress(), new Uint256(daoBalance))).join();
         asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();

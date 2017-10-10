@@ -61,10 +61,16 @@ public class PapyrusUtils {
         return parity.ethCoinbase().sendAsync()
                 //New account with some Ether
                 .thenCombine(parity.personalNewAccount(randomCitizenPassword).sendAsync(),
-                    (coinbase, newAccount) -> transferEther(coinbase.getAddress(), newAccount.getAccountId(), initialBalance)
-                        .thenApply(transaction -> new PapyrusMember(newAccount.getAccountId(), web3j)
-                            .withRefillTransaction(transaction.getTransactionHash())
-                        )
+                    (coinbase, newAccount) -> {
+                        if (initialBalance > 0) {
+                            return transferEther(coinbase.getAddress(), newAccount.getAccountId(), initialBalance)
+                                    .thenApply(transaction -> new PapyrusMember(newAccount.getAccountId(), web3j)
+                                            .withRefillTransaction(transaction.getTransactionHash())
+                                    );
+                        } else {
+                            return CompletableFuture.completedFuture(new PapyrusMember(newAccount.getAccountId(), web3j));
+                        }
+                    }
                 )
                 //Flat map
                 .thenCompose(papyrusMember -> papyrusMember)

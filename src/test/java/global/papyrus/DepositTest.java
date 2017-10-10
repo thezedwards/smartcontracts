@@ -26,7 +26,7 @@ public abstract class DepositTest {
         ).join();
     }
 
-    @BeforeMethod
+    @BeforeMethod(enabled = false)
     public void rememberBalances() {
         daoBalanceBeforeTest = asCf(balanceOf(token(), new Address(dao().getContractAddress()))).join();
         memberBalanceBeforeTest = asCf(balanceOf(token(), member().getAddress())).join();

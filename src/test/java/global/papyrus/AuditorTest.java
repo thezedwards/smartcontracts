@@ -34,7 +34,7 @@ public class AuditorTest extends DepositTest{
     private PapyrusPrototypeToken tokenRegistrar;
     private AuditorRegistry auditorRegistry;
 
-    @BeforeClass
+    @BeforeClass(enabled = false)
     public void registerUser() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
         auditor = createNewMember(2, 100)
                 .thenApply(papyrusMember -> {
@@ -58,31 +58,31 @@ public class AuditorTest extends DepositTest{
         initDepositContract();
     }
 
-    @Test
+    @Test(enabled = false)
     public void testRegister() throws ExecutionException, InterruptedException {
         testAuditorRegistration(dao, token);
         assertDepositsTaken();
     }
 
-    @Test(dependsOnMethods = {"testRegister"})
+    @Test(dependsOnMethods = {"testRegister"}, enabled = false)
     public void testUnregister() throws ExecutionException, InterruptedException {
         testAuditorUnregistration(dao, daoRegistrar);
         assertDepositsReturned();
     }
 
-    @Test(dependsOnMethods = {"testUnregister"})
+    @Test(dependsOnMethods = {"testUnregister"}, enabled = false)
     public void testRegisterWithRegistrar() {
         testAuditorRegistration(daoRegistrar, tokenRegistrar);
         assertRegistrarDepositsTaken();
     }
 
-    @Test(dependsOnMethods = {"testRegisterWithRegistrar"})
+    @Test(dependsOnMethods = {"testRegisterWithRegistrar"}, enabled = false)
     public void testUnregisterWithRegistrar() {
         testAuditorUnregistration(daoRegistrar, dao);
         assertRegistrarDepositsReturned();
     }
 
-    @Test(dependsOnMethods = {"testUnregisterWithRegistrar"})
+    @Test(dependsOnMethods = {"testUnregisterWithRegistrar"}, enabled = false)
     public void testTransferOwnership() {
         testAuditorRegistration(daoRegistrar, tokenRegistrar);
         assertRegistrarDepositsTaken();
@@ -101,7 +101,7 @@ public class AuditorTest extends DepositTest{
         assertRegistrarDepositsReturned();
     }
 
-    @Test(dependsOnMethods = {"testTransferOwnership"})
+    @Test(dependsOnMethods = {"testTransferOwnership"}, enabled = false)
     public void testTransferOwnershipAndDeposit() {
         testAuditorRegistration(daoRegistrar, tokenRegistrar);
         assertRegistrarDepositsTaken();

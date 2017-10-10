@@ -51,16 +51,16 @@ task migrate {
     }
 }
 
-task compileContracts {
-    doLast {
-        println "Compiling contracts with solc"
-        exec {
-            commandLine "bash", "-c", "shopt -s globstar && solc -o ${SOLC_DIR} --overwrite contracts/**/*.sol --abi --bin"
-        }
-    }
-}
+//task compileContracts {
+//    doLast {
+//        println "Compiling contracts with solc"
+//        exec {
+//            commandLine "bash", "-c", "shopt -s globstar && solc -o ${SOLC_DIR} --overwrite contracts/**/*.sol --abi --bin"
+//        }
+//    }
+//}
 
-task wrappers(dependsOn:'compileContracts') {
+task wrappers {
     def contracts=[
             "PapyrusKYC",
             "PapyrusPrototypeToken",
@@ -93,6 +93,9 @@ task wrappers(dependsOn:'compileContracts') {
 }
 
 test {
+    testLogging {
+        showStandardStreams = true
+    }
     systemProperties['owner.addr'] = '0x3a4cac8ae75136b1e54cce14b8e1c11b8de39544'
     useTestNG()
 }
