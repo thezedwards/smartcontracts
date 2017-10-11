@@ -7,9 +7,9 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.web3j.abi.datatypes.generated.Uint16;
 import org.web3j.abi.datatypes.generated.Uint256;
-import org.web3j.crypto.CipherException;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.crypto.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
@@ -21,12 +21,19 @@ import static global.papyrus.utils.PapyrusUtils.*;
 import static global.papyrus.utils.Web3jUtils.asCf;
 
 public class ActivityTrack {
+    private final File keystoreDie = new File("");
+    private final String pass = "";
+    private final String dspAddr = "";
+    private final String sspAddr = "";
+    private final String auditorAddr = "";
+
     @Test
     public void createTrack() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException, ExecutionException, InterruptedException {
         try {
-            PapyrusMember dsp = createNewMember(0.3d, 10).join();
-            PapyrusMember ssp = createNewMember(0.3d, 10).join();
-            PapyrusMember auditor = createNewMember(0.3d, 10).join();
+            PapyrusMember dsp = createNewMember(Double.parseDouble(addresses.getProperty("initeth")), 10).join();
+            PapyrusMember ssp = createNewMember(Double.parseDouble(addresses.getProperty("initeth")), 10).join();
+            PapyrusMember auditor = createNewMember(Double.parseDouble(addresses.getProperty("initeth")), 10).join();
+
 
             System.out.println("DSP - " + dsp.address + ", mintTx - " + dsp.mintTransaction);
             System.out.println("SSP - " + ssp.address + ", mintTx - " + ssp.mintTransaction);
@@ -71,5 +78,11 @@ public class ActivityTrack {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private PapyrusMember lookupMember(String address) throws IOException, CipherException {
+        File key = keystoreDie.listFiles((dir, name) -> name.contains(address))[0];
+        return new PapyrusMember(address, web3j, key, pass);
     }
 }

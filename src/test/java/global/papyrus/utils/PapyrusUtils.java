@@ -45,13 +45,14 @@ public class PapyrusUtils {
     public static final BigInteger ethPrice = BigInteger.valueOf(1_000_000_000_000_000_000L);
     //Year must be enough for testing purposes
     public static final BigInteger unlockPeriod = BigInteger.valueOf(60 * 60 * 24 * 365);
-    public static final String randomCitizenPassword = "mypasswd";
-    public static final String ownerAddr = System.getProperty("owner.addr");
     public static final Properties addresses = loadAddresses();
     public static final Parity parity = Parity.build(new HttpService(addresses.getProperty("url")));
     public static final Web3j web3j = Web3j.build(new HttpService(addresses.getProperty("url")));
     public static final BigInteger gasPrice = BigInteger.valueOf(Long.parseLong(addresses.getProperty("gasprice")));
     public static final BigInteger gasLimit = BigInteger.valueOf(Long.parseLong(addresses.getProperty("gaslimit")));
+    public static final String randomCitizenPassword = addresses.getProperty("passwd");
+    public static final String ownerAddr = addresses.getProperty("owner");
+
 
     private PapyrusUtils() {/**/}
 
