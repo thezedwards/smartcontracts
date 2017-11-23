@@ -1,4 +1,4 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.17;
 
 
 import "./common/StandardToken.sol";
@@ -12,20 +12,21 @@ contract PapyrusPrototypeToken is StandardToken, Ownable {
 
   event Mint(address indexed to, uint256 amount, uint256 priceUsd);
   event MintFinished();
+  event Burn(address indexed burner, uint256 amount);
   event TransferableChanged(bool transferable);
 
   // PUBLIC FUNCTIONS
 
   // If ether is sent to this address, send it back
-  function() { revert(); }
+  function() public { revert(); }
 
   // Check transfer ability and sender address before transfer
-  function transfer(address _to, uint _value) canTransfer public returns (bool) {
+  function transfer(address _to, uint256 _value) canTransfer public returns (bool) {
     return super.transfer(_to, _value);
   }
 
   // Check transfer ability and sender address before transfer
-  function transferFrom(address _from, address _to, uint _value) canTransfer public returns (bool) {
+  function transferFrom(address _from, address _to, uint256 _value) canTransfer public returns (bool) {
     return super.transferFrom(_from, _to, _value);
   }
 
@@ -52,6 +53,18 @@ contract PapyrusPrototypeToken is StandardToken, Ownable {
     mintingFinished = true;
     MintFinished();
     return true;
+  }
+
+  /// @dev Burns a specific amount of tokens.
+  /// @param _value The amount of token to be burned.
+  function burn(uint256 _value) public {
+    require(_value > 0);
+    require(_value <= balances[msg.sender]);
+    address burner = msg.sender;
+    balances[burner] = balances[burner].sub(_value);
+    totalSupply = totalSupply.sub(_value);
+    totalBurned = totalBurned.add(_value);
+    Burn(burner, _value);
   }
 
   /// @dev Change ability to transfer tokens by users.
@@ -89,6 +102,9 @@ contract PapyrusPrototypeToken is StandardToken, Ownable {
   // Will be set to true when minting tokens will be finished
   bool public mintingFinished = false;
 
+  // Amount of burned tokens
+  uint256 public totalBurned;
+
   // Amount of USD (with 18 decimals) collected during sale phase
-  uint public totalCollected;
+  uint256 public totalCollected;
 }
