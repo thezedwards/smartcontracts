@@ -1,87 +1,76 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.19;
 
 import '../common/StandardToken.sol';
-import "./ChannelContract.sol";
 import './ChannelApi.sol';
+import "./ChannelContract.sol";
+
 
 contract ChannelManagerContract {
 
-    event ChannelNew(
-        address channel_address,
-        address indexed sender,
-        address client,
-        address indexed receiver,
-        uint close_timeout,
-        uint settle_timeout,
-        uint audit_timeout
-    );
+  // EVENTS
 
-    event ChannelDeleted(
-        address channel_address,
-        address indexed sender,
-        address indexed receiver
-    );
+  event ChannelNew(
+    address channel,
+    address indexed sender,
+    address client,
+    address indexed receiver,
+    uint32 closeTimeout,
+    uint32 settleTimeout,
+    uint32 auditTimeout
+  );
 
-    StandardToken public token;
-    ChannelApi public channel_api;
+  event ChannelDeleted(
+    address channel,
+    address indexed sender,
+    address indexed receiver
+  );
 
-    function ChannelManagerContract(address token_address, address channel_api_address) {
-        require(token_address != 0);
-        require(channel_api_address != 0);
-        token = StandardToken(token_address);
-        channel_api = ChannelApi(channel_api_address);
-    }
+  // PUBLIC FUNCTIONS
 
-    /// @notice Create a new channel from msg.sender to receiver
-    /// @param receiver The address of the receiver
-    /// @param settle_timeout The settle timeout in blocks
-    /// @return The address of the newly created ChannelContract.
-    function newChannel(
-        address client, 
-        address receiver, 
-        uint close_timeout,
-        uint settle_timeout,
-        uint audit_timeout,
-        address auditor
-    )
-        returns (address)
-    {
-        address new_channel_address = new ChannelContract(
-            this,
-            msg.sender,
-            client,
-            receiver,
-            close_timeout,
-            settle_timeout,
-            audit_timeout,
-            auditor
-        );
+  function ChannelManagerContract(address _token, address _channelApi) public {
+    require(_token != address(0) && _channelApi != address(0));
+    token = StandardToken(_token);
+    channelApi = ChannelApi(_channelApi);
+  }
 
-        ChannelNew(
-            new_channel_address, 
-            msg.sender, 
-            client, 
-            receiver,
-            close_timeout,
-            settle_timeout,
-            audit_timeout
-        );
+  /// @notice Create a new channel from msg.sender to receiver
+  /// @param receiver The address of the receiver
+  /// @param settleTimeout The settle timeout in blocks
+  /// @return The address of the newly created ChannelContract.
+  function newChannel(
+    address client,
+    address receiver,
+    uint32 closeTimeout,
+    uint32 settleTimeout,
+    uint32 auditTimeout,
+    address auditor
+  )
+    public
+    returns (address)
+  {
+    address channelAddress = new ChannelContract(this, msg.sender, client, receiver, closeTimeout, settleTimeout, auditTimeout, auditor);
+    ChannelNew(channelAddress, msg.sender, client, receiver, closeTimeout, settleTimeout, auditTimeout);
+    return channelAddress;
+  }
 
-        return new_channel_address;
-    }
+  function auditReport(address channelAddress, uint64 total, uint64 fraud) public {
+    require(channelAddress != address(0));
+    ChannelContract channel = ChannelContract(channelAddress);
+    require(channel.manager() == address(this));
+    channel.audit(msg.sender);
+    channelApi.applyRuntimeUpdate(channel.sender(), channel.receiver(), total, fraud);
+  }
 
-    function auditReport(address contract_address, uint total, uint fraud) {
-        ChannelContract ch = ChannelContract(contract_address);
-        require(ch.manager() == address(this));
-        address auditor = msg.sender;
-        ch.audit(auditor);
-        channel_api.applyRuntimeUpdate(ch.sender(), ch.receiver(), total, fraud);
-    }
-    
-    function destroyChannel(address channel_address) {
-        ChannelContract ch = ChannelContract(channel_address);
-        require(ch.manager() == address(this));
-        ChannelDeleted(channel_address,ch.sender(),ch.receiver());
-        ch.destroy();
-    }
+  function destroyChannel(address channelAddress) public {
+    require(channelAddress != address(0));
+    ChannelContract channel = ChannelContract(channelAddress);
+    require(channel.manager() == address(this));
+    ChannelDeleted(channelAddress, channel.sender(), channel.receiver());
+    channel.destroy();
+  }
+
+  // FIELDS
+
+  StandardToken public token;
+  ChannelApi public channelApi;
 }

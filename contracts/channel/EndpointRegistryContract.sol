@@ -1,53 +1,57 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.17;
+
 
 contract EndpointRegistryContract {
-    event AddressRegistered(address indexed eth_address, string socket);
 
-    // Mapping of Ethereum Addresses => SocketEndpoints
-    mapping (address => string) address_to_socket;
+  // EVENTS
 
-    modifier noEmptyString(string str)
-    {
-        require(equals(str, "") != true);
-        _;
+  event AddressRegistered(address ethAddress, string socket);
+
+  // PUBLIC FUNCTIONS
+
+  /*
+    * @notice Registers the Ethereum Address to the Endpoint socket.
+    * @dev Registers the Ethereum Address to the Endpoint socket.
+    * @param string of socket in this format "127.0.0.1:40001"
+    */
+  function registerEndpoint(string socket) public noEmptyString(socket) {
+    string storage oldSocket = sockets[msg.sender];
+
+    // Compare if the new socket matches the old one, if it does just return
+    if (equals(oldSocket, socket)) {
+        return;
     }
 
-    /*
-     * @notice Registers the Ethereum Address to the Endpoint socket.
-     * @dev Registers the Ethereum Address to the Endpoint socket.
-     * @param string of socket in this format "127.0.0.1:40001"
-     */
-    function registerEndpoint(string socket) noEmptyString(socket)
-    {
-        string storage old_socket = address_to_socket[msg.sender];
+    // Put the ethereum address 0 in front of the oldSocket,old_socket:0x0
+    sockets[msg.sender] = socket;
+    AddressRegistered(msg.sender, socket);
+  }
 
-        // Compare if the new socket matches the old one, if it does just return
-        if (equals(old_socket, socket)) {
-            return;
-        }
+  /*
+    * @notice Finds the socket if given an Ethereum Address
+    * @dev Finds the socket if given an Ethereum Address
+    * @param An eth_address which is a 20 byte Ethereum Address
+    * @return A socket which the current Ethereum Address is using.
+    */
+  function findEndpointByAddress(address ethAddress) public view returns (string socket) {
+      return sockets[ethAddress];
+  }
 
-        // Put the ethereum address 0 in front of the old_socket,old_socket:0x0
-        address_to_socket[msg.sender] = socket;
-        AddressRegistered(msg.sender, socket);
-    }
+  // INTERNAL FUNCTIONS
 
-    /*
-     * @notice Finds the socket if given an Ethereum Address
-     * @dev Finds the socket if given an Ethereum Address
-     * @param An eth_address which is a 20 byte Ethereum Address
-     * @return A socket which the current Ethereum Address is using.
-     */
-    function findEndpointByAddress(address eth_address) constant returns (string socket)
-    {
-        return address_to_socket[eth_address];
-    }
+  function equals(string a, string b) internal pure returns (bool result) {
+    return keccak256(a) == keccak256(b);
+  }
 
-    function equals(string a, string b) internal constant returns (bool result)
-    {
-        if (sha3(a) == sha3(b)) {
-            return true;
-        }
+  // MODIFIERS
 
-        return false;
-    }
+  modifier noEmptyString(string str) {
+    require(equals(str, "") != true);
+    _;
+  }
+
+  // FIELDS
+
+  // Mapping of Ethereum Addresses => SocketEndpoints
+  mapping(address => string) sockets;
 }

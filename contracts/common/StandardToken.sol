@@ -1,5 +1,4 @@
-pragma solidity ^0.4.17;
-
+pragma solidity ^0.4.19;
 
 import './ERC20.sol';
 import './SafeMath.sol';
@@ -24,7 +23,7 @@ contract StandardToken is ERC20 {
     Transfer(msg.sender, _to, _value);
     return true;
   }
-  
+
   /// @dev Transfers tokens from one address to another.
   /// @param _from The address which you want to send tokens from.
   /// @param _to The address which you want to transfer to.
@@ -58,7 +57,7 @@ contract StandardToken is ERC20 {
   /// @dev Gets the balance of the specified address.
   /// @param _owner The address to query the balance of.
   /// @return An uint256 representing the amount owned by the specified address.
-  function balanceOf(address _owner) public constant returns (uint256) {
+  function balanceOf(address _owner) public view returns (uint256) {
     return balances[_owner];
   }
 
@@ -66,12 +65,12 @@ contract StandardToken is ERC20 {
   /// @param _owner The address which owns tokens.
   /// @param _spender The address which will spend tokens.
   /// @return A uint256 specifying the amount of tokens still available for the spender.
-  function allowance(address _owner, address _spender) public constant returns (uint256) {
+  function allowance(address _owner, address _spender) public view returns (uint256) {
     return allowances[_owner][_spender];
   }
 
   // FIELDS
 
-  mapping (address => uint256) balances;
-  mapping (address => mapping (address => uint256)) allowances;
+  mapping(address => uint256) balances;
+  mapping(address => mapping(address => uint256)) allowances;
 }

@@ -1,224 +1,199 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.19;
 
+import '../common/ECRecovery.sol';
 import '../common/StandardToken.sol';
-import '../zeppelin/ECRecovery.sol';
 import './ChannelManagerContract.sol';
 
-//Papyrus State Channel Library
-//moved to separate library to save gas
+
+// Papyrus State Channel Library
+// moved to separate library to save gas
 library ChannelLibrary {
-    
-    struct Data {
-        uint close_timeout;
-        uint settle_timeout;
-        uint audit_timeout;
-        uint opened;
-        uint close_requested;
-        uint closed;
-        uint settled;
-        uint audited;
-        ChannelManagerContract manager;
-    
-        address sender;
-        address receiver;
-        address client;
-        uint balance;
-        address auditor;
 
-        //state update for close
-        uint nonce;
-        uint completed_transfers;
-    }
+  // STRUCTURES
 
-    struct StateUpdate {
-        uint nonce;
-        uint completed_transfers;
-    }
+  struct Data {
+    uint32 closeTimeout;
+    uint32 settleTimeout;
+    uint32 auditTimeout;
+    uint256 opened;
+    uint256 closeRequested;
+    uint256 closed;
+    uint256 settled;
+    uint256 audited;
+    ChannelManagerContract manager;
 
-    modifier notSettledButClosed(Data storage self) {
-        require(self.settled <= 0 && self.closed > 0);
-        _;
-    }
+    address sender;
+    address receiver;
+    address client;
+    uint256 balance;
+    address auditor;
 
-    modifier notAuditedButClosed(Data storage self) {
-        require(self.audited <= 0 && self.closed > 0);
-        _;
-    }
+    // state update for close
+    uint256 nonce;
+    uint256 completedTransfers;
+  }
 
-    modifier stillTimeout(Data storage self) {
-        require(self.closed + self.settle_timeout >= block.number);
-        _;
-    }
+  struct StateUpdate {
+    uint256 nonce;
+    uint256 completedTransfers;
+  }
 
-    modifier timeoutOver(Data storage self) {
-        require(self.closed + self.settle_timeout <= block.number);
-        _;
-    }
+  // PUBLIC FUNCTIONS
 
-    modifier channelSettled(Data storage self) {
-        require(self.settled != 0);
-        _;
-    }
-
-    modifier senderOnly(Data storage self) {
-        require(self.sender == msg.sender);
-        _;
-    }
-
-    modifier receiverOnly(Data storage self) {
-        require(self.receiver == msg.sender);
-        _;
-    }
-
-    /// @notice Sender deposits amount to channel.
-    /// must deposit before the channel is opened.
-    /// @param amount The amount to be deposited to the address
-    /// @return Success if the transfer was successful
-    /// @return The new balance of the invoker
-    function deposit(Data storage self, uint256 amount) 
+  /// @notice Sender deposits amount to channel.
+  /// must deposit before the channel is opened.
+  /// @param amount The amount to be deposited to the address
+  /// @return Success if the transfer was successful
+  /// @return The new balance of the invoker
+  function deposit(Data storage self, uint256 amount)
+    public
     senderOnly(self)
     returns (bool success, uint256 balance)
-    {
-        require(self.opened > 0);
-        require(self.closed == 0);
+  {
+    require(self.opened > 0);
+    require(self.closed == 0);
+    StandardToken token = self.manager.token();
+    require(token.balanceOf(msg.sender) >= amount);
+    success = token.transferFrom(msg.sender, this, amount);
+    if (success) {
+      self.balance += amount;
+      return (true, self.balance);
+    }
+    return (false, 0);
+  }
 
-        StandardToken token = self.manager.token();
+  function requestClose(Data storage self) public {
+    require(msg.sender == self.sender || msg.sender == self.receiver);
+    require(self.closeRequested == 0);
+    self.closeRequested = block.number;
+  }
 
-        require (token.balanceOf(msg.sender) >= amount);
+  function close(
+    Data storage self,
+    address channel,
+    uint256 nonce,
+    uint256 completedTransfers,
+    bytes signature
+  )
+    public
+  {
+    if (self.closeTimeout > 0) {
+      require(self.closeRequested > 0);
+      require(block.number - self.closeRequested >= self.closeTimeout);
+    }
+    require(nonce > self.nonce);
+    require(completedTransfers >= self.completedTransfers);
+    require(completedTransfers <= self.balance);
 
-        success = token.transferFrom(msg.sender, this, amount);
+    if (msg.sender != self.sender) {
+      //checking signature
+      bytes32 signedHash = hashState(channel, nonce, completedTransfers);
+      address signAddress = ECRecovery.recover(signedHash, signature);
+      require(signAddress == self.sender);
+    }
+
+    if (self.closed == 0) {
+        self.closed = block.number;
+    }
+
+    self.nonce = nonce;
+    self.completedTransfers = completedTransfers;
+  }
+
+  /// @notice Settles the balance between the two parties
+  /// @dev Settles the balances of the two parties fo the channel
+  /// @return The participants with netted balances
+  function settle(Data storage self)
+    public
+    notSettledButClosed(self)
+    timeoutOver(self)
+  {
+    StandardToken token = self.manager.token();
     
-        if (success == true) {
-            self.balance += amount;
-
-            return (true, self.balance);
-        }
-
-        return (false, 0);
+    if (self.completedTransfers > 0) {
+      require(token.transfer(self.receiver, self.completedTransfers));
     }
 
-    function request_close(
-        Data storage self
-    ) {
-        require(msg.sender == self.sender || msg.sender == self.receiver);
-        require(self.close_requested == 0);
-        self.close_requested = block.number;
+    if (self.completedTransfers < self.balance) {
+      require(token.transfer(self.sender, self.balance - self.completedTransfers));
     }
 
-    function close(
-        Data storage self,
-        address channel_address,
-        uint nonce,
-        uint completed_transfers,
-        bytes signature
-    )
-    {
-        if (self.close_timeout > 0) {
-            require(self.close_requested > 0);
-            require(block.number - self.close_requested >= self.close_timeout);
-        }
-        require(nonce > self.nonce);
-        require(completed_transfers >= self.completed_transfers);
-        require(completed_transfers <= self.balance);
-    
-        if (msg.sender != self.sender) {
-            //checking signature
-            bytes32 signed_hash = hashState(
-                channel_address,
-                nonce,
-                completed_transfers
-            );
+    self.settled = block.number;
+  }
 
-            address sign_address = ECRecovery.recover(signed_hash, signature);
-            require(sign_address == self.sender);
-        }
+  function audit(Data storage self, address auditor)
+    public
+    notAuditedButClosed(self)
+  {
+    require(self.auditor == auditor);
+    require(block.number <= self.closed + self.auditTimeout);
+    self.audited = block.number;
+  }
 
-        if (self.closed == 0) {
-            self.closed = block.number;
-        }
-    
-        self.nonce = nonce;
-        self.completed_transfers = completed_transfers;
+  function validateTransfer(
+    Data storage self,
+    address transferId,
+    address channel,
+    uint256 sum,
+    bytes lockData,
+    bytes signature
+  )
+    public
+    view
+    returns (uint256)
+  {
+
+    bytes32 signedHash = hashTransfer(transferId, channel, lockData, sum);
+    address signAddress = ECRecovery.recover(signedHash, signature);
+    require(signAddress == self.client);
+  }
+
+  function hashState(address channel, uint256 nonce, uint256 completedTransfers) public pure returns (bytes32) {
+    return keccak256(channel, nonce, completedTransfers);
+  }
+
+  function hashTransfer(address transferId, address channel, bytes lockData, uint256 sum) public pure returns (bytes32) {
+    if (lockData.length > 0) {
+      return keccak256(transferId, channel, sum, lockData);
+    } else {
+      return keccak256(transferId, channel, sum);
     }
+  }
 
-    function hashState (
-        address channel_address,
-        uint nonce,
-        uint completed_transfers
-    ) returns (bytes32) {
-        return sha3 (
-            channel_address,
-            nonce,
-            completed_transfers
-        );
-    }
+  // MODIFIERS
 
-    /// @notice Settles the balance between the two parties
-    /// @dev Settles the balances of the two parties fo the channel
-    /// @return The participants with netted balances
-    function settle(Data storage self)
-        notSettledButClosed(self)
-        timeoutOver(self)
-    {
-        StandardToken token = self.manager.token();
-        
-        if (self.completed_transfers > 0) {
-            require(token.transfer(self.receiver, self.completed_transfers));
-        }
+  modifier notSettledButClosed(Data storage self) {
+    require(self.settled <= 0 && self.closed > 0);
+    _;
+  }
 
-        if (self.completed_transfers < self.balance) {
-            require(token.transfer(self.sender, self.balance - self.completed_transfers));
-        }
+  modifier notAuditedButClosed(Data storage self) {
+    require(self.audited <= 0 && self.closed > 0);
+    _;
+  }
 
-        self.settled = block.number;
-    }
+  modifier stillTimeout(Data storage self) {
+    require(self.closed + self.settleTimeout >= block.number);
+    _;
+  }
 
-    function audit(Data storage self, address auditor)
-        notAuditedButClosed(self) {
-        require(self.auditor == auditor);
-        require(block.number <= self.closed + self.audit_timeout);
-        self.audited = block.number;
-    }
+  modifier timeoutOver(Data storage self) {
+    require(self.closed + self.settleTimeout <= block.number);
+    _;
+  }
 
-    function validateTransfer(
-        Data storage self,
-        address transfer_id,
-        address channel_address,
-        uint sum,
-        bytes lock_data,
-        bytes signature
-    ) returns (uint256) {
+  modifier channelSettled(Data storage self) {
+    require(self.settled != 0);
+    _;
+  }
 
-        bytes32 signed_hash = hashTransfer(
-            transfer_id,
-            channel_address,
-            lock_data,
-            sum
-        );
+  modifier senderOnly(Data storage self) {
+    require(self.sender == msg.sender);
+    _;
+  }
 
-        address sign_address = ECRecovery.recover(signed_hash, signature);
-        require(sign_address == self.client);
-    }
-
-    function hashTransfer(
-        address transfer_id,
-        address channel_address,
-        bytes lock_data,
-        uint sum
-    ) returns (bytes32) {
-        if (lock_data.length > 0) {
-            return sha3 (
-                transfer_id,
-                channel_address,
-                sum,
-                lock_data
-            );
-        } else {
-            return sha3 (
-                transfer_id,
-                channel_address,
-                sum
-            );
-        }
-    }
+  modifier receiverOnly(Data storage self) {
+    require(self.receiver == msg.sender);
+    _;
+  }
 }

@@ -1,29 +1,31 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.19;
+
 
 // This is the base contract that your contract DepositRegistry extends from.
 contract DepositRegistry {
-    // This is the function that actually insert a record.
-    function register(address key, uint256 amount, address depositOwner);
 
-    // Unregister a given record
-    function unregister(address key);
+  // This is the function that actually insert a record.
+  function register(address key, uint256 amount, address depositOwner) public;
 
-    function transfer(address key, address newOwner, address sender);
+  // Unregister a given record
+  function unregister(address key) public;
 
-    function spend(address key, uint256 amount);
+  function transfer(address key, address newOwner, address sender) public;
 
-    function refill(address key, uint256 amount);
+  function spend(address key, uint256 amount) public;
 
-    // Tells whether a given key is registered.
-    function isRegistered(address key) constant returns(bool);
+  function refill(address key, uint256 amount) public;
 
-    function getDepositOwner(address key) constant returns(address);
+  // Tells whether a given key is registered.
+  function isRegistered(address key) public view returns (bool);
 
-    function getDeposit(address key) constant returns(uint256 amount);
+  function getDepositOwner(address key) public view returns (address);
 
-    function getDepositRecord(address key) constant returns(address owner, uint time, uint256 amount, address depositOwner);
+  function getDeposit(address key) public view returns (uint256 amount);
 
-    function hasEnough(address key, uint256 amount) constant returns(bool);
+  function getDepositRecord(address key) public view returns (address owner, uint256 time, uint256 amount, address depositOwner);
 
-    function kill();
+  function hasEnough(address key, uint256 amount) public view returns (bool);
+
+  function kill() public;
 }

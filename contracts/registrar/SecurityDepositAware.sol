@@ -1,19 +1,25 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.19;
 
 import "../registry/DepositRegistry.sol";
 import "./DepositAware.sol";
 
-contract SecurityDepositAware is DepositAware{
-    uint256 constant SECURITY_DEPOSIT_SIZE = 10;
 
-    DepositRegistry public securityDepositRegistry;
+contract SecurityDepositAware is DepositAware {
 
-    function receiveSecurityDeposit(address depositAccount) internal {
-        token.transferFrom(msg.sender, this, SECURITY_DEPOSIT_SIZE);
-        securityDepositRegistry.register(depositAccount, SECURITY_DEPOSIT_SIZE, msg.sender);
-    }
+  // INTERNAL FUNCTIONS
 
-    function transferSecurityDeposit(address depositAccount, address newOwner) {
-        securityDepositRegistry.transfer(depositAccount, newOwner, msg.sender);
-    }
+  function receiveSecurityDeposit(address depositAccount) internal {
+    token.transferFrom(msg.sender, this, SECURITY_DEPOSIT_SIZE);
+    securityDepositRegistry.register(depositAccount, SECURITY_DEPOSIT_SIZE, msg.sender);
+  }
+
+  function transferSecurityDeposit(address depositAccount, address newOwner) internal {
+    securityDepositRegistry.transfer(depositAccount, newOwner, msg.sender);
+  }
+
+  // FIELDS
+
+  DepositRegistry public securityDepositRegistry;
+
+  uint256 private constant SECURITY_DEPOSIT_SIZE = 10;
 }

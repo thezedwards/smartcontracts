@@ -31,5 +31,5 @@ contract MultiAccess is Ownable {
     // FIELDS
 
     // Set of addresses that can have access to manage the contract
-    mapping (address => bool) public accessGrants;
+    mapping(address => bool) public accessGrants;
 }

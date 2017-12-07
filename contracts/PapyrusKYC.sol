@@ -33,8 +33,8 @@ contract PapyrusKYC is MultiAccess {
     // FIELDS
 
     // Addresses which require KYC to be verified
-    mapping (address => bool) public kycRequired;
+    mapping(address => bool) public kycRequired;
 
     // Addresses that already where KYC verified
-    mapping (address => bool) public kycVerified;
+    mapping(address => bool) public kycVerified;
 }

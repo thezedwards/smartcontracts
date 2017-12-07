@@ -1,17 +1,22 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.19;
 
 import "../dao/DaoOwnable.sol";
 import "../dispute/Dispute.sol";
 
+
 contract DisputeRegistry is DaoOwnable {
 
-    mapping(address => Dispute) disputeMapping;
+  // PUBLIC FUNCTIONS
 
-    function registerDispute(Dispute dispute) onlyDaoOrOwner {
-        disputeMapping[address(dispute)] = dispute;
-    }
+  function registerDispute(Dispute dispute) public onlyDaoOrOwner {
+    disputes[address(dispute)] = dispute;
+  }
 
-    function findDispute(address disputeAddress) constant returns (address) {
-        return address(disputeMapping[disputeAddress]);
-    }
+  function findDispute(address disputeAddress) public view returns (address) {
+    return address(disputes[disputeAddress]);
+  }
+
+  // FIELDS
+
+  mapping(address => Dispute) disputes;
 }

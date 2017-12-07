@@ -1,190 +1,193 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.19;
 
 import "./ChannelLibrary.sol";
 
+
 contract ChannelContract {
-    using ChannelLibrary for ChannelLibrary.Data;
-    ChannelLibrary.Data data;
+  using ChannelLibrary for ChannelLibrary.Data;
 
-    event ChannelNewBalance(address token_address, address participant, uint balance, uint block_number);
-    event ChannelCloseRequested(address closing_address, uint block_number);
-    event ChannelClosed(address closing_address, uint block_number);
-    event TransferUpdated(address node_address, uint block_number);
-    event ChannelSettled(uint block_number);
-    event ChannelAudited(uint block_number);
-    event ChannelSecretRevealed(bytes32 secret, address receiver_address);
+  // EVENTS
 
-    modifier onlyManager() {
-        require(msg.sender == address(data.manager));
-        _;
+  event ChannelNewBalance(address token, address participant, uint256 balance, uint256 blockNumber);
+  event ChannelCloseRequested(address channelAddress, uint256 blockNumber);
+  event ChannelClosed(address channelAddress, uint256 blockNumber);
+  event TransferUpdated(address nodeAddress, uint256 blockNumber);
+  event ChannelSettled(uint256 blockNumber);
+  event ChannelAudited(uint256 blockNumber);
+  event ChannelSecretRevealed(bytes32 secret, address receiver);
+
+  // PUBLIC FUNCTIONS
+
+  function ChannelContract(
+    address manager,
+    address sender,
+    address client,
+    address receiver,
+    uint32 closeTimeout,
+    uint32 settleTimeout,
+    uint32 auditTimeout,
+    address auditor
+  )
+    public
+  {
+    // allow creation only from manager contract
+    require(msg.sender == manager);
+    require(sender != receiver);
+    require(client != receiver);
+    require(closeTimeout >= 0);
+    require(settleTimeout > 0);
+    require(auditTimeout >= 0);
+    data.sender = sender;
+    data.client = client;
+    data.receiver = receiver;
+    data.auditor = auditor;
+    data.manager = ChannelManagerContract(manager);
+    data.closeTimeout = closeTimeout;
+    data.settleTimeout = settleTimeout;
+    data.auditTimeout = auditTimeout;
+    data.opened = block.number;
+  }
+
+  function () public {
+    revert();
+  }
+
+  /// @notice Caller makes a deposit into their channel balance.
+  /// @param amount The amount caller wants to deposit.
+  /// @return True if deposit is successful.
+  function deposit(uint256 amount) public returns (bool) {
+    bool success;
+    uint256 balance;
+    (success, balance) = data.deposit(amount);
+    if (success) {
+      ChannelNewBalance(data.manager.token(), msg.sender, balance, 0);
     }
+    return success;
+  }
 
-    function ChannelContract(
-        address manager_address,
-        address sender,
-        address client,
-        address receiver,
-        uint close_timeout,
-        uint settle_timeout,
-        uint audit_timeout,
-        address auditor
-    )
-    {
-        //allow creation only from manager contract
-        require(msg.sender == manager_address);
-        require (sender != receiver);
-        require (client != receiver);
-        require (audit_timeout >= 0);
-        require (settle_timeout > 0);
-        require (close_timeout >= 0);
+  /// @notice Request to close the channel.
+  function requestClose() public {
+    data.requestClose();
+    ChannelCloseRequested(msg.sender, data.closed);
+  }
 
-        data.sender = sender;
-        data.client = client;
-        data.receiver = receiver;
-        data.auditor = auditor;
-        data.manager = ChannelManagerContract(manager_address);
-        data.close_timeout = close_timeout;
-        data.settle_timeout = settle_timeout;
-        data.audit_timeout = audit_timeout;
-        data.opened = block.number;
-    }
+  /// @notice Close the channel.
+  function close(uint256 nonce, uint256 completedTransfers, bytes signature) public {
+    data.close(address(this), nonce, completedTransfers, signature);
+    ChannelClosed(msg.sender, data.closed);
+  }
 
-    /// @notice Caller makes a deposit into their channel balance.
-    /// @param amount The amount caller wants to deposit.
-    /// @return True if deposit is successful.
-    function deposit(uint256 amount) returns (bool) {
-        bool success;
-        uint256 balance;
+  /// @notice Settle the transfers and balances of the channel and pay out to
+  /// each participant. Can only be called after the channel is closed
+  /// and only after the number of blocks in the settlement timeout
+  /// have passed.
+  function settle() public {
+    data.settle();
+    ChannelSettled(data.settled);
+  }
 
-        (success, balance) = data.deposit(amount);
+  /// @notice Settle the transfers and balances of the channel and pay out to
+  /// each participant. Can only be called after the channel is closed
+  /// and only after the number of blocks in the settlement timeout
+  /// have passed.
+  function audit(address auditor) public onlyManager {
+    data.audit(auditor);
+    ChannelAudited(data.audited);
+  }
 
-        if (success == true) {
-            ChannelNewBalance(data.manager.token(), msg.sender, balance, 0);
-        }
+  function destroy() public onlyManager {
+    require(data.settled > 0);
+    require(data.audited > 0 || block.number > data.closed + data.auditTimeout);
+    selfdestruct(0);
+  }
 
-        return success;
-    }
+  /// @notice Get the address and balance of both partners in a channel.
+  /// @return The address and balance pairs.
+  function addressAndBalance()
+    public
+    view
+    returns (address sender, address receiver, uint256 balance)
+  {
+    sender = data.sender;
+    receiver = data.receiver;
+    balance = data.balance;
+  }
 
-    /// @notice Get the address and balance of both partners in a channel.
-    /// @return The address and balance pairs.
-    function addressAndBalance()
-        constant
-        returns (
-        address sender,
-        address receiver,
-        uint balance)
-    {
-        sender = data.sender;
-        receiver = data.receiver;
-        balance = data.balance;
-    }
+  function sender() public view returns (address) {
+    return data.sender;
+  }
 
-    /// @notice Request to close the channel. 
-    function request_close () {
-        data.request_close();
-        ChannelCloseRequested(msg.sender, data.closed);
-    }
+  function receiver() public view returns (address) {
+    return data.receiver;
+  }
 
-    /// @notice Close the channel. 
-    function close (
-        uint nonce,
-        uint256 completed_transfers,
-        bytes signature
-    ) {
-        data.close(address(this), nonce, completed_transfers, signature);
-        ChannelClosed(msg.sender, data.closed);
-    }
+  function client() public view returns (address) {
+    return data.client;
+  }
 
-    /// @notice Settle the transfers and balances of the channel and pay out to
-    ///         each participant. Can only be called after the channel is closed
-    ///         and only after the number of blocks in the settlement timeout
-    ///         have passed.
-    function settle() {
-        data.settle();
-        ChannelSettled(data.settled);
-    }
+  function auditor() public view returns (address) {
+    return data.auditor;
+  }
 
-    /// @notice Settle the transfers and balances of the channel and pay out to
-    ///         each participant. Can only be called after the channel is closed
-    ///         and only after the number of blocks in the settlement timeout
-    ///         have passed.
-    function audit(address auditor) onlyManager {
-        data.audit(auditor);
-        ChannelAudited(data.audited);
-    }
+  function closeTimeout() public view returns (uint32) {
+    return data.closeTimeout;
+  }
 
-    function destroy() onlyManager {
-        require(data.settled > 0);
-        require(data.audited > 0 || block.number > data.closed + data.audit_timeout);
-        selfdestruct(0);
-    }
+  function settleTimeout() public view returns (uint32) {
+    return data.settleTimeout;
+  }
 
-    function sender() constant returns (address) {
-        return data.sender;
-    }
+  function auditTimeout() public view returns (uint32) {
+    return data.auditTimeout;
+  }
 
-    function receiver() constant returns (address) {
-        return data.receiver;
-    }
+  /// @return Returns the address of the manager.
+  function manager() public view returns (address) {
+    return data.manager;
+  }
 
-    function client() constant returns (address) {
-        return data.client;
-    }
+  function balance() public view returns (uint256) {
+    return data.balance;
+  }
 
-    function auditor() constant returns (address) {
-        return data.auditor;
-    }
+  function nonce() public view returns (uint256) {
+    return data.nonce;
+  }
 
-    function closeTimeout() constant returns (uint) {
-        return data.close_timeout;
-    }
+  function completedTransfers() public view returns (uint256) {
+    return data.completedTransfers;
+  }
 
-    function settleTimeout() constant returns (uint) {
-        return data.settle_timeout;
-    }
+  /// @notice Returns the block number for when the channel was opened.
+  /// @return The block number for when the channel was opened.
+  function opened() public view returns (uint256) {
+    return data.opened;
+  }
 
-    function auditTimeout() constant returns (uint) {
-        return data.audit_timeout;
-    }
+  function closeRequested() public view returns (uint256) {
+    return data.closeRequested;
+  }
 
-    /// @return Returns the address of the manager.
-    function manager() constant returns (address) {
-        return data.manager;
-    }
+  function closed() public view returns (uint256) {
+    return data.closed;
+  }
 
-    function balance() constant returns (uint) {
-        return data.balance;
-    }
+  function settled() public view returns (uint256) {
+    return data.settled;
+  }
 
-    function nonce() constant returns (uint) {
-        return data.nonce;
-    }
+  function audited() public view returns (uint256) {
+    return data.audited;
+  }
 
-    function completedTransfers() constant returns (uint) {
-        return data.completed_transfers;
-    }
+  // MODIFIERS
 
-    /// @notice Returns the block number for when the channel was opened.
-    /// @return The block number for when the channel was opened.
-    function opened() constant returns (uint) {
-        return data.opened;
-    }
+  modifier onlyManager() {
+    require(msg.sender == address(data.manager));
+    _;
+  }
 
-    function closeRequested() constant returns (uint) {
-        return data.close_requested;
-    }
+  // FIELDS
 
-    function closed() constant returns (uint) {
-        return data.closed;
-    }
-
-    function settled() constant returns (uint) {
-        return data.settled;
-    }
-
-    function audited() constant returns (uint) {
-        return data.audited;
-    }
-
-    function () { revert(); }
+  ChannelLibrary.Data data;
 }

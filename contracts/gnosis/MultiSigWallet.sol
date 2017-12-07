@@ -26,9 +26,9 @@ contract MultiSigWallet {
     /*
      *  Storage
      */
-    mapping (uint => Transaction) public transactions;
-    mapping (uint => mapping (address => bool)) public confirmations;
-    mapping (address => bool) public isOwner;
+    mapping(uint => Transaction) public transactions;
+    mapping(uint => mapping(address => bool)) public confirmations;
+    mapping(address => bool) public isOwner;
     address[] public owners;
     uint public required;
     uint public transactionCount;

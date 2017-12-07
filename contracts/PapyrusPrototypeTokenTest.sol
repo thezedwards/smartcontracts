@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.4.17;
 
 
 import "./common/StandardToken.sol";
@@ -6,7 +6,7 @@ import "./common/Ownable.sol";
 
 
 /// @title Papyrus Prototype Token (PRP) smart contract.
-contract PapyrusPrototypeToken is StandardToken, Ownable {
+contract PapyrusPrototypeTokenTest is StandardToken, Ownable {
 
   // EVENTS
 
@@ -91,8 +91,8 @@ contract PapyrusPrototypeToken is StandardToken, Ownable {
   // FIELDS
 
   // Standard fields used to describe the token
-  string public name = "Papyrus Prototype Token";
-  string public symbol = "PRP";
+  string public name = "Test Token";
+  string public symbol = "WWW";
   string public version = "H0.1";
   uint8 public decimals = 18;
 

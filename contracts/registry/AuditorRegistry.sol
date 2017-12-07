@@ -1,27 +1,29 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.19;
+
 
 contract AuditorRegistry {
-    // This is the function that actually insert a record.
-    function register(address key, address recordOwner);
 
-    function applyKarmaDiff(address key, uint256[2] diff);
+  // This is the function that actually insert a record.
+  function register(address key, address recordOwner) public;
 
-    // Unregister a given record
-    function unregister(address key, address sender);
+  function applyKarmaDiff(address key, uint256[2] diff) public;
 
-    //Transfer ownership of record
-    function transfer(address key, address newOwner, address sender);
+  // Unregister a given record
+  function unregister(address key, address sender) public;
 
-    function getOwner(address key) constant returns(address);
+  // Transfer ownership of record
+  function transfer(address key, address newOwner, address sender) public;
 
-    // Tells whether a given key is registered.
-    function isRegistered(address key) constant returns(bool);
+  function getOwner(address key) public view returns (address);
 
-    function getAuditor(address key) constant returns(address auditorAddress, uint256[2] karma, address recordOwner);
+  // Tells whether a given key is registered.
+  function isRegistered(address key) public view returns (bool);
 
-    //@dev Get list of all registered dsp
-    //@return Returns array of addresses registered as DSP with register times
-    function getAllAuditors() constant returns(address[] addresses, uint256[2][] karmas, address[] recordOwners);
+  function getAuditor(address key) public view returns (address auditorAddress, uint256[2] karma, address recordOwner);
 
-    function kill();
+  /// @dev Get list of all registered dsp
+  /// @return Returns array of addresses registered as DSP with register times
+  function getAllAuditors() public view returns (address[] addresses, uint256[2][] karmas, address[] recordOwners);
+
+  function kill() public;
 }

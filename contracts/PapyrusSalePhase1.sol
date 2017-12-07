@@ -414,10 +414,10 @@ contract PapyrusSalePhase1 is Ownable {
     uint256 public participantCount;
 
     // Received bids
-    mapping (address => uint256) public receivedBids;
+    mapping(address => uint256) public receivedBids;
 
     // Accepted bids
-    mapping (address => uint256) public acceptedBids;
+    mapping(address => uint256) public acceptedBids;
 
     // Current stage of the auction
     Stage public stage;

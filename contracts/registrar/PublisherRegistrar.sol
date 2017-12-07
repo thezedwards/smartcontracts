@@ -1,45 +1,57 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.19;
 
 import "../registry/PublisherRegistry.sol";
 import "./SecurityDepositAware.sol";
 
-contract PublisherRegistrar is SecurityDepositAware{
-    PublisherRegistry public publisherRegistry;
 
-    event PublisherRegistered(address publisherAddress);
-    event PublisherUnregistered(address publisherAddress);
-    event PublisherParametersChanged(address publisherAddress);
+contract PublisherRegistrar is SecurityDepositAware {
 
-    //@dev Retrieve information about registered Publisher
-    //@return Address of registered Publisher and time when registered
-    function findPublisher(address addr) constant returns(address publisherAddress, bytes32[5] url, uint256[2] karma, address recordOwner) {
-        return publisherRegistry.getPublisher(addr);
-    }
+  // EVENTS
 
-    function isPublisherRegistered(address key) constant returns(bool) {
-        return publisherRegistry.isRegistered(key);
-    }
+  event PublisherRegistered(address indexed publisherAddress);
+  event PublisherUnregistered(address indexed publisherAddress);
+  event PublisherParametersChanged(address indexed publisherAddress);
 
-    //@dev Register organisation as Publisher
-    //@param publisherAddress address of wallet to register
-    function registerPublisher(address publisherAddress, bytes32[5] url) {
-        receiveSecurityDeposit(publisherAddress);
-        publisherRegistry.register(publisherAddress, url, msg.sender);
-        PublisherRegistered(publisherAddress);
-    }
+  // PUBLIC FUNCTIONS
 
-    //@dev Unregister Publisher and return unused deposit
-    //@param Address of Publisher to be unregistered
-    function unregisterPublisher(address publisherAddress) {
-        returnDeposit(publisherAddress, securityDepositRegistry);
-        publisherRegistry.unregister(publisherAddress, msg.sender);
-        PublisherUnregistered(publisherAddress);
-    }
+  //@dev Register organisation as Publisher
+  //@param publisherAddress address of wallet to register
+  function registerPublisher(address publisherAddress, bytes32[5] url) public {
+    receiveSecurityDeposit(publisherAddress);
+    publisherRegistry.register(publisherAddress, url, msg.sender);
+    PublisherRegistered(publisherAddress);
+  }
 
-    //@dev transfer ownership of this Publisher record
-    //@param address of Publisher
-    //@param address of new owner
-    function transferPublisherRecord(address key, address newOwner) {
-        publisherRegistry.transfer(key, newOwner, msg.sender);
-    }
+  //@dev Unregister Publisher and return unused deposit
+  //@param Address of Publisher to be unregistered
+  function unregisterPublisher(address publisherAddress) public {
+    returnDeposit(publisherAddress, securityDepositRegistry);
+    publisherRegistry.unregister(publisherAddress, msg.sender);
+    PublisherUnregistered(publisherAddress);
+  }
+
+  //@dev transfer ownership of this Publisher record
+  //@param address of Publisher
+  //@param address of new owner
+  function transferPublisherRecord(address key, address newOwner) public {
+    publisherRegistry.transfer(key, newOwner, msg.sender);
+  }
+
+  //@dev Retrieve information about registered Publisher
+  //@return Address of registered Publisher and time when registered
+  function findPublisher(address _publisherAddress)
+    public
+    view
+    returns (address publisherAddress, bytes32[5] url, uint256[2] karma, address recordOwner)
+  {
+    return publisherRegistry.getPublisher(_publisherAddress);
+  }
+
+  function isPublisherRegistered(address publisherAddress) public view returns (bool) {
+    return publisherRegistry.isRegistered(publisherAddress);
+  }
+
+  // FIELDS
+  
+  PublisherRegistry public publisherRegistry;
 }

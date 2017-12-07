@@ -25,5 +25,5 @@ contract PrivateParticipation is Ownable {
     // FIELDS
 
     // Addresses allowed to participate in private presale
-    mapping (address => uint256) public privateParticipants;
+    mapping(address => uint256) public privateParticipants;
 }

@@ -1,5 +1,6 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.9;
+
 
 contract SSPTypeAware {
-    enum SSPType { Gate, Direct }
+  enum SSPType { Gate, Direct }
 }
