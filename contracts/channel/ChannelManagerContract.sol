@@ -53,12 +53,20 @@ contract ChannelManagerContract {
     return channelAddress;
   }
 
-  function auditReport(address channelAddress, uint64 total, uint64 fraud) public {
+  function auditReport(
+    address channelAddress,
+    uint256 receiverPayment,
+    uint256 auditorPayment,
+    uint64 totalImpressions,
+    uint64 fraudImpressions
+  )
+    public
+  {
     require(channelAddress != address(0));
     ChannelContract channel = ChannelContract(channelAddress);
     require(channel.manager() == address(this));
     channel.audit(msg.sender);
-    channelApi.applyRuntimeUpdate(channel.sender(), channel.receiver(), total, fraud);
+    channelApi.applyRuntimeUpdate(channel.sender(), channel.receiver(), receiverPayment, auditorPayment, totalImpressions, fraudImpressions);
   }
 
   function destroyChannel(address channelAddress) public {

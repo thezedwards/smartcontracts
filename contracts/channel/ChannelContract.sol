@@ -72,8 +72,8 @@ contract ChannelContract {
   }
 
   /// @notice Close the channel.
-  function close(uint256 nonce, uint256 completedTransfers, bytes signature) public {
-    data.close(address(this), nonce, completedTransfers, signature);
+  function close(uint256 nonce, uint256 receiverPayment, uint256 auditorPayment, bytes signature) public {
+    data.close(address(this), nonce, receiverPayment, auditorPayment, signature);
     ChannelClosed(msg.sender, data.closed);
   }
 
@@ -154,8 +154,12 @@ contract ChannelContract {
     return data.nonce;
   }
 
-  function completedTransfers() public view returns (uint256) {
-    return data.completedTransfers;
+  function receiverPayment() public view returns (uint256) {
+    return data.receiverPayment;
+  }
+
+  function auditorPayment() public view returns (uint256) {
+    return data.auditorPayment;
   }
 
   /// @notice Returns the block number for when the channel was opened.

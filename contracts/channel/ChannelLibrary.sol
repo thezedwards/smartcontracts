@@ -30,12 +30,14 @@ library ChannelLibrary {
 
     // state update for close
     uint256 nonce;
-    uint256 completedTransfers;
+    uint256 receiverPayment;
+    uint256 auditorPayment;
   }
 
   struct StateUpdate {
     uint256 nonce;
-    uint256 completedTransfers;
+    uint256 receiverPayment;
+    uint256 auditorPayment;
   }
 
   // PUBLIC FUNCTIONS
@@ -72,7 +74,8 @@ library ChannelLibrary {
     Data storage self,
     address channel,
     uint256 nonce,
-    uint256 completedTransfers,
+    uint256 receiverPayment,
+    uint256 auditorPayment,
     bytes signature
   )
     public
@@ -82,12 +85,13 @@ library ChannelLibrary {
       require(block.number - self.closeRequested >= self.closeTimeout);
     }
     require(nonce > self.nonce);
-    require(completedTransfers >= self.completedTransfers);
-    require(completedTransfers <= self.balance);
+    require(receiverPayment >= self.receiverPayment);
+    require(auditorPayment >= self.auditorPayment);
+    require(receiverPayment + auditorPayment <= self.balance);
 
     if (msg.sender != self.sender) {
-      //checking signature
-      bytes32 signedHash = hashState(channel, nonce, completedTransfers);
+      // checking signature
+      bytes32 signedHash = hashState(channel, nonce, receiverPayment, auditorPayment);
       address signAddress = ECRecovery.recover(signedHash, signature);
       require(signAddress == self.sender);
     }
@@ -97,11 +101,12 @@ library ChannelLibrary {
     }
 
     self.nonce = nonce;
-    self.completedTransfers = completedTransfers;
+    self.receiverPayment = receiverPayment;
+    self.auditorPayment = auditorPayment;
   }
 
   /// @notice Settles the balance between the two parties
-  /// @dev Settles the balances of the two parties fo the channel
+  /// @dev Settles the balances of the two parties for the channel
   /// @return The participants with netted balances
   function settle(Data storage self)
     public
@@ -110,12 +115,16 @@ library ChannelLibrary {
   {
     StandardToken token = self.manager.token();
     
-    if (self.completedTransfers > 0) {
-      require(token.transfer(self.receiver, self.completedTransfers));
+    if (self.receiverPayment > 0) {
+      require(token.transfer(self.receiver, self.receiverPayment));
+    }
+    
+    if (self.auditorPayment > 0) {
+      require(token.transfer(self.auditor, self.auditorPayment));
     }
 
-    if (self.completedTransfers < self.balance) {
-      require(token.transfer(self.sender, self.balance - self.completedTransfers));
+    if (self.receiverPayment + self.auditorPayment < self.balance) {
+      require(token.transfer(self.sender, self.balance - self.receiverPayment - self.auditorPayment));
     }
 
     self.settled = block.number;
@@ -142,14 +151,13 @@ library ChannelLibrary {
     view
     returns (uint256)
   {
-
     bytes32 signedHash = hashTransfer(transferId, channel, lockData, sum);
     address signAddress = ECRecovery.recover(signedHash, signature);
     require(signAddress == self.client);
   }
 
-  function hashState(address channel, uint256 nonce, uint256 completedTransfers) public pure returns (bytes32) {
-    return keccak256(channel, nonce, completedTransfers);
+  function hashState(address channel, uint256 nonce, uint256 receiverPayment, uint256 auditorPayment) public pure returns (bytes32) {
+    return keccak256(channel, nonce, receiverPayment, auditorPayment);
   }
 
   function hashTransfer(address transferId, address channel, bytes lockData, uint256 sum) public pure returns (bytes32) {

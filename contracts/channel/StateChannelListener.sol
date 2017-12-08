@@ -13,25 +13,35 @@ contract StateChannelListener is RegistryProvider, ChannelApi {
 
   // PUBLIC FUNCTIONS
 
-  function applyRuntimeUpdate(address from, address to, uint64 impressionsCount, uint64 fraudCount) public onlyChannelContract {
-      uint256[2] memory karmaDiff = [impressionsCount, uint256(0)];
-      if (getDSPRegistry().isRegistered(from)) {
-          getDSPRegistry().applyKarmaDiff(from, karmaDiff);
-      } else if (getSSPRegistry().isRegistered(from)) {
-          getSSPRegistry().applyKarmaDiff(from, karmaDiff);
-      }
+  function applyRuntimeUpdate(
+    address from,
+    address to,
+    uint256 /*receiverPayment*/,
+    uint256 /*auditorPayment*/,
+    uint64 totalImpressions,
+    uint64 fraudImpressions
+  )
+    public
+    onlyChannelContract
+  {
+    uint256[2] memory karmaDiff = [totalImpressions, uint256(0)];
+    if (getDSPRegistry().isRegistered(from)) {
+      getDSPRegistry().applyKarmaDiff(from, karmaDiff);
+    } else if (getSSPRegistry().isRegistered(from)) {
+      getSSPRegistry().applyKarmaDiff(from, karmaDiff);
+    }
 
-      karmaDiff[1] = fraudCount;
-      if (getSSPRegistry().isRegistered(to)) {
-          karmaDiff[0] = 0;
-          getSSPRegistry().applyKarmaDiff(to, karmaDiff);
-      } else if (getPublisherRegistry().isRegistered(to)) {
-          karmaDiff[0] = impressionsCount;
-          getPublisherRegistry().applyKarmaDiff(to, karmaDiff);
-      }
+    karmaDiff[1] = fraudImpressions;
+    if (getSSPRegistry().isRegistered(to)) {
+      karmaDiff[0] = 0;
+      getSSPRegistry().applyKarmaDiff(to, karmaDiff);
+    } else if (getPublisherRegistry().isRegistered(to)) {
+      karmaDiff[0] = totalImpressions;
+      getPublisherRegistry().applyKarmaDiff(to, karmaDiff);
+    }
   }
 
-  function applyAuditorsCheckUpdate(address /*from*/, address /*to*/, uint64 /*fraudCountDelta*/) public onlyChannelContract {
+  function applyAuditorsCheckUpdate(address /*from*/, address /*to*/, uint64 /*fraudImpressionsDelta*/) public onlyChannelContract {
     // To be implemented
   }
 
