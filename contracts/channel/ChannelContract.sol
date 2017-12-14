@@ -4,7 +4,7 @@ import "./ChannelLibrary.sol";
 
 
 contract ChannelContract {
-  using ChannelLibrary for ChannelLibrary.Data;
+  using ChannelLibrary for ChannelLibrary.ChannelData;
 
   // EVENTS
 
@@ -20,28 +20,28 @@ contract ChannelContract {
 
   function ChannelContract(
     address manager,
-    address sender,
-    address client,
-    address receiver,
+    string module,
+    bytes configuration,
+    address[] participants,
     uint32 closeTimeout,
     uint32 settleTimeout,
-    uint32 auditTimeout,
-    address auditor
+    uint32 auditTimeout
   )
     public
   {
     // allow creation only from manager contract
     require(msg.sender == manager);
-    require(sender != receiver);
-    require(client != receiver);
+    require(participants.length > 1);
     require(closeTimeout >= 0);
     require(settleTimeout > 0);
     require(auditTimeout >= 0);
-    data.sender = sender;
-    data.client = client;
-    data.receiver = receiver;
-    data.auditor = auditor;
     data.manager = ChannelManagerContract(manager);
+    data.module = module;
+    data.configuration = configuration;
+    data.participants.length = participants.length;
+    for (uint16 i = 0; i < participants.length; ++i) {
+      data.participants[i].participant = participants[i];
+    }
     data.closeTimeout = closeTimeout;
     data.settleTimeout = settleTimeout;
     data.auditTimeout = auditTimeout;
@@ -52,13 +52,15 @@ contract ChannelContract {
     revert();
   }
 
-  /// @notice Caller makes a deposit into their channel balance.
-  /// @param amount The amount caller wants to deposit.
-  /// @return True if deposit is successful.
-  function deposit(uint256 amount) public returns (bool) {
+  /// @notice Sender deposits amount to channel. Should be called before the channel is closed.
+  /// @param participant The amount to be deposited to the address
+  /// @param amount The amount to be deposited to the address
+  /// @return Success if the transfer was successful
+  /// @return The new balance of the invoker
+  function deposit(address participant, uint256 amount) public returns (bool) {
     bool success;
     uint256 balance;
-    (success, balance) = data.deposit(amount);
+    (success, balance) = data.deposit(participant, amount);
     if (success) {
       ChannelNewBalance(data.manager.token(), msg.sender, balance, 0);
     }
@@ -103,30 +105,31 @@ contract ChannelContract {
 
   /// @notice Get the address and balance of both partners in a channel.
   /// @return The address and balance pairs.
-  function addressAndBalance()
+  function participant(uint256 index)
     public
     view
-    returns (address sender, address receiver, uint256 balance)
+    returns (address participantAddress, address validatorAddress, uint256 balance)
   {
-    sender = data.sender;
-    receiver = data.receiver;
-    balance = data.balance;
+    participantAddress = data.participants[index].participant;
+    validatorAddress = data.participants[index].validator;
+    balance = data.participants[index].balance;
   }
 
-  function sender() public view returns (address) {
-    return data.sender;
+  function blockPart(uint256 participantIndex, uint64 blockNumber)
+    public
+    view
+    returns (bytes reference)
+  {
+    reference = data.participants[participantIndex].blockParts[blockNumber].reference;
   }
 
-  function receiver() public view returns (address) {
-    return data.receiver;
-  }
-
-  function client() public view returns (address) {
-    return data.client;
-  }
-
-  function auditor() public view returns (address) {
-    return data.auditor;
+  function blockResult(uint256 participantIndex, uint64 blockNumber)
+    public
+    view
+    returns (uint256 resultHash, uint256 stake)
+  {
+    resultHash = data.participants[participantIndex].blockResults[blockNumber].resultHash;
+    stake = data.participants[participantIndex].blockResults[blockNumber].stake;
   }
 
   function closeTimeout() public view returns (uint32) {
@@ -144,10 +147,6 @@ contract ChannelContract {
   /// @return Returns the address of the manager.
   function manager() public view returns (address) {
     return data.manager;
-  }
-
-  function balance() public view returns (uint256) {
-    return data.balance;
   }
 
   function nonce() public view returns (uint256) {
@@ -193,5 +192,5 @@ contract ChannelContract {
 
   // FIELDS
 
-  ChannelLibrary.Data data;
+  ChannelLibrary.ChannelData data;
 }

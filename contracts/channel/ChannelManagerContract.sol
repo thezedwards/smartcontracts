@@ -10,19 +10,17 @@ contract ChannelManagerContract {
   // EVENTS
 
   event ChannelNew(
-    address channel,
-    address indexed sender,
-    address client,
-    address indexed receiver,
+    address indexed channel,
+    string indexed module,
+    bytes configuration,
+    address[] indexed participants,
     uint32 closeTimeout,
     uint32 settleTimeout,
     uint32 auditTimeout
   );
 
   event ChannelDeleted(
-    address channel,
-    address indexed sender,
-    address indexed receiver
+    address indexed channel
   );
 
   // PUBLIC FUNCTIONS
@@ -33,28 +31,29 @@ contract ChannelManagerContract {
     channelApi = ChannelApi(_channelApi);
   }
 
-  /// @notice Create a new channel from msg.sender to receiver
-  /// @param receiver The address of the receiver
+  /// @notice Create a new channel for specified participants
   /// @param settleTimeout The settle timeout in blocks
   /// @return The address of the newly created ChannelContract.
   function newChannel(
-    address client,
-    address receiver,
+    string module,
+    bytes configuration,
+    address[] participants,
     uint32 closeTimeout,
     uint32 settleTimeout,
-    uint32 auditTimeout,
-    address auditor
+    uint32 auditTimeout
   )
     public
     returns (address)
   {
-    address channelAddress = new ChannelContract(this, msg.sender, client, receiver, closeTimeout, settleTimeout, auditTimeout, auditor);
-    ChannelNew(channelAddress, msg.sender, client, receiver, closeTimeout, settleTimeout, auditTimeout);
+    address channelAddress = new ChannelContract(this, module, configuration, participants, closeTimeout, settleTimeout, auditTimeout);
+    ChannelNew(channelAddress, module, configuration, participants, closeTimeout, settleTimeout, auditTimeout);
     return channelAddress;
   }
 
   function auditReport(
     address channelAddress,
+    address from,
+    address to,
     uint256 receiverPayment,
     uint256 auditorPayment,
     uint64 totalImpressions,
@@ -66,14 +65,14 @@ contract ChannelManagerContract {
     ChannelContract channel = ChannelContract(channelAddress);
     require(channel.manager() == address(this));
     channel.audit(msg.sender);
-    channelApi.applyRuntimeUpdate(channel.sender(), channel.receiver(), receiverPayment, auditorPayment, totalImpressions, fraudImpressions);
+    channelApi.applyRuntimeUpdate(from, to, receiverPayment, auditorPayment, totalImpressions, fraudImpressions);
   }
 
   function destroyChannel(address channelAddress) public {
     require(channelAddress != address(0));
     ChannelContract channel = ChannelContract(channelAddress);
     require(channel.manager() == address(this));
-    ChannelDeleted(channelAddress, channel.sender(), channel.receiver());
+    ChannelDeleted(channelAddress);
     channel.destroy();
   }
 
