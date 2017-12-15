@@ -16,8 +16,6 @@ contract StateChannelListener is RegistryProvider, ChannelApi {
   function applyRuntimeUpdate(
     address from,
     address to,
-    uint256 /*receiverPayment*/,
-    uint256 /*auditorPayment*/,
     uint64 totalImpressions,
     uint64 fraudImpressions
   )

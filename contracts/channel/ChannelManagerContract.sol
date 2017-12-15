@@ -54,8 +54,6 @@ contract ChannelManagerContract {
     address channelAddress,
     address from,
     address to,
-    uint256 receiverPayment,
-    uint256 auditorPayment,
     uint64 totalImpressions,
     uint64 fraudImpressions
   )
@@ -65,7 +63,7 @@ contract ChannelManagerContract {
     ChannelContract channel = ChannelContract(channelAddress);
     require(channel.manager() == address(this));
     channel.audit(msg.sender);
-    channelApi.applyRuntimeUpdate(from, to, receiverPayment, auditorPayment, totalImpressions, fraudImpressions);
+    channelApi.applyRuntimeUpdate(from, to, totalImpressions, fraudImpressions);
   }
 
   function destroyChannel(address channelAddress) public {

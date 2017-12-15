@@ -4,6 +4,7 @@ import "./ChannelLibrary.sol";
 
 
 contract ChannelContract {
+  using ChannelLibrary for ChannelLibrary.Role;
   using ChannelLibrary for ChannelLibrary.ChannelData;
 
   // EVENTS
@@ -31,7 +32,7 @@ contract ChannelContract {
   {
     // allow creation only from manager contract
     require(msg.sender == manager);
-    require(participants.length > 1);
+    require(participants.length >= 3);
     require(closeTimeout >= 0);
     require(settleTimeout > 0);
     require(auditTimeout >= 0);
@@ -74,8 +75,8 @@ contract ChannelContract {
   }
 
   /// @notice Close the channel.
-  function close(uint256 nonce, uint256 receiverPayment, uint256 auditorPayment, bytes signature) public {
-    data.close(address(this), nonce, receiverPayment, auditorPayment, signature);
+  function close(uint256 nonce, bytes signature) public {
+    data.close(address(this), nonce, signature);
     ChannelClosed(msg.sender, data.closed);
   }
 
@@ -131,6 +132,26 @@ contract ChannelContract {
     resultHash = data.participants[participantIndex].blockResults[blockNumber].resultHash;
     stake = data.participants[participantIndex].blockResults[blockNumber].stake;
   }
+  
+  function dsp() public view returns (address) {
+    return data.participants[uint(ChannelLibrary.Role.DSP)].participant;
+  }
+
+  function ssp() public view returns (address) {
+    return data.participants[uint(ChannelLibrary.Role.SSP)].participant;
+  }
+  
+  function auditor() public view returns (address) {
+    return data.participants[uint(ChannelLibrary.Role.Auditor)].participant;
+  }
+
+  function sspPayment() public view returns (uint256) {
+    return data.participants[uint(ChannelLibrary.Role.SSP)].balance;
+  }
+
+  function auditorPayment() public view returns (uint256) {
+    return data.participants[uint(ChannelLibrary.Role.Auditor)].balance;
+  }
 
   function closeTimeout() public view returns (uint32) {
     return data.closeTimeout;
@@ -151,14 +172,6 @@ contract ChannelContract {
 
   function nonce() public view returns (uint256) {
     return data.nonce;
-  }
-
-  function receiverPayment() public view returns (uint256) {
-    return data.receiverPayment;
-  }
-
-  function auditorPayment() public view returns (uint256) {
-    return data.auditorPayment;
   }
 
   /// @notice Returns the block number for when the channel was opened.
