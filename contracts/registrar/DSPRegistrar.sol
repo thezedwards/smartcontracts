@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.4.18;
 
 import "../registry/DSPRegistry.sol";
 import "./SecurityDepositAware.sol";

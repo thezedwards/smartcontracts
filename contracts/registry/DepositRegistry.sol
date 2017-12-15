@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.4.18;
 
 
 // This is the base contract that your contract DepositRegistry extends from.
