@@ -8,6 +8,13 @@ module.exports = {
             port: 80,
             network_id: '*', // Match any network id
             from: "0x3a4cac8ae75136b1e54cce14b8e1c11b8de39544"
+        },
+        local: {
+            host: 'localhost',
+            port: 8545,
+            network_id: '*', // Match any network id
+            gas: 6000000,
+            gasPrice: 0x01
         }
     }
 };

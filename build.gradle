@@ -11,7 +11,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'org.web3j:core:2.3.1'
+        classpath 'org.web3j:core:3.2.0'
+        classpath 'org.web3j:codegen:3.2.0'
     }
 }
 
@@ -25,7 +26,8 @@ repositories {
 apply plugin: 'java'
 apply plugin: 'idea'
 
-def SOLC_DIR = "build/contracts"
+def SOLC_DIR = "build/solc"
+def SOLC_CONTRACTS_DIR = "$SOLC_DIR/contracts"
 def SRC_GEN_DIR = "build/generated/source/contracts/java"
 def SRC_GEN_PACKAGE = "global.papyrus.smartcontracts"
 
@@ -34,11 +36,30 @@ sourceSets {
         java {
             srcDirs = [SRC_GEN_DIR]
         }
+        resources {
+            srcDirs = [SOLC_DIR]
+        }
+    }
+    test{
+        java {
+            srcDirs = []
+        }
     }
 }
 
 dependencies {
-    compile('org.web3j:core:2.3.1')
+//Ethereum Web3
+    compile ('org.web3j:utils:3.2.0')
+    compile ('org.web3j:rlp:3.2.0')
+    compile ('org.web3j:abi:3.2.0')
+    compile ('org.web3j:core:3.2.0')
+    compile ('org.web3j:crypto:3.2.0')
+    compile ('org.web3j:geth:3.2.0')
+    compile ('org.web3j:parity:3.2.0')
+    compile ('org.web3j:tuples:3.2.0')
+    compile ('org.web3j:codegen:3.2.0')
+    compile ('org.web3j:infura:3.2.0')
+
     testCompile('org.testng:testng:6.11')
 }
 
@@ -51,20 +72,22 @@ task migrate {
     }
 }
 
-//task compileContracts {
-//    doLast {
-//        println "Compiling contracts with solc"
-//        exec {
+task compileContracts {
+    doLast {
+        println "Compiling contracts with solc"
+        exec {
 //            commandLine "bash", "-c", "shopt -s globstar && solc -o ${SOLC_DIR} --overwrite contracts/**/*.sol --abi --bin"
-//        }
-//    }
-//}
+            commandLine "bash", "-c", "solc -o ${SOLC_CONTRACTS_DIR} --overwrite contracts/*.sol contracts/*/*.sol contracts/*/*/*.sol --abi --bin"
+        }
+    }
+}
 
-task wrappers {
+task wrappers(dependsOn: compileContracts) {
     def contracts=[
             "PapyrusKYC",
             "PapyrusPrototypeToken",
             "PapyrusToken",
+            "contracts_common_StandardToken_sol_StandardToken",
             "PapyrusDAO",
             "SSPRegistry",
             "DSPRegistry",
@@ -73,24 +96,29 @@ task wrappers {
             "SSPRegistrar",
             "PublisherRegistry",
             "AuditorRegistry",
-            "SecurityDepositRegistry"
+            "SecurityDepositRegistry",
+            "ChannelManagerContract",
+            "EndpointRegistryContract"
     ]
 
     doLast {
-        def wrapper = new SolidityFunctionWrapper()
+        def wrapper = new SolidityFunctionWrapper(true)
         def upToDate = true
         for (def contract : contracts) {
-            def binFile = file("${SOLC_DIR}/${contract}.bin")
-            def abiFile = file("${SOLC_DIR}/${contract}.abi")
-            println("Generating ${contract}.java")
+            def binFile = file("${SOLC_CONTRACTS_DIR}/${contract}.bin")
+            def abiFile = file("${SOLC_CONTRACTS_DIR}/${contract}.abi")
             def binary = GFileUtils.readFile(binFile)
             def abi = GFileUtils.readFile(abiFile)
-            wrapper.generateJavaFiles(contract, binary, abi, file(SRC_GEN_DIR).absolutePath, SRC_GEN_PACKAGE)
+            def className = contract.substring(contract.lastIndexOf('_') + 1)
+            println("Generating ${className}.java")
+            wrapper.generateJavaFiles(className, binary, abi, file(SRC_GEN_DIR).absolutePath, SRC_GEN_PACKAGE)
             upToDate = false
         }
         return upToDate
     }
 }
+compileJava.dependsOn.add(wrappers)
+
 
 test {
     testLogging {
@@ -100,4 +128,10 @@ test {
     useTestNG()
 }
 
-compileJava.dependsOn.add(wrappers)
+uploadArchives {
+    repositories {
+        ivy {
+            url "file://tmp/papyrus/ivy"
+        }
+    }
+}
