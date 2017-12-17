@@ -11,12 +11,7 @@ contract ChannelManagerContract {
 
   event ChannelNew(
     address indexed channel,
-    string indexed module,
-    bytes configuration,
-    address[] indexed participants,
-    uint32 closeTimeout,
-    uint32 settleTimeout,
-    uint32 auditTimeout
+    string indexed module
   );
 
   event ChannelDeleted(
@@ -46,7 +41,7 @@ contract ChannelManagerContract {
     returns (address)
   {
     address channelAddress = new ChannelContract(this, module, configuration, participants, closeTimeout, settleTimeout, auditTimeout);
-    ChannelNew(channelAddress, module, configuration, participants, closeTimeout, settleTimeout, auditTimeout);
+    ChannelNew(channelAddress, module);
     return channelAddress;
   }
 
