@@ -10,6 +10,8 @@ contract ChannelContract {
   // EVENTS
 
   event ChannelNewBalance(address token, address participant, uint256 balance, uint256 blockNumber);
+  event ChannelNewBlockPart(address token, address participant, uint64 blockNumber, bytes reference);
+  event ChannelNewBlockResult(address token, address participant, uint64 blockNumber, uint256 resultHash, uint256 stake);
   event ChannelCloseRequested(address channelAddress, uint256 blockNumber);
   event ChannelClosed(address channelAddress, uint256 blockNumber);
   event TransferUpdated(address nodeAddress, uint256 blockNumber);
@@ -66,6 +68,16 @@ contract ChannelContract {
       ChannelNewBalance(data.manager.token(), msg.sender, balance, 0);
     }
     return success;
+  }
+
+  function setBlockPart(uint64 blockNumber, bytes reference) public {
+    data.blockPart(blockNumber, reference);
+    ChannelNewBlockPart(data.manager.token(), msg.sender, blockNumber, reference);
+  }
+
+  function setBlockResult(uint64 blockNumber, uint256 resultHash, uint256 stake) public {
+    data.blockResult(blockNumber, resultHash, stake);
+    ChannelNewBlockResult(data.manager.token(), msg.sender, blockNumber, resultHash, stake);
   }
 
   /// @notice Request to close the channel.
