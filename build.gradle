@@ -101,7 +101,9 @@ task wrappers(dependsOn: compileContracts) {
     ]
 
     doLast {
-        def wrapper = new SolidityFunctionWrapper(true)
+        //Do not using native types - it is buggy and makes unnecessary conversions (like Address<->String)
+        def nativeTypes = false
+        def wrapper = new SolidityFunctionWrapper(nativeTypes)
         def upToDate = true
         for (def contract : contracts) {
             def binFile = file("${SOLC_CONTRACTS_DIR}/${contract}.bin")

@@ -11,7 +11,7 @@ contract ChannelManagerContract {
 
   event ChannelNew(
     address indexed channel,
-    string indexed module
+    string module
   );
 
   event ChannelDeleted(

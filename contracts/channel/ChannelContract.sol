@@ -136,7 +136,7 @@ contract ChannelContract {
     // Check result and settled state
     bytes32 resultHash = keccak256(result);
     for (i = 0; i < participants.length; ++i) {
-      if (participants[i].blockResults[blockNumber].resultHash != resultHash || participants[i].blockResults[blockNumber].settled) {
+      if (participants[i].validator != address(0) && participants[i].blockResults[blockNumber].resultHash != resultHash || participants[i].blockResults[blockNumber].settled) {
         revert();
       }
     }
