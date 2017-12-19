@@ -9,7 +9,6 @@ var PublisherRegistry = artifacts.require("./registry/impl/PublisherRegistryImpl
 var AuditorRegistry = artifacts.require("./registry/impl/AuditorRegistryImpl.sol");
 var SecurityDepositRegistry = artifacts.require("./registry/impl/SecurityDepositRegistry.sol");
 var ECRecovery = artifacts.require("./common/ECRecovery.sol");
-var ChannelLibrary = artifacts.require("./channel/ChannelLibrary.sol");
 var EndpointRegistryContract = artifacts.require("./channel/EndpointRegistryContract.sol");
 var ChannelManagerContract = artifacts.require("./channel/ChannelManagerContract.sol");
 
@@ -22,7 +21,6 @@ var addressPublisherRegistry;
 var addressAuditorRegistry;
 var addressSecurityDepositRegistry;
 var addressECRecovery;
-var addressChannelLibrary;
 var addressEndpointRegistry;
 var addressChannelManager;
 
@@ -40,8 +38,7 @@ function printAddresses() {
     console.log("    Security Deposit Registry: " + addressSecurityDepositRegistry);
     console.log("  Endpoint Registry: " + addressEndpointRegistry);
     console.log("  Channel Manager: " + addressChannelManager);
-    console.log("    Channel Library: " + addressChannelLibrary);
-    console.log("      ECRecovery: " + addressECRecovery);
+    console.log("    ECRecovery: " + addressECRecovery);
     console.log("====================================");
     fs.writeFileSync("contracts.properties", "dao=" + addressPapyrusDAO + "\n" + "token=" + addressPapyrusPrototypeToken);
 }
@@ -81,14 +78,10 @@ module.exports = function(deployer) {
         return deployer.deploy(ECRecovery);
     }).then(function() {
         addressECRecovery = ECRecovery.address;
-        deployer.link(ECRecovery, ChannelLibrary);
-        return deployer.deploy(ChannelLibrary);
-    }).then(function() {
-        addressChannelLibrary = ChannelLibrary.address;
         return deployer.deploy(EndpointRegistryContract);
     }).then(function() {
         addressEndpointRegistry = EndpointRegistryContract.address;
-        deployer.link(ChannelLibrary, ChannelManagerContract);
+        deployer.link(ECRecovery, ChannelManagerContract);
         return deployer.deploy(ChannelManagerContract, addressPapyrusPrototypeToken, addressPapyrusDAO);
     }).then(function() {
         addressChannelManager = ChannelManagerContract.address;
