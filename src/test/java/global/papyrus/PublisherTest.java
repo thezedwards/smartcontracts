@@ -49,12 +49,12 @@ public class PublisherTest extends DepositTest{
                 }).join();
         dao = loadDaoContract(publisher.transactionManager);
         daoRegistrar = loadDaoContract(publisherRegistrar.transactionManager);
-        token = asCf(dao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), publisher.transactionManager)).join();
-        tokenRegistrar = asCf(daoRegistrar.token())
-                .thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), publisherRegistrar.transactionManager)
+        token = asCf(dao.token().sendAsync()).thenApply(tokenAddress -> loadTokenContract(tokenAddress, publisher.transactionManager)).join();
+        tokenRegistrar = asCf(daoRegistrar.token().sendAsync())
+                .thenApply(tokenAddress -> loadTokenContract(tokenAddress, publisherRegistrar.transactionManager)
                 ).join();
-        publisherRegistry = asCf(daoRegistrar.publisherRegistry())
-                .thenApply(publisherRegistryAddress -> loadPublisherRegistry(publisherRegistryAddress.toString(), publisher.transactionManager))
+        publisherRegistry = asCf(daoRegistrar.publisherRegistry().sendAsync())
+                .thenApply(publisherRegistryAddress -> loadPublisherRegistry(publisherRegistryAddress, publisher.transactionManager))
                 .join();
         initDepositContract();
     }
@@ -90,11 +90,11 @@ public class PublisherTest extends DepositTest{
         rememberBalances();
         assertRecordOwner(publisher, publisherRegistrar);
         //Only owner is permitted to transfer ownership
-        asCf(dao.transferPublisherRecord(publisher.getAddress(), publisher.getAddress()))
+        asCf(dao.transferPublisherRecord(publisher.getAddress().getValue(), publisher.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(publisher, publisherRegistrar);
         //Now should work
-        asCf(daoRegistrar.transferPublisherRecord(publisher.getAddress(), publisher.getAddress()))
+        asCf(daoRegistrar.transferPublisherRecord(publisher.getAddress().getValue(), publisher.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(publisher, publisher);
         //Ok, now lets unregister it and check deposit returned to new owner
@@ -109,13 +109,11 @@ public class PublisherTest extends DepositTest{
         rememberBalances();
         assertRecordOwner(publisher, publisherRegistrar);
         //Only owner is permitted to transfer ownership
-        asCf(dao.transferPublisherRecord(publisher.getAddress(), publisher.getAddress()))
+        asCf(dao.transferPublisherRecord(publisher.getAddress().getValue(), publisher.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(publisher, publisherRegistrar);
         //Now should work
-        asCf(daoRegistrar.transferPublisherRecord(publisher.getAddress(), publisher.getAddress()))
-                .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(daoRegistrar.transferSecurityDeposit(publisher.getAddress(), publisher.getAddress()))
+        asCf(daoRegistrar.transferPublisherRecord(publisher.getAddress().getValue(), publisher.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(publisher, publisher);
         //Ok, now lets unregister it and check deposit returned to new owner
@@ -124,25 +122,25 @@ public class PublisherTest extends DepositTest{
     }
 
     protected void testPublisherRegistration(PapyrusDAO dao, PapyrusPrototypeToken token) {
-        asCf(dao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(dao.registerPublisher(publisher.getAddress(), generateUrl(5))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(dao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
-        asCf(dao.registerPublisher(publisher.getAddress(), generateUrl(5))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(dao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
+        asCf(dao.isPublisherRegistered(publisher.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
+        asCf(dao.registerPublisher(publisher.getAddress().getValue(), generateUrl(5)).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isPublisherRegistered(publisher.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
+        asCf(token.approve(daoAddress().getValue(), BigInteger.TEN).sendAsync()).join();
+        asCf(dao.registerPublisher(publisher.getAddress().getValue(), generateUrl(5)).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isPublisherRegistered(publisher.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
 //        asCf(dao.findPublisher(publisher.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), publisher.address)).join();
     }
 
     protected void testPublisherUnregistration(PapyrusDAO permittedDao, PapyrusDAO nonpermittedDao) {
-        asCf(permittedDao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
-        asCf(nonpermittedDao.unregisterPublisher(publisher.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(permittedDao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
-        asCf(permittedDao.unregisterPublisher(publisher.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(permittedDao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
+        asCf(permittedDao.isPublisherRegistered(publisher.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
+        asCf(nonpermittedDao.unregisterPublisher(publisher.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(permittedDao.isPublisherRegistered(publisher.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
+        asCf(permittedDao.unregisterPublisher(publisher.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(permittedDao.isPublisherRegistered(publisher.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
     }
 
     protected void assertRecordOwner(PapyrusMember record, PapyrusMember recordOwner) {
-        asCf(publisherRegistry.getOwner(record.getAddress())).thenAccept(owner -> Assert.assertEquals(owner.toString(), recordOwner.address)).join();
+        asCf(publisherRegistry.getOwner(record.getAddress().getValue()).sendAsync()).thenAccept(owner -> Assert.assertEquals(owner, recordOwner.address)).join();
     }
 
     @Override

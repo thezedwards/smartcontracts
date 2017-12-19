@@ -36,10 +36,10 @@ public class DSPTest extends DepositTest{
     enum DSPType {
         Gate(0), Direct(1);
 
-        public final Uint8 code;
+        public final BigInteger code;
 
         DSPType(int code) {
-            this.code = new Uint8(code);
+            this.code = BigInteger.valueOf(code);
         }
     }
 
@@ -57,12 +57,12 @@ public class DSPTest extends DepositTest{
                 }).join();
         dao = loadDaoContract(dsp.transactionManager);
         daoRegistrar = loadDaoContract(dspRegistrar.transactionManager);
-        token = asCf(dao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), dsp.transactionManager)).join();
-        tokenRegistrar = asCf(daoRegistrar.token())
-                .thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), dspRegistrar.transactionManager)
+        token = asCf(dao.token().sendAsync()).thenApply(tokenAddress -> loadTokenContract(tokenAddress, dsp.transactionManager)).join();
+        tokenRegistrar = asCf(daoRegistrar.token().sendAsync())
+                .thenApply(tokenAddress -> loadTokenContract(tokenAddress, dspRegistrar.transactionManager)
                 ).join();
-        dspRegistry = asCf(daoRegistrar.dspRegistry())
-                .thenApply(dspRegistryAddress -> loadDspRegistry(dspRegistryAddress.toString(), dsp.transactionManager))
+        dspRegistry = asCf(daoRegistrar.dspRegistry().sendAsync())
+                .thenApply(dspRegistryAddress -> loadDspRegistry(dspRegistryAddress, dsp.transactionManager))
                 .join();
         initDepositContract();
     }
@@ -98,11 +98,11 @@ public class DSPTest extends DepositTest{
         rememberBalances();
         assertRecordOwner(dsp, dspRegistrar);
         //Only owner is permitted to transfer ownership
-        asCf(dao.transferDSPRecord(dsp.getAddress(), dsp.getAddress()))
+        asCf(dao.transferDSPRecord(dsp.getAddress().getValue(), dsp.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(dsp, dspRegistrar);
         //Now should work
-        asCf(daoRegistrar.transferDSPRecord(dsp.getAddress(), dsp.getAddress()))
+        asCf(daoRegistrar.transferDSPRecord(dsp.getAddress().getValue(), dsp.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(dsp, dsp);
         //Ok, now lets unregister it and check deposit returned to new owner
@@ -117,13 +117,11 @@ public class DSPTest extends DepositTest{
         rememberBalances();
         assertRecordOwner(dsp, dspRegistrar);
         //Only owner is permitted to transfer ownership
-        asCf(dao.transferDSPRecord(dsp.getAddress(), dsp.getAddress()))
+        asCf(dao.transferDSPRecord(dsp.getAddress().getValue(), dsp.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(dsp, dspRegistrar);
         //Now should work
-        asCf(daoRegistrar.transferDSPRecord(dsp.getAddress(), dsp.getAddress()))
-                .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(daoRegistrar.transferSecurityDeposit(dsp.getAddress(), dsp.getAddress()))
+        asCf(daoRegistrar.transferDSPRecord(dsp.getAddress().getValue(), dsp.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(dsp, dsp);
         //Ok, now lets unregister it and check deposit returned to new owner
@@ -132,25 +130,25 @@ public class DSPTest extends DepositTest{
     }
 
     protected void testDspRegistration(PapyrusDAO dao, PapyrusPrototypeToken token) {
-        asCf(dao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(dao.registerDsp(dsp.getAddress(), DSPType.Direct.code, generateUrl(5))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(dao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
-        asCf(dao.registerDsp(dsp.getAddress(), DSPType.Direct.code, generateUrl(5))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(dao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
+        asCf(dao.isDspRegistered(dsp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
+        asCf(dao.registerDsp(dsp.getAddress().getValue(), DSPType.Direct.code, generateUrl(5)).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isDspRegistered(dsp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
+        asCf(token.approve(daoAddress().getValue(), BigInteger.TEN).sendAsync()).join();
+        asCf(dao.registerDsp(dsp.getAddress().getValue(), DSPType.Direct.code, generateUrl(5)).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isDspRegistered(dsp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
 //        asCf(dao.findDsp(dsp.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), dsp.address)).join();
     }
 
     protected void testDspUnregistration(PapyrusDAO permittedDao, PapyrusDAO nonpermittedDao) {
-        asCf(permittedDao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
-        asCf(nonpermittedDao.unregisterDsp(dsp.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(permittedDao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
-        asCf(permittedDao.unregisterDsp(dsp.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(permittedDao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
+        asCf(permittedDao.isDspRegistered(dsp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
+        asCf(nonpermittedDao.unregisterDsp(dsp.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(permittedDao.isDspRegistered(dsp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
+        asCf(permittedDao.unregisterDsp(dsp.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(permittedDao.isDspRegistered(dsp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
     }
 
     protected void assertRecordOwner(PapyrusMember record, PapyrusMember recordOwner) {
-        asCf(dspRegistry.getOwner(record.getAddress())).thenAccept(owner -> Assert.assertEquals(owner.toString(), recordOwner.address)).join();
+        asCf(dspRegistry.getOwner(record.getAddress().getValue()).sendAsync()).thenAccept(owner -> Assert.assertEquals(owner, recordOwner.address)).join();
     }
 
     @Override

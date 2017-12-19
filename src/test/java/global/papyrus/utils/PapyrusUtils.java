@@ -26,14 +26,12 @@ import java.math.RoundingMode;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static global.papyrus.utils.Web3jUtils.asCf;
+import static java.util.stream.Collectors.toList;
 import static org.web3j.tx.ManagedTransaction.GAS_PRICE;
 import static org.web3j.tx.Transfer.GAS_LIMIT;
 
@@ -108,8 +106,8 @@ public class PapyrusUtils {
     }
 
     public static CompletableFuture<TransactionReceipt> mintPrp(String to, long prpAmount) {
-        return Web3jUtils.asCf(loadDaoContract(new ClientTransactionManager(web3j, ownerAddr)).token()).thenCompose(tokenAddr ->
-            Web3jUtils.asCf(loadTokenContract(tokenAddr.toString(), new ClientTransactionManager(web3j, ownerAddr)).mint(new Address(to), new Uint256(prpAmount), new Uint256(0)))
+        return Web3jUtils.asCf(loadDaoContract(new ClientTransactionManager(web3j, ownerAddr)).token().sendAsync()).thenCompose(tokenAddr ->
+            Web3jUtils.asCf(loadTokenContract(tokenAddr.toString(), new ClientTransactionManager(web3j, ownerAddr)).mint(to, BigInteger.valueOf(prpAmount), BigInteger.ZERO).sendAsync())
         );
     }
 
@@ -165,14 +163,14 @@ public class PapyrusUtils {
         return new BigDecimal(weiAmount).divide(new BigDecimal(ethPrice), new MathContext(18, RoundingMode.HALF_UP)).doubleValue();
     }
 
-    public static StaticArray<Bytes32> generateUrl(int length) {
-        return new StaticArray<>(Stream.generate(() -> UUID.randomUUID().toString().replaceAll("-", "")).limit(length)
-                .map(str -> new Bytes32(str.getBytes()))
-                .toArray(Bytes32[]::new));
+    public static List<byte[]> generateUrl(int length) {
+        return Stream.generate(() -> UUID.randomUUID().toString().replaceAll("-", "")).limit(length)
+                .map(String::getBytes)
+                .collect(toList());
     }
 
     public static CompletableFuture<Integer> balanceOf(PapyrusPrototypeToken token, Address address) {
-        return asCf(token.balanceOf(address)).thenApply(uint -> uint.getValue().intValue());
+        return asCf(token.balanceOf(address.getValue()).sendAsync()).thenApply(BigInteger::intValue);
     }
 
     public static Properties loadAddresses() {

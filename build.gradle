@@ -5,6 +5,7 @@ version '0.1'
 
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'maven-publish'
 
 buildscript {
     repositories {
@@ -23,9 +24,6 @@ repositories {
     }
 }
 
-apply plugin: 'java'
-apply plugin: 'idea'
-
 def SOLC_DIR = "build/solc"
 def SOLC_CONTRACTS_DIR = "$SOLC_DIR/contracts"
 def SRC_GEN_DIR = "build/generated/source/contracts/java"
@@ -42,7 +40,7 @@ sourceSets {
     }
     test{
         java {
-            srcDirs = []
+            srcDirs = ['src/test/java']
         }
     }
 }
@@ -129,10 +127,16 @@ test {
     useTestNG()
 }
 
-uploadArchives {
-    repositories {
-        ivy {
-            url "file://tmp/papyrus/ivy"
+task sourcesJar ( type: Jar, dependsOn: classes ) {
+    classifier 'sources'
+    from 'contracts', SRC_GEN_DIR
+}
+
+publishing {
+    publications {
+        admin(MavenPublication) {
+            from components.java
+            artifact sourcesJar
         }
     }
 }

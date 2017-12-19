@@ -21,8 +21,8 @@ public abstract class DepositTest {
     private SecurityDepositRegistry depositRegistry;
 
     protected void initDepositContract() {
-        depositRegistry = asCf(dao().securityDepositRegistry()).thenApply(registryAddress ->
-                loadSecurityDepositRegistry(registryAddress.toString(), member().transactionManager)
+        depositRegistry = asCf(dao().securityDepositRegistry().sendAsync()).thenApply(registryAddress ->
+                loadSecurityDepositRegistry(registryAddress, member().transactionManager)
         ).join();
     }
 
@@ -86,8 +86,8 @@ public abstract class DepositTest {
     }
 
     protected CompletableFuture<Void> assertRegistryRecord(PapyrusMember member, int amount) {
-        return asCf(depositRegistry.getDeposit(member.getAddress())).thenAccept(deposit ->
-                Assert.assertEquals(deposit.getValue().intValue(), amount)
+        return asCf(depositRegistry.getDeposit(member.getAddress().getValue()).sendAsync()).thenAccept(deposit ->
+                Assert.assertEquals(deposit.intValue(), amount)
         );
     }
 

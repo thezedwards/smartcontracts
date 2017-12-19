@@ -48,12 +48,12 @@ public class AuditorTest extends DepositTest{
                 }).join();
         dao = loadDaoContract(auditor.transactionManager);
         daoRegistrar = loadDaoContract(auditorRegistrar.transactionManager);
-        token = asCf(dao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), auditor.transactionManager)).join();
-        tokenRegistrar = asCf(daoRegistrar.token())
-                .thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), auditorRegistrar.transactionManager)
+        token = asCf(dao.token().sendAsync()).thenApply(tokenAddress -> loadTokenContract(tokenAddress, auditor.transactionManager)).join();
+        tokenRegistrar = asCf(daoRegistrar.token().sendAsync())
+                .thenApply(tokenAddress -> loadTokenContract(tokenAddress, auditorRegistrar.transactionManager)
                 ).join();
-        auditorRegistry = asCf(daoRegistrar.auditorRegistry())
-                .thenApply(auditorRegistryAddress -> loadAuditorRegistry(auditorRegistryAddress.toString(), auditor.transactionManager))
+        auditorRegistry = asCf(daoRegistrar.auditorRegistry().sendAsync())
+                .thenApply(auditorRegistryAddress -> loadAuditorRegistry(auditorRegistryAddress, auditor.transactionManager))
                 .join();
         initDepositContract();
     }
@@ -89,11 +89,11 @@ public class AuditorTest extends DepositTest{
         rememberBalances();
         assertRecordOwner(auditor, auditorRegistrar);
         //Only owner is permitted to transfer ownership
-        asCf(dao.transferAuditorRecord(auditor.getAddress(), auditor.getAddress()))
+        asCf(dao.transferAuditorRecord(auditor.getAddress().getValue(), auditor.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(auditor, auditorRegistrar);
         //Now should work
-        asCf(daoRegistrar.transferAuditorRecord(auditor.getAddress(), auditor.getAddress()))
+        asCf(daoRegistrar.transferAuditorRecord(auditor.getAddress().getValue(), auditor.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(auditor, auditor);
         //Ok, now lets unregister it and check deposit returned to new owner
@@ -108,13 +108,11 @@ public class AuditorTest extends DepositTest{
         rememberBalances();
         assertRecordOwner(auditor, auditorRegistrar);
         //Only owner is permitted to transfer ownership
-        asCf(dao.transferAuditorRecord(auditor.getAddress(), auditor.getAddress()))
+        asCf(dao.transferAuditorRecord(auditor.getAddress().getValue(), auditor.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(auditor, auditorRegistrar);
         //Now should work
-        asCf(daoRegistrar.transferAuditorRecord(auditor.getAddress(), auditor.getAddress()))
-                .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(daoRegistrar.transferSecurityDeposit(auditor.getAddress(), auditor.getAddress()))
+        asCf(daoRegistrar.transferAuditorRecord(auditor.getAddress().getValue(), auditor.getAddress().getValue()).sendAsync())
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(auditor, auditor);
         //Ok, now lets unregister it and check deposit returned to new owner
@@ -123,25 +121,25 @@ public class AuditorTest extends DepositTest{
     }
 
     protected void testAuditorRegistration(PapyrusDAO dao, PapyrusPrototypeToken token) {
-        asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(dao.registerAuditor(auditor.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
-        asCf(dao.registerAuditor(auditor.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
+        asCf(dao.isAuditorRegistered(auditor.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
+        asCf(dao.registerAuditor(auditor.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isAuditorRegistered(auditor.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
+        asCf(token.approve(daoAddress().getValue(), BigInteger.TEN).sendAsync()).join();
+        asCf(dao.registerAuditor(auditor.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isAuditorRegistered(auditor.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
 //        asCf(dao.findAuditor(auditor.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), auditor.address)).join();
     }
 
     protected void testAuditorUnregistration(PapyrusDAO permittedDao, PapyrusDAO nonpermittedDao) {
-        asCf(permittedDao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
-        asCf(nonpermittedDao.unregisterAuditor(auditor.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(permittedDao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
-        asCf(permittedDao.unregisterAuditor(auditor.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(permittedDao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
+        asCf(permittedDao.isAuditorRegistered(auditor.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
+        asCf(nonpermittedDao.unregisterAuditor(auditor.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(permittedDao.isAuditorRegistered(auditor.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
+        asCf(permittedDao.unregisterAuditor(auditor.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(permittedDao.isAuditorRegistered(auditor.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
     }
 
     protected void assertRecordOwner(PapyrusMember record, PapyrusMember recordOwner) {
-        asCf(auditorRegistry.getOwner(record.getAddress())).thenAccept(owner -> Assert.assertEquals(owner.toString(), recordOwner.address)).join();
+        asCf(auditorRegistry.getOwner(record.getAddress().getValue()).sendAsync()).thenAccept(owner -> Assert.assertEquals(owner, recordOwner.address)).join();
     }
 
     @Override
