@@ -134,7 +134,7 @@ contract ChannelContract {
   function blockSettle(uint64 blockNumber, bytes result) public onlyParticipant {
     uint8 i;
     // Check result and settled state
-    bytes32 resultHash = bytes32(keccak256(result));
+    bytes32 resultHash = keccak256(result);
     for (i = 0; i < participants.length; ++i) {
       if (participants[i].blockResults[blockNumber].resultHash != resultHash || participants[i].blockResults[blockNumber].settled) {
         revert();
