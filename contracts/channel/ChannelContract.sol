@@ -30,7 +30,7 @@ contract ChannelContract {
   }
 
   struct BlockResult {
-    uint256 resultHash;
+    bytes32 resultHash;
     uint256 stake;
     bool settled;
   }
@@ -39,7 +39,7 @@ contract ChannelContract {
 
   event ChannelNewBalance(address token, address participant, uint256 balance, uint256 blockNumber);
   event ChannelNewBlockPart(address token, address participant, uint64 blockNumber, bytes reference);
-  event ChannelNewBlockResult(address token, address participant, uint64 blockNumber, uint256 resultHash, uint256 stake);
+  event ChannelNewBlockResult(address token, address participant, uint64 blockNumber, bytes32 resultHash, uint256 stake);
   event ChannelCloseRequested(address channelAddress, uint256 blockNumber);
   event ChannelClosed(address channelAddress, uint256 blockNumber);
   event TransferUpdated(address nodeAddress, uint256 blockNumber);
@@ -114,7 +114,7 @@ contract ChannelContract {
     return (success, participants[i].balance);
   }
 
-  function blockPart(uint64 blockNumber, bytes reference) public {
+  function setBlockPart(uint64 blockNumber, bytes reference) public {
     int8 participantIndex = getParticipantIndex(msg.sender);
     require(participantIndex >= 0);
     uint8 i = uint8(participantIndex);
@@ -122,7 +122,7 @@ contract ChannelContract {
     ChannelNewBlockPart(manager.token(), msg.sender, blockNumber, reference);
   }
 
-  function blockResult(uint64 blockNumber, uint256 resultHash, uint256 stake) public {
+  function setBlockResult(uint64 blockNumber, bytes32 resultHash, uint256 stake) public {
     int8 validatorIndex = getValidatorIndex(msg.sender);
     require(validatorIndex >= 0);
     uint8 i = uint8(validatorIndex);
@@ -134,7 +134,7 @@ contract ChannelContract {
   function blockSettle(uint64 blockNumber, bytes result) public onlyParticipant {
     uint8 i;
     // Check result and settled state
-    uint256 resultHash = uint256(keccak256(result));
+    bytes32 resultHash = bytes32(keccak256(result));
     for (i = 0; i < participants.length; ++i) {
       if (participants[i].blockResults[blockNumber].resultHash != resultHash || participants[i].blockResults[blockNumber].settled) {
         revert();
@@ -244,7 +244,7 @@ contract ChannelContract {
   function blockResult(uint256 participantIndex, uint64 blockNumber)
     public
     view
-    returns (uint256 resultHash, uint256 stake)
+    returns (bytes32 resultHash, uint256 stake)
   {
     resultHash = participants[participantIndex].blockResults[blockNumber].resultHash;
     stake = participants[participantIndex].blockResults[blockNumber].stake;
