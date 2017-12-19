@@ -52,7 +52,7 @@ contract ChannelContract {
   function ChannelContract(
     address _manager,
     string _module,
-    bytes configuration,
+    bytes _configuration,
     address[] _participants,
     uint32 _closeTimeout,
     uint32 _settleTimeout,
@@ -62,15 +62,15 @@ contract ChannelContract {
   {
     // allow creation only from manager contract
     require(msg.sender == _manager);
-    require(participants.length >= 3 && participants.length <= MAX_PARTICIPATS);
-    require(closeTimeout >= 0);
-    require(settleTimeout > 0);
-    require(auditTimeout >= 0);
+    require(_participants.length >= 3 && _participants.length <= MAX_PARTICIPANTS);
+    require(_closeTimeout >= 0);
+    require(_settleTimeout > 0);
+    require(_auditTimeout >= 0);
     manager = ChannelManagerContract(_manager);
     module = _module;
-    configuration = configuration;
+    configuration = _configuration;
     participants.length = _participants.length;
-    for (uint16 i = 0; i < participants.length; ++i) {
+    for (uint16 i = 0; i < _participants.length; ++i) {
       participants[i].participant = _participants[i];
     }
     closeTimeout = _closeTimeout;
@@ -223,6 +223,14 @@ contract ChannelContract {
     selfdestruct(0);
   }
 
+  function participantCount()
+    public
+    view
+    returns (uint64)
+  {
+    return uint64(participants.length);
+  }
+
   function participant(uint256 index)
     public
     view
@@ -360,5 +368,5 @@ contract ChannelContract {
 
   uint256 public nonce;
 
-  uint8 constant MAX_PARTICIPATS = 16;
+  uint8 constant MAX_PARTICIPANTS = 16;
 }
