@@ -1,9 +1,24 @@
 package global.papyrus.utils;
 
-import global.papyrus.smartcontracts.*;
+import java.io.FileReader;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+
 import org.web3j.abi.datatypes.Address;
-import org.web3j.abi.datatypes.StaticArray;
 import org.web3j.abi.datatypes.generated.Bytes32;
+import org.web3j.abi.datatypes.generated.StaticArray5;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.CipherException;
 import org.web3j.protocol.Web3j;
@@ -14,24 +29,18 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.protocol.parity.Parity;
 import org.web3j.tx.ClientTransactionManager;
-import org.web3j.tx.ManagedTransaction;
 import org.web3j.tx.TransactionManager;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.MathContext;
-import java.math.RoundingMode;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
+import global.papyrus.smartcontracts.AuditorRegistry;
+import global.papyrus.smartcontracts.DSPRegistrar;
+import global.papyrus.smartcontracts.DSPRegistry;
+import global.papyrus.smartcontracts.PapyrusDAO;
+import global.papyrus.smartcontracts.PapyrusPrototypeToken;
+import global.papyrus.smartcontracts.PublisherRegistry;
+import global.papyrus.smartcontracts.SSPRegistry;
+import global.papyrus.smartcontracts.SecurityDepositRegistry;
 
 import static global.papyrus.utils.Web3jUtils.asCf;
-import static java.util.stream.Collectors.toList;
 import static org.web3j.tx.ManagedTransaction.GAS_PRICE;
 import static org.web3j.tx.Transfer.GAS_LIMIT;
 
@@ -106,8 +115,8 @@ public class PapyrusUtils {
     }
 
     public static CompletableFuture<TransactionReceipt> mintPrp(String to, long prpAmount) {
-        return Web3jUtils.asCf(loadDaoContract(new ClientTransactionManager(web3j, ownerAddr)).token().sendAsync()).thenCompose(tokenAddr ->
-            Web3jUtils.asCf(loadTokenContract(tokenAddr.toString(), new ClientTransactionManager(web3j, ownerAddr)).mint(to, BigInteger.valueOf(prpAmount), BigInteger.ZERO).sendAsync())
+        return Web3jUtils.asCf(loadDaoContract(new ClientTransactionManager(web3j, ownerAddr)).token()).thenCompose(tokenAddr ->
+            Web3jUtils.asCf(loadTokenContract(tokenAddr.toString(), new ClientTransactionManager(web3j, ownerAddr)).mint(new Address(to), new Uint256(prpAmount), new Uint256(0)))
         );
     }
 
@@ -163,14 +172,15 @@ public class PapyrusUtils {
         return new BigDecimal(weiAmount).divide(new BigDecimal(ethPrice), new MathContext(18, RoundingMode.HALF_UP)).doubleValue();
     }
 
-    public static List<byte[]> generateUrl(int length) {
-        return Stream.generate(() -> UUID.randomUUID().toString().replaceAll("-", "")).limit(length)
-                .map(String::getBytes)
-                .collect(toList());
+    public static StaticArray5<Bytes32> generateUrl5() {
+        int length = 5;
+        return new StaticArray5<>(Stream.generate(() -> UUID.randomUUID().toString().replaceAll("-", "")).limit(length)
+                .map(str -> new Bytes32(str.getBytes()))
+                .toArray(Bytes32[]::new));
     }
 
     public static CompletableFuture<Integer> balanceOf(PapyrusPrototypeToken token, Address address) {
-        return asCf(token.balanceOf(address.getValue()).sendAsync()).thenApply(BigInteger::intValue);
+        return asCf(token.balanceOf(address)).thenApply(uint -> uint.getValue().intValue());
     }
 
     public static Properties loadAddresses() {

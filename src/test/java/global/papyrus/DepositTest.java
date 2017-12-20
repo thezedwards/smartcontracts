@@ -1,16 +1,19 @@
 package global.papyrus;
 
-import global.papyrus.smartcontracts.PapyrusDAO;
-import global.papyrus.smartcontracts.PapyrusPrototypeToken;
-import global.papyrus.smartcontracts.SecurityDepositRegistry;
-import global.papyrus.utils.PapyrusMember;
+import java.util.concurrent.CompletableFuture;
+
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.web3j.abi.datatypes.Address;
 
-import java.util.concurrent.CompletableFuture;
+import global.papyrus.smartcontracts.PapyrusDAO;
+import global.papyrus.smartcontracts.PapyrusPrototypeToken;
+import global.papyrus.smartcontracts.SecurityDepositRegistry;
+import global.papyrus.utils.PapyrusMember;
 
-import static global.papyrus.utils.PapyrusUtils.*;
+import static global.papyrus.utils.PapyrusUtils.balanceOf;
+import static global.papyrus.utils.PapyrusUtils.depositAmount;
+import static global.papyrus.utils.PapyrusUtils.loadSecurityDepositRegistry;
 import static global.papyrus.utils.Web3jUtils.asCf;
 
 public abstract class DepositTest {
@@ -21,8 +24,8 @@ public abstract class DepositTest {
     private SecurityDepositRegistry depositRegistry;
 
     protected void initDepositContract() {
-        depositRegistry = asCf(dao().securityDepositRegistry().sendAsync()).thenApply(registryAddress ->
-                loadSecurityDepositRegistry(registryAddress, member().transactionManager)
+        depositRegistry = asCf(dao().securityDepositRegistry()).thenApply(registryAddress ->
+                loadSecurityDepositRegistry(registryAddress.toString(), member().transactionManager)
         ).join();
     }
 
@@ -86,8 +89,8 @@ public abstract class DepositTest {
     }
 
     protected CompletableFuture<Void> assertRegistryRecord(PapyrusMember member, int amount) {
-        return asCf(depositRegistry.getDeposit(member.getAddress().getValue()).sendAsync()).thenAccept(deposit ->
-                Assert.assertEquals(deposit.intValue(), amount)
+        return asCf(depositRegistry.getDeposit(member.getAddress())).thenAccept(deposit ->
+                Assert.assertEquals(deposit.getValue().intValue(), amount)
         );
     }
 

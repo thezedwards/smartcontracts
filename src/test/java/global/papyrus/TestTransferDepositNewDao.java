@@ -39,12 +39,12 @@ public class TestTransferDepositNewDao {
                 }).join();
         dao = loadDaoContract(auditor.transactionManager);
         ownerDao = loadDaoContract(new ClientTransactionManager(web3j, ownerAddr));
-        token = asCf(dao.token().sendAsync()).thenApply(tokenAddress -> loadTokenContract(tokenAddress, auditor.transactionManager)).join();
-        ownerToken = asCf(dao.token().sendAsync()).thenApply(tokenAddress -> loadTokenContract(tokenAddress, new ClientTransactionManager(web3j, ownerAddr))).join();
-        asCf(dao.isAuditorRegistered(auditor.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
-        asCf(token.approve(daoAddress().getValue(), BigInteger.TEN).sendAsync()).join();
-        asCf(dao.registerAuditor(auditor.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(dao.isAuditorRegistered(auditor.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
+        token = asCf(dao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), auditor.transactionManager)).join();
+        ownerToken = asCf(dao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), new ClientTransactionManager(web3j, ownerAddr))).join();
+        asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
+        asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
+        asCf(dao.registerAuditor(auditor.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
     }
 
     @Test(enabled = false)
@@ -52,7 +52,7 @@ public class TestTransferDepositNewDao {
         daoBalance = asCf(balanceOf(token, daoAddress())).join();
         int ownerBalance = asCf(balanceOf(token, ownerAddress())).join();
         //Let owner be the new Dao (destination on money transfer not so important)
-        asCf(dao.transferDepositsToNewDao(ownerAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.transferDepositsToNewDao(ownerAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         //Nothing changed
         balanceOf(token, daoAddress()).thenAccept(
                 realBalance -> Assert.assertEquals(realBalance.intValue(), daoBalance)
@@ -61,7 +61,7 @@ public class TestTransferDepositNewDao {
                 realBalance -> Assert.assertEquals(realBalance.intValue(), ownerBalance)
         ).join();
         //Now should work
-        asCf(ownerDao.transferDepositsToNewDao(ownerAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(ownerDao.transferDepositsToNewDao(ownerAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         balanceOf(token, daoAddress()).thenAccept(
                 realBalance -> Assert.assertEquals(realBalance.intValue(), 0)
         ).join();
@@ -72,9 +72,9 @@ public class TestTransferDepositNewDao {
 
     @AfterClass(enabled = false)
     public void unregisterUser() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException {
-        asCf(ownerToken.transfer(daoAddress().getValue(), BigInteger.valueOf(daoBalance)).sendAsync()).join();
-        asCf(dao.isAuditorRegistered(auditor.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
-        asCf(dao.unregisterAuditor(auditor.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(dao.isAuditorRegistered(auditor.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
+        asCf(ownerToken.transfer(daoAddress(), new Uint256(daoBalance))).join();
+        asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
+        asCf(dao.unregisterAuditor(auditor.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
     }
 }

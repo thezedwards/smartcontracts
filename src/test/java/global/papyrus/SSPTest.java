@@ -1,9 +1,12 @@
 package global.papyrus;
 
-import global.papyrus.smartcontracts.PapyrusDAO;
-import global.papyrus.smartcontracts.PapyrusPrototypeToken;
-import global.papyrus.smartcontracts.SSPRegistry;
-import global.papyrus.utils.PapyrusMember;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.util.concurrent.ExecutionException;
+
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -12,12 +15,10 @@ import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint8;
 import org.web3j.crypto.CipherException;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.util.concurrent.ExecutionException;
+import global.papyrus.smartcontracts.PapyrusDAO;
+import global.papyrus.smartcontracts.PapyrusPrototypeToken;
+import global.papyrus.smartcontracts.SSPRegistry;
+import global.papyrus.utils.PapyrusMember;
 
 import static global.papyrus.utils.PapyrusUtils.*;
 import static global.papyrus.utils.Web3jUtils.asCf;
@@ -39,10 +40,10 @@ public class SSPTest extends DepositTest {
     enum SSPType {
         Gate(0), Direct(1);
 
-        public final BigInteger code;
+        public final Uint8 code;
 
         SSPType(int code) {
-            this.code = BigInteger.valueOf(code);
+            this.code = new Uint8(code);
         }
     }
 
@@ -60,12 +61,12 @@ public class SSPTest extends DepositTest {
                 }).join();
         dao = loadDaoContract(ssp.transactionManager);
         daoRegistrar = loadDaoContract(sspRegistrar.transactionManager);
-        token = asCf(dao.token().sendAsync()).thenApply(tokenAddress -> loadTokenContract(tokenAddress, ssp.transactionManager)).join();
-        tokenRegistrar = asCf(daoRegistrar.token().sendAsync())
-                .thenApply(tokenAddress -> loadTokenContract(tokenAddress, sspRegistrar.transactionManager)
+        token = asCf(dao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), ssp.transactionManager)).join();
+        tokenRegistrar = asCf(daoRegistrar.token())
+                .thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), sspRegistrar.transactionManager)
                 ).join();
-        sspRegistry = asCf(daoRegistrar.sspRegistry().sendAsync())
-                .thenApply(sspRegistryAddress -> loadSspRegistry(sspRegistryAddress, ssp.transactionManager))
+        sspRegistry = asCf(daoRegistrar.sspRegistry())
+                .thenApply(sspRegistryAddress -> loadSspRegistry(sspRegistryAddress.toString(), ssp.transactionManager))
                 .join();
         initDepositContract();
     }
@@ -101,11 +102,11 @@ public class SSPTest extends DepositTest {
         rememberBalances();
         assertRecordOwner(ssp, sspRegistrar);
         //Only owner is permitted to transfer ownership
-        asCf(dao.transferSSPRecord(ssp.getAddress().getValue(), ssp.getAddress().getValue()).sendAsync())
+        asCf(dao.transferSSPRecord(ssp.getAddress(), ssp.getAddress()))
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(ssp, sspRegistrar);
         //Now should work
-        asCf(daoRegistrar.transferSSPRecord(ssp.getAddress().getValue(), ssp.getAddress().getValue()).sendAsync())
+        asCf(daoRegistrar.transferSSPRecord(ssp.getAddress(), ssp.getAddress()))
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(ssp, ssp);
         //Ok, now lets unregister it and check deposit returned to new owner
@@ -120,11 +121,11 @@ public class SSPTest extends DepositTest {
         rememberBalances();
         assertRecordOwner(ssp, sspRegistrar);
         //Only owner is permitted to transfer ownership
-        asCf(dao.transferSSPRecord(ssp.getAddress().getValue(), ssp.getAddress().getValue()).sendAsync())
+        asCf(dao.transferSSPRecord(ssp.getAddress(), ssp.getAddress()))
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(ssp, sspRegistrar);
         //Now should work
-        asCf(daoRegistrar.transferSSPRecord(ssp.getAddress().getValue(), ssp.getAddress().getValue()).sendAsync())
+        asCf(daoRegistrar.transferSSPRecord(ssp.getAddress(), ssp.getAddress()))
                 .thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         assertRecordOwner(ssp, ssp);
         //Ok, now lets unregister it and check deposit returned to new owner
@@ -133,25 +134,25 @@ public class SSPTest extends DepositTest {
     }
 
     protected void testSspRegistration(PapyrusDAO dao, PapyrusPrototypeToken token) {
-        asCf(dao.isSspRegistered(ssp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
-        asCf(dao.registerSsp(ssp.getAddress().getValue(), SSPType.Direct.code, BigInteger.valueOf(3)).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(dao.isSspRegistered(ssp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
-        asCf(token.approve(daoAddress().getValue(), BigInteger.TEN).sendAsync()).join();
-        asCf(dao.registerSsp(ssp.getAddress().getValue(), SSPType.Direct.code, BigInteger.valueOf(3)).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(dao.isSspRegistered(ssp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
+        asCf(dao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
+        asCf(dao.registerSsp(ssp.getAddress(), SSPType.Direct.code, new Uint16(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
+        asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
+        asCf(dao.registerSsp(ssp.getAddress(), SSPType.Direct.code, new Uint16(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
 //        asCf(dao.findSsp(ssp.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), ssp.address)).join();
     }
 
     protected void testSspUnregistration(PapyrusDAO permittedDao, PapyrusDAO nonpermittedDao) {
-        asCf(permittedDao.isSspRegistered(ssp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
-        asCf(nonpermittedDao.unregisterSsp(ssp.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(permittedDao.isSspRegistered(ssp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertTrue).join();
-        asCf(permittedDao.unregisterSsp(ssp.getAddress().getValue()).sendAsync()).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
-        asCf(permittedDao.isSspRegistered(ssp.getAddress().getValue()).sendAsync()).thenAccept(Assert::assertFalse).join();
+        asCf(permittedDao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
+        asCf(nonpermittedDao.unregisterSsp(ssp.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(permittedDao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
+        asCf(permittedDao.unregisterSsp(ssp.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(permittedDao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
     }
 
     protected void assertRecordOwner(PapyrusMember record, PapyrusMember recordOwner) {
-        asCf(sspRegistry.getOwner(record.getAddress().getValue()).sendAsync()).thenAccept(owner -> Assert.assertEquals(owner, recordOwner.address)).join();
+        asCf(sspRegistry.getOwner(record.getAddress())).thenAccept(owner -> Assert.assertEquals(owner.toString(), recordOwner.address)).join();
     }
 
     @Override
