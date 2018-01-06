@@ -1,76 +1,255 @@
 pragma solidity ^0.4.18;
 
+import '../common/ECRecovery.sol';
 import '../common/StandardToken.sol';
 import './ChannelApi.sol';
-import "./ChannelContract.sol";
+import './ChannelManagerApi.sol';
+import './CampaignContract.sol';
+import './SettlementApi.sol';
 
 
-contract ChannelManagerContract {
+contract ChannelManagerContract is ChannelManagerApi {
+  using SafeMath for uint256;
 
-  // EVENTS
+  // STRUCTURES
 
-  event ChannelNew(
-    address indexed channel,
-    string module
-  );
+  struct Channel {
+    address campaign;
+    string module;
+    bytes configuration;
+    Participant[] participants;
+    uint32 closeTimeout;
 
-  event ChannelDeleted(
-    address indexed channel
-  );
+    uint256 opened;
+    uint256 closeRequested;
+    uint256 closed;
+
+    mapping (uint64 => BlockSettlement) blockSettlements;
+    uint64 blockCount;
+  }
+
+  struct Participant {
+    address participant;
+    address validator;
+    mapping (uint64 => BlockPart) blockParts;
+    mapping (uint64 => BlockResult) blockResults;
+  }
+
+  struct BlockPart {
+    bytes reference;
+  }
+
+  struct BlockResult {
+    bytes32 resultHash;
+    uint256 stake;
+  }
+
+  struct BlockSettlement {
+    bytes result;
+    bool settled;
+  }
 
   // PUBLIC FUNCTIONS
 
-  function ChannelManagerContract(address _token, address _channelApi) public {
-    require(_token != address(0) && _channelApi != address(0));
-    token = StandardToken(_token);
+  function ChannelManagerContract(address _channelApi) public {
+    require(_channelApi != address(0));
     channelApi = ChannelApi(_channelApi);
   }
 
-  /// @notice Create a new channel for specified participants
-  /// @param settleTimeout The settle timeout in blocks
-  /// @return The address of the newly created ChannelContract.
-  function newChannel(
+  function () public {
+    revert();
+  }
+
+  // PUBLIC FUNCTIONS (CHANNELS MANAGEMENT)
+
+  function createChannel(
     string module,
     bytes configuration,
     address[] participants,
-    uint32 closeTimeout,
-    uint32 settleTimeout,
-    uint32 auditTimeout
+    uint32 closeTimeout
   )
     public
-    returns (address)
+    returns (uint64 channel)
   {
-    address channelAddress = new ChannelContract(this, module, configuration, participants, closeTimeout, settleTimeout, auditTimeout);
-    ChannelNew(channelAddress, module);
-    return channelAddress;
+    require(participants.length >= MIN_PARTICIPANTS && participants.length <= MAX_PARTICIPANTS);
+    require(closeTimeout >= 0);
+    channel = channelCount;
+    channels[channel].campaign = msg.sender;
+    channels[channel].module = module;
+    channels[channel].configuration = configuration;
+    channels[channel].participants.length = participants.length;
+    for (uint16 i = 0; i < participants.length; ++i) {
+      channels[channel].participants[i].participant = participants[i];
+    }
+    channels[channel].closeTimeout = closeTimeout;
+    channels[channel].opened = block.number;
+    channelCount += 1;
+    ChannelCreated(channel, module, block.number);
   }
 
-  function auditReport(
-    address channelAddress,
-    address from,
-    address to,
-    uint64 totalImpressions,
-    uint64 fraudImpressions
-  )
+  function requestCloseChannel(uint64 channel) public onlyParticipant(channel) {
+    require(channels[channel].closeRequested == 0);
+    channels[channel].closeRequested = block.number;
+    ChannelCloseRequested(channel, channels[channel].closeRequested);
+  }
+
+  function closeChannel(uint64 channel) public {
+    if (channels[channel].closeTimeout > 0) {
+      require(channels[channel].closeRequested > 0);
+      require(block.number - channels[channel].closeRequested >= channels[channel].closeTimeout);
+    }
+    if (channels[channel].closed == 0) {
+      channels[channel].closed = block.number;
+    }
+    ChannelClosed(channel, channels[channel].closed);
+  }
+
+  // PUBLIC FUNCTIONS (CHANNELS INTERACTION)
+
+  function approve(uint64 channel, address validator) public {
+    require(validator != address(0));
+    int8 participantIndex = getParticipantIndex(channel, msg.sender);
+    require(participantIndex >= 0);
+    uint8 i = uint8(participantIndex);
+    channels[channel].participants[i].validator = validator;
+  }
+
+  function setBlockPart(uint64 channel, uint64 blockId, bytes reference) public {
+    int8 participantIndex = getParticipantIndex(channel, msg.sender);
+    require(participantIndex >= 0);
+    uint8 i = uint8(participantIndex);
+    channels[channel].participants[i].blockParts[blockId].reference = reference;
+    if (channels[channel].blockCount < blockId + 1) {
+      channels[channel].blockCount = blockId + 1;
+    }
+    ChannelNewBlockPart(channel, msg.sender, blockId, reference);
+  }
+
+  function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash, uint256 stake) public {
+    int8 validatorIndex = getValidatorIndex(channel, msg.sender);
+    require(validatorIndex >= 0);
+    uint8 i = uint8(validatorIndex);
+    channels[channel].participants[i].blockResults[blockId].resultHash = resultHash;
+    channels[channel].participants[i].blockResults[blockId].stake = stake;
+    ChannelNewBlockResult(channel, msg.sender, blockId, resultHash, stake);
+  }
+
+  function blockSettle(uint64 channel, uint64 blockId, bytes result) public onlyParticipant(channel) {
+    require(!channels[channel].blockSettlements[blockId].settled);
+    channels[channel].blockSettlements[blockId].result = result;
+    channels[channel].blockSettlements[blockId].settled = true;
+    ChannelBlockSettled(channel, msg.sender, blockId, result);
+  }
+
+  function participantCount(uint64 channel)
     public
+    view
+    returns (uint64)
   {
-    require(channelAddress != address(0));
-    ChannelContract channel = ChannelContract(channelAddress);
-    require(channel.manager() == address(this));
-    channel.audit(msg.sender);
-    channelApi.applyRuntimeUpdate(from, to, totalImpressions, fraudImpressions);
+    return uint64(channels[channel].participants.length);
   }
 
-  function destroyChannel(address channelAddress) public {
-    require(channelAddress != address(0));
-    ChannelContract channel = ChannelContract(channelAddress);
-    require(channel.manager() == address(this));
-    ChannelDeleted(channelAddress);
-    channel.destroy();
+  function participant(uint64 channel, uint64 participantId)
+    public
+    view
+    returns (address participantAddress, address validatorAddress)
+  {
+    participantAddress = channels[channel].participants[participantId].participant;
+    validatorAddress = channels[channel].participants[participantId].validator;
+  }
+
+  function blockCount(uint64 channel)
+    public
+    view
+    returns (uint64)
+  {
+    return channels[channel].blockCount;
+  }
+
+  function blockPart(uint64 channel, uint64 participantId, uint64 blockId)
+    public
+    view
+    returns (bytes reference)
+  {
+    reference = channels[channel].participants[participantId].blockParts[blockId].reference;
+  }
+
+  function blockResult(uint64 channel, uint64 participantId, uint64 blockId)
+    public
+    view
+    returns (bytes32 resultHash, uint256 stake)
+  {
+    resultHash = channels[channel].participants[participantId].blockResults[blockId].resultHash;
+    stake = channels[channel].participants[participantId].blockResults[blockId].stake;
+  }
+
+  function blockSettlement(uint64 channel, uint64 blockId)
+    public
+    view
+    returns (bytes result)
+  {
+    result = channels[channel].blockSettlements[blockId].result;
+  }
+
+  function hashState(address _channel, uint256 _nonce, uint256 _receiverPayment, uint256 _auditorPayment) public pure returns (bytes32) {
+    return keccak256(_channel, _nonce, _receiverPayment, _auditorPayment);
+  }
+
+  function hashTransfer(address _transferId, address _channel, bytes _lockData, uint256 _sum) public pure returns (bytes32) {
+    if (_lockData.length > 0) {
+      return keccak256(_transferId, _channel, _sum, _lockData);
+    } else {
+      return keccak256(_transferId, _channel, _sum);
+    }
+  }
+
+  // PRIVATE FUNCTIONS
+
+  function getParticipantIndex(uint64 channel, address participantAddress) private view returns (int8) {
+    for (uint8 i = 0; i < channels[channel].participants.length; ++i) {
+      if (channels[channel].participants[i].participant == participantAddress) {
+        return int8(i);
+      }
+    }
+    return -1;
+  }
+
+  function isParticipant(uint64 channel, address participantAddress) private view returns (bool) {
+    return getParticipantIndex(channel, participantAddress) >= 0;
+  }
+
+  function getValidatorIndex(uint64 channel, address validator) private view returns (int8) {
+    for (uint8 i = 0; i < channels[channel].participants.length; ++i) {
+      if (channels[channel].participants[i].validator == validator) {
+        return int8(i);
+      }
+    }
+    return -1;
+  }
+
+  function isValidator(uint64 channel, address validator) private view returns (bool) {
+    return getValidatorIndex(channel, validator) >= 0;
+  }
+
+  // MODIFIERS
+
+  modifier onlyParticipant(uint64 channel) {
+    require(isParticipant(channel, msg.sender));
+    _;
+  }
+
+  modifier onlyValidator(uint64 channel) {
+    require(isValidator(channel, msg.sender));
+    _;
   }
 
   // FIELDS
 
-  StandardToken public token;
   ChannelApi public channelApi;
+
+  mapping (uint64 => Channel) public channels;
+  uint64 public channelCount;
+
+  uint8 constant MIN_PARTICIPANTS = 2;
+  uint8 constant MAX_PARTICIPANTS = 16;
 }
