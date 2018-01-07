@@ -82,7 +82,7 @@ module.exports = function(deployer) {
     }).then(function() {
         addressEndpointRegistry = EndpointRegistryContract.address;
         deployer.link(ECRecovery, ChannelManagerContract);
-        return deployer.deploy(ChannelManagerContract, addressPapyrusPrototypeToken, addressPapyrusDAO);
+        return deployer.deploy(ChannelManagerContract, addressPapyrusDAO);
     }).then(function() {
         addressChannelManager = ChannelManagerContract.address;
         linkDao("SSPRegistry", SSPRegistry.at(addressSSPRegistry));
