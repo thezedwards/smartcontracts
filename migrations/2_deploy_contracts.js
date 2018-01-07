@@ -11,6 +11,7 @@ var SecurityDepositRegistry = artifacts.require("./registry/impl/SecurityDeposit
 var ECRecovery = artifacts.require("./common/ECRecovery.sol");
 var EndpointRegistryContract = artifacts.require("./channel/EndpointRegistryContract.sol");
 var ChannelManagerContract = artifacts.require("./channel/ChannelManagerContract.sol");
+var CampaignContract = artifacts.require("./channel/CampaignContract.sol");
 
 var addressCoreAccount = web3.eth.accounts[0];
 var addressPapyrusPrototypeToken;
@@ -23,6 +24,7 @@ var addressSecurityDepositRegistry;
 var addressECRecovery;
 var addressEndpointRegistry;
 var addressChannelManager;
+var addressCampaignContract;
 
 
 function printAddresses() {
@@ -39,6 +41,7 @@ function printAddresses() {
     console.log("  Endpoint Registry: " + addressEndpointRegistry);
     console.log("  Channel Manager: " + addressChannelManager);
     console.log("    ECRecovery: " + addressECRecovery);
+    console.log("  Campaign: " + addressCampaignContract);
     console.log("====================================");
     fs.writeFileSync("contracts.properties", "dao=" + addressPapyrusDAO + "\n" + "token=" + addressPapyrusPrototypeToken);
 }
@@ -85,6 +88,19 @@ module.exports = function(deployer) {
         return deployer.deploy(ChannelManagerContract, addressPapyrusDAO);
     }).then(function() {
         addressChannelManager = ChannelManagerContract.address;
+        return deployer.deploy(CampaignContract,
+            addressPapyrusPrototypeToken,
+            addressChannelManager,
+            '0xb508d41ecb22e9b9bb85c15b5fb3a90cdaddc4ea',
+            '0xb508d41ecb22e9b9bb85c15b5fb3a90cdaddc4ea',
+            'Name of Campaign',
+            'Some short description.',
+            '<html></html>',
+            'https://google.com',
+            'Test Title'
+        );
+    }).then(function() {
+        addressCampaignContract = CampaignContract.address;
         linkDao("SSPRegistry", SSPRegistry.at(addressSSPRegistry));
         linkDao("DSPRegistry", DSPRegistry.at(addressDSPRegistry));
         linkDao("PublisherRegistry", PublisherRegistry.at(addressPublisherRegistry));
