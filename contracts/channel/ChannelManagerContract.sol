@@ -24,15 +24,19 @@ contract ChannelManagerContract is ChannelManagerApi {
     uint256 closeRequested;
     uint256 closed;
 
-    mapping (uint64 => BlockSettlement) blockSettlements;
+    mapping (uint64 => Block) blocks;
     uint64 blockCount;
   }
 
   struct Participant {
     address participant;
     address validator;
-    mapping (uint64 => BlockPart) blockParts;
-    mapping (uint64 => BlockResult) blockResults;
+  }
+
+  struct Block {
+    BlockPart[] parts;
+    BlockResult[] results;
+    BlockSettlement settlement;
   }
 
   struct BlockPart {
@@ -118,7 +122,10 @@ contract ChannelManagerContract is ChannelManagerApi {
     int8 participantIndex = getParticipantIndex(channel, msg.sender);
     require(participantIndex >= 0);
     uint8 i = uint8(participantIndex);
-    channels[channel].participants[i].blockParts[blockId].reference = reference;
+    if (channels[channel].blocks[blockId].parts.length == 0) {
+      channels[channel].blocks[blockId].parts.length = channels[channel].participants.length;
+    }
+    channels[channel].blocks[blockId].parts[i].reference = reference;
     if (channels[channel].blockCount < blockId + 1) {
       channels[channel].blockCount = blockId + 1;
     }
@@ -129,15 +136,18 @@ contract ChannelManagerContract is ChannelManagerApi {
     int8 validatorIndex = getValidatorIndex(channel, msg.sender);
     require(validatorIndex >= 0);
     uint8 i = uint8(validatorIndex);
-    channels[channel].participants[i].blockResults[blockId].resultHash = resultHash;
-    channels[channel].participants[i].blockResults[blockId].stake = stake;
+    if (channels[channel].blocks[blockId].results.length == 0) {
+      channels[channel].blocks[blockId].results.length = channels[channel].participants.length;
+    }
+    channels[channel].blocks[blockId].results[i].resultHash = resultHash;
+    channels[channel].blocks[blockId].results[i].stake = stake;
     ChannelNewBlockResult(channel, msg.sender, blockId, resultHash, stake);
   }
 
   function blockSettle(uint64 channel, uint64 blockId, bytes result) public onlyParticipant(channel) {
-    require(!channels[channel].blockSettlements[blockId].settled);
-    channels[channel].blockSettlements[blockId].result = result;
-    channels[channel].blockSettlements[blockId].settled = true;
+    require(!channels[channel].blocks[blockId].settlement.settled);
+    channels[channel].blocks[blockId].settlement.result = result;
+    channels[channel].blocks[blockId].settlement.settled = true;
     ChannelBlockSettled(channel, msg.sender, blockId, result);
   }
 
@@ -171,7 +181,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     view
     returns (bytes reference)
   {
-    reference = channels[channel].participants[participantId].blockParts[blockId].reference;
+    reference = channels[channel].blocks[blockId].parts[participantId].reference;
   }
 
   function blockResult(uint64 channel, uint64 participantId, uint64 blockId)
@@ -179,8 +189,8 @@ contract ChannelManagerContract is ChannelManagerApi {
     view
     returns (bytes32 resultHash, uint256 stake)
   {
-    resultHash = channels[channel].participants[participantId].blockResults[blockId].resultHash;
-    stake = channels[channel].participants[participantId].blockResults[blockId].stake;
+    resultHash = channels[channel].blocks[blockId].results[participantId].resultHash;
+    stake = channels[channel].blocks[blockId].results[participantId].stake;
   }
 
   function blockSettlement(uint64 channel, uint64 blockId)
@@ -188,7 +198,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     view
     returns (bytes result)
   {
-    result = channels[channel].blockSettlements[blockId].result;
+    result = channels[channel].blocks[blockId].settlement.result;
   }
 
   function hashState(address _channel, uint256 _nonce, uint256 _receiverPayment, uint256 _auditorPayment) public pure returns (bytes32) {
