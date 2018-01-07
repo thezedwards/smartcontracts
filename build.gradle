@@ -96,7 +96,6 @@ task wrappers(dependsOn: compileContracts) {
             "AuditorRegistry",
             "SecurityDepositRegistry",
             "ChannelManagerContract",
-            "ChannelContract",
             "EndpointRegistryContract"
     ]
 

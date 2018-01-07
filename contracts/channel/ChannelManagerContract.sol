@@ -84,11 +84,11 @@ contract ChannelManagerContract is ChannelManagerApi {
     channels[channel].participants.length = participants.length;
     for (uint16 i = 0; i < participants.length; ++i) {
       channels[channel].participants[i].participant = participants[i];
+      ChannelCreated(channel, participants[i]);
     }
     channels[channel].closeTimeout = closeTimeout;
     channels[channel].opened = block.number;
     channelCount += 1;
-    ChannelCreated(channel, module, block.number);
   }
 
   function requestCloseChannel(uint64 channel) public onlyParticipant(channel) {
@@ -150,6 +150,8 @@ contract ChannelManagerContract is ChannelManagerApi {
     channels[channel].blocks[blockId].settlement.settled = true;
     ChannelBlockSettled(channel, msg.sender, blockId, result);
   }
+  
+  //FUNCTIONS
 
   function participantCount(uint64 channel)
     public
@@ -174,6 +176,30 @@ contract ChannelManagerContract is ChannelManagerApi {
     returns (uint64)
   {
     return channels[channel].blockCount;
+  }
+
+  function channelClosed(uint64 channel)
+    public
+    view
+    returns (uint256)
+  {
+    return channels[channel].closed;
+  }
+
+  function channelModule(uint64 channel)
+    public
+    view
+    returns (string)
+  {
+    return channels[channel].module;
+  }
+
+  function channelConfiguration(uint64 channel)
+    public
+    view
+    returns (bytes)
+  {
+    return channels[channel].configuration;
   }
 
   function blockPart(uint64 channel, uint64 participantId, uint64 blockId)

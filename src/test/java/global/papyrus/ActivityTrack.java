@@ -28,7 +28,7 @@ public class ActivityTrack {
     private final String sspAddr = "";
     private final String auditorAddr = "";
 
-    @Test
+    @Test(enabled = false)
     public void createTrack() throws CipherException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException, ExecutionException, InterruptedException {
         try {
             PapyrusMember dsp = createNewMember(Double.parseDouble(addresses.getProperty("initeth")), 10).join();
