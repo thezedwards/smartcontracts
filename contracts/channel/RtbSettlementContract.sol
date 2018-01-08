@@ -47,11 +47,11 @@ contract RtbSettlementContract is SettlementApi {
       fraudImpressions := mload(add(result, 0x48))
     }
     if (sspPayment > 0) {
-      var (sspAddress, /*sspValidator*/) = channelManager.participant(channel, 1);
+      address sspAddress = channelManager.channelParticipant(channel, 1);
       require(token.transfer(sspAddress, sspPayment));
     }
     if (auditorPayment > 0) {
-      var (auditorAddress, /*auditorValidator*/) = channelManager.participant(channel, 2);
+      address auditorAddress = channelManager.channelParticipant(channel, 2);
       require(token.transfer(auditorAddress, auditorPayment));
     }
   }

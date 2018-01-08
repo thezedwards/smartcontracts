@@ -153,28 +153,47 @@ contract ChannelManagerContract is ChannelManagerApi {
   
   //FUNCTIONS
 
-  function participantCount(uint64 channel)
-    public
-    view
-    returns (uint64)
-  {
+  function channelCampaign(uint64 channel) public view returns (address) {
+    return channels[channel].campaign;
+  }
+
+  function channelModule(uint64 channel) public view returns (string) {
+    return channels[channel].module;
+  }
+
+  function channelConfiguration(uint64 channel) public view returns (address) {
+    return channels[channel].campaign;
+  }
+
+  function channelParticipantCount(uint64 channel) public view returns (uint64) {
     return uint64(channels[channel].participants.length);
   }
 
-  function participant(uint64 channel, uint64 participantId)
-    public
-    view
-    returns (address participantAddress, address validatorAddress)
-  {
-    participantAddress = channels[channel].participants[participantId].participant;
-    validatorAddress = channels[channel].participants[participantId].validator;
+  function channelParticipant(uint64 channel, uint64 participantId) public view returns (address) {
+    return channels[channel].participants[participantId].participant;
   }
 
-  function blockCount(uint64 channel)
-    public
-    view
-    returns (uint64)
-  {
+  function channelValidator(uint64 channel, uint64 participantId) public view returns (address) {
+    return channels[channel].participants[participantId].validator;
+  }
+
+  function channelCloseTimeout(uint64 channel) public view returns (uint32) {
+    return channels[channel].closeTimeout;
+  }
+
+  function channelOpened(uint64 channel) public view returns (uint256) {
+    return channels[channel].opened;
+  }
+
+  function channelCloseRequested(uint64 channel) public view returns (uint256) {
+    return channels[channel].closeRequested;
+  }
+
+  function channelClosed(uint64 channel) public view returns (uint256) {
+    return channels[channel].closed;
+  }
+
+  function blockCount(uint64 channel) public view returns (uint64) {
     return channels[channel].blockCount;
   }
 

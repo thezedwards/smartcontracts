@@ -65,6 +65,6 @@ contract CampaignContract is RtbSettlementContract {
   string public link;
   string public title;
 
-  mapping (address => mapping (uint64 => uint64)) channelIndexes;
-  mapping (address => uint64) channelCounts;
+  mapping (address => mapping (uint64 => uint64)) public channelIndexes;
+  mapping (address => uint64) public channelCounts;
 }
