@@ -14,7 +14,7 @@ contract ChannelManagerContract is ChannelManagerApi {
   // STRUCTURES
 
   struct Channel {
-    address campaign;
+    address creator;
     string module;
     bytes configuration;
     Participant[] participants;
@@ -78,7 +78,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(participants.length >= MIN_PARTICIPANTS && participants.length <= MAX_PARTICIPANTS);
     require(closeTimeout >= 0);
     channel = channelCount;
-    channels[channel].campaign = msg.sender;
+    channels[channel].creator = msg.sender;
     channels[channel].module = module;
     channels[channel].configuration = configuration;
     channels[channel].participants.length = participants.length;
@@ -153,16 +153,16 @@ contract ChannelManagerContract is ChannelManagerApi {
   
   //FUNCTIONS
 
-  function channelCampaign(uint64 channel) public view returns (address) {
-    return channels[channel].campaign;
+  function channelCreator(uint64 channel) public view returns (address) {
+    return channels[channel].creator;
   }
 
   function channelModule(uint64 channel) public view returns (string) {
     return channels[channel].module;
   }
 
-  function channelConfiguration(uint64 channel) public view returns (address) {
-    return channels[channel].campaign;
+  function channelConfiguration(uint64 channel) public view returns (bytes) {
+    return channels[channel].configuration;
   }
 
   function channelParticipantCount(uint64 channel) public view returns (uint64) {
@@ -195,30 +195,6 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   function blockCount(uint64 channel) public view returns (uint64) {
     return channels[channel].blockCount;
-  }
-
-  function channelClosed(uint64 channel)
-    public
-    view
-    returns (uint256)
-  {
-    return channels[channel].closed;
-  }
-
-  function channelModule(uint64 channel)
-    public
-    view
-    returns (string)
-  {
-    return channels[channel].module;
-  }
-
-  function channelConfiguration(uint64 channel)
-    public
-    view
-    returns (bytes)
-  {
-    return channels[channel].configuration;
   }
 
   function blockPart(uint64 channel, uint64 participantId, uint64 blockId)
