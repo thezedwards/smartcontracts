@@ -49,7 +49,6 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   struct BlockSettlement {
     bytes result;
-    bool settled;
   }
 
   // PUBLIC FUNCTIONS
@@ -143,9 +142,8 @@ contract ChannelManagerContract is ChannelManagerApi {
   }
 
   function blockSettle(uint64 channel, uint64 blockId, bytes result) public onlyParticipant(channel) {
-    require(!channels[channel].blocks[blockId].settlement.settled);
+    require(channels[channel].blocks[blockId].settlement.result.length == 0);
     channels[channel].blocks[blockId].settlement.result = result;
-    channels[channel].blocks[blockId].settlement.settled = true;
     ChannelBlockSettled(channel, msg.sender, blockId, result);
   }
   
