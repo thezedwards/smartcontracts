@@ -14,7 +14,6 @@ contract ChannelManagerContract is ChannelManagerApi {
   // STRUCTURES
 
   struct Channel {
-    address creator;
     string module;
     bytes configuration;
     Participant[] participants;
@@ -78,7 +77,6 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(participants.length >= MIN_PARTICIPANTS && participants.length <= MAX_PARTICIPANTS);
     require(closeTimeout >= 0);
     channel = channelCount;
-    channels[channel].creator = msg.sender;
     channels[channel].module = module;
     channels[channel].configuration = configuration;
     channels[channel].participants.length = participants.length;
@@ -152,10 +150,6 @@ contract ChannelManagerContract is ChannelManagerApi {
   }
   
   //FUNCTIONS
-
-  function channelCreator(uint64 channel) public view returns (address) {
-    return channels[channel].creator;
-  }
 
   function channelModule(uint64 channel) public view returns (string) {
     return channels[channel].module;
