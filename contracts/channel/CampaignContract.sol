@@ -12,13 +12,15 @@ contract CampaignContract is RtbSettlementContract {
     address _token,
     address _channelManager,
     address _advertiser,
-    address _dsp
+    address _dsp,
+    uint64 _dbId
   )
     RtbSettlementContract(_token, _channelManager)
     public
   {
     advertiser = _advertiser;
     dsp = _dsp;
+    dbId = _dbId;
   }
 
   function () public {
@@ -49,6 +51,7 @@ contract CampaignContract is RtbSettlementContract {
   address public advertiser;
   address public dsp;
   address[] public ssps;
+  uint64 public dbId;
 
   mapping (address => mapping (uint64 => uint64)) public channelIndexes;
   mapping (address => uint64) public channelCounts;
