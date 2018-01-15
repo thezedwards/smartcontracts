@@ -1,6 +1,7 @@
 bin
 build
 node_modules
+contract.properties
 yarn-error.log
 .node-xmlhttprequest-sync-*
 .idea
