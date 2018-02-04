@@ -113,6 +113,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(participantIndex >= 0);
     uint8 i = uint8(participantIndex);
     channels[channel].participants[i].validator = validator;
+    ChannelApproved(channel, msg.sender);
   }
 
   function setBlockPart(uint64 channel, uint64 blockId, bytes reference) public {

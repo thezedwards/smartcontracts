@@ -11,6 +11,7 @@ contract ChannelManagerApi {
   // EVENTS
 
   event ChannelCreated(uint64 indexed channel, address indexed participant);
+  event ChannelApproved(uint64 indexed channel, address indexed participant);
   event ChannelCloseRequested(uint64 indexed channel, uint256 blockNumber);
   event ChannelClosed(uint64 indexed channel, uint256 blockNumber);
   event ChannelAudited(uint64 indexed channel, uint256 blockNumber);
