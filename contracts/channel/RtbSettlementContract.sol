@@ -1,16 +1,18 @@
 pragma solidity ^0.4.18;
 
 import '../common/StandardToken.sol';
+import '../common/SafeOwnable.sol';
 import './ChannelManagerContract.sol';
 import './SettlementApi.sol';
 
 
-contract RtbSettlementContract is SettlementApi {
+contract RtbSettlementContract is SafeOwnable, SettlementApi {
   using SafeMath for uint256;
 
   // EVENTS
 
   event Deposit(address indexed sender, uint256 balance);
+  event Withdraw(address indexed receiver, uint256 balance);
 
   // PUBLIC FUNCTIONS
 
@@ -20,7 +22,7 @@ contract RtbSettlementContract is SettlementApi {
     channelManager = ChannelManagerContract(_channelManager);
   }
 
-  /// @notice Sender deposits amount to participant.
+  /// @notice Sender deposits amount of tokens.
   /// @param amount The amount to be deposited to the contract
   /// @return success Success if the transfer was successful
   /// @return balance The new balance of the contract
@@ -30,6 +32,20 @@ contract RtbSettlementContract is SettlementApi {
     if (success) {
       contractBalance = contractBalance.add(amount);
       Deposit(msg.sender, contractBalance);
+    }
+    return (success, contractBalance);
+  }
+
+  /// @notice Sender withdraws amount of tokens.
+  /// @param amount The amount to be withdrawn from the contract
+  /// @return success Success if the transfer was successful
+  /// @return balance The new balance of the contract
+  function withdraw(uint256 amount) public onlyOwner returns (bool success, uint256 balance) {
+    require(token.balanceOf(this) >= amount);
+    success = token.transfer(owner, amount);
+    if (success) {
+      contractBalance = contractBalance.sub(amount);
+      Withdraw(owner, contractBalance);
     }
     return (success, contractBalance);
   }
