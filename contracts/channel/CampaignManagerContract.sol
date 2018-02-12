@@ -7,9 +7,7 @@ contract CampaignManagerContract {
 
   // EVENTS
 
-  event CampaignCreated(
-    address indexed campaign
-  );
+  event CampaignCreated(address indexed campaign);
 
   // PUBLIC FUNCTIONS
 
@@ -24,14 +22,13 @@ contract CampaignManagerContract {
   }
 
   function createCampaign(
-    string _dbId,
-    address _advertiser,
-    address _dsp
+    address _dsp,
+    string _dbId
   )
     public
     returns (address campaign)
   {
-    campaign = new CampaignContract(token, channelManager, _dbId, _advertiser, _dsp);
+    campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _dbId);
     campaigns[campaignCount] = campaign;
     campaignCount += 1;
     CampaignCreated(campaign);

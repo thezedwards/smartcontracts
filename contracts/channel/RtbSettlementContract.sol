@@ -13,6 +13,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
 
   event Deposit(address indexed sender, uint256 balance);
   event Withdraw(address indexed receiver, uint256 balance);
+  event Settle(address indexed sender, uint64 channel, uint64 blockId);
 
   // PUBLIC FUNCTIONS
 
@@ -70,6 +71,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
       address auditorAddress = channelManager.channelParticipant(channel, 2);
       require(token.transfer(auditorAddress, auditorPayment));
     }
+    Settle(msg.sender, channel, blockId);
   }
 
   // FIELDS

@@ -6,21 +6,26 @@ import './RtbSettlementContract.sol';
 
 contract CampaignContract is RtbSettlementContract {
 
+  // EVENTS
+
+  event ChannelCreate(address indexed creator, uint64 channel, string module, bytes configuration, address ssp, address auditor, uint32 closeTimeout);
+
   // PUBLIC FUNCTIONS
 
   function CampaignContract(
     address _token,
     address _channelManager,
-    string _dbId,
     address _advertiser,
-    address _dsp
+    address _dsp,
+    string _dbId
   )
     RtbSettlementContract(_token, _channelManager)
     public
   {
-    dbId = _dbId;
     advertiser = _advertiser;
     dsp = _dsp;
+    dbId = _dbId;
+    owner = advertiser;
   }
 
   function () public {
@@ -44,14 +49,16 @@ contract CampaignContract is RtbSettlementContract {
     channel = channelManager.createChannel(module, configuration, participants, closeTimeout);
     channelIndexes[ssp][channelCounts[ssp]] = channel;
     channelCounts[ssp] += 1;
+    ChannelCreate(msg.sender, channelCounts[ssp] - 1, module, configuration, ssp, auditor, closeTimeout);
   }
 
   // FIELDS
 
   address public advertiser;
   address public dsp;
-  address[] public ssps;
   string public dbId;
+
+  address[] public ssps;
 
   mapping (address => mapping (uint64 => uint64)) public channelIndexes;
   mapping (address => uint64) public channelCounts;
