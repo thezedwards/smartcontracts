@@ -19,11 +19,27 @@ contract ChannelManagerApi {
 
   // PUBLIC FUNCTIONS (CHANNELS MANAGEMENT)
 
-  function createChannel(string module, bytes configuration, address[] participants, uint32 closeTimeout) public returns (uint64 channelId);
-
+  function createChannel(
+  // validator module name
+    string module,
+  // module-specific configuration 
+    bytes configuration,
+  // addresses of participants 
+    address[] participants,
+  // minimal period in seconds between two subsequent blocks   
+    uint32 minBlockPeriod,
+  // timeout in seconds between now and blockStart checked in setPartResult   
+    uint32 partTimeout,
+  // timeout in seconds between now and blockStart checked in setBlockResult   
+    uint32 resultTimeout,
+  // timeout in seconds between and now and closeTimestamp set in requestClose    
+    uint32 closeTimeout
+  )
+  public
+  returns (uint64 channel);
+  
   // Closing channel
   function requestClose(uint64 channel) public;
-  function closeChannel(uint64 channel) public;
 
   // Writting data to channel
   function approve(uint64 channel, address validator) public;
