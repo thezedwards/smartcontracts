@@ -46,7 +46,7 @@ contract CampaignContract is RtbSettlementContract {
     participants[0] = dsp;
     participants[1] = ssp;
     participants[2] = auditor;
-    channel = channelManager.createChannel(module, configuration, participants, closeTimeout);
+    channel = channelManager.createChannel(module, configuration, participants, 60, 300, 600, closeTimeout);
     channelIndexes[ssp][channelCounts[ssp]] = channel;
     channelCounts[ssp] += 1;
     ChannelCreate(msg.sender, channelCounts[ssp] - 1, module, configuration, ssp, auditor, closeTimeout);
