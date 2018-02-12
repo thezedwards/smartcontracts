@@ -17,6 +17,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     string module;
     bytes configuration;
     Participant[] participants;
+    uint32 minBlockPeriod;
     uint32 partTimeout;
     uint32 resultTimeout;
     uint32 closeTimeout;
@@ -26,6 +27,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     uint64 closed;
 
     mapping (uint64 => Block) blocks;
+    uint64 lastBlock;
     uint64 blockCount;
   }
 
@@ -73,6 +75,8 @@ contract ChannelManagerContract is ChannelManagerApi {
     bytes configuration,
     // addresses of participants 
     address[] participants,
+    // minimal period in seconds between two subsequent blocks   
+    uint32 minBlockPeriod,
     // timeout in seconds between now and blockStart checked in setPartResult   
     uint32 partTimeout,
     // timeout in seconds between now and blockStart checked in setBlockResult   
@@ -95,6 +99,7 @@ contract ChannelManagerContract is ChannelManagerApi {
       channels[channel].participants[i].participant = participants[i];
       ChannelCreated(channel, participants[i]);
     }
+    channels[channel].minBlockPeriod = minBlockPeriod;
     channels[channel].partTimeout = partTimeout;
     channels[channel].resultTimeout = resultTimeout;
     channels[channel].closeTimeout = closeTimeout;
@@ -127,6 +132,10 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(participantIndex >= 0);
     uint8 i = uint8(participantIndex);
     if (channels[channel].blocks[blockId].parts.length == 0) {
+      if (blockId > channels[channel].lastBlock) {
+        require(blockStart(blockId) - blockStart(channels[channel].lastBlock) >= channels[channel].minBlockPeriod);
+        channels[channel].lastBlock = blockId;
+      }
       channels[channel].blocks[blockId].parts.length = channels[channel].participants.length;
     }
     channels[channel].blocks[blockId].parts[i].reference = reference;
@@ -138,6 +147,7 @@ contract ChannelManagerContract is ChannelManagerApi {
   }
 
   function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public notClosed(channel, blockId) {
+    //TODO require all parts were received or (blockStart(blockId) + channels[channel].partTimeout < now)
     require(blockStart(blockId) + channels[channel].resultTimeout >= now);
     
     int8 validatorIndex = getValidatorIndex(channel, msg.sender);
@@ -194,11 +204,11 @@ contract ChannelManagerContract is ChannelManagerApi {
     return channels[channel].closeTimeout;
   }
 
-  function channelOpened(uint64 channel) public view returns (uint256) {
+  function channelOpened(uint64 channel) public view returns (uint64) {
     return channels[channel].opened;
   }
 
-  function channelCloseTimestamp(uint64 channel) public view returns (uint256) {
+  function channelCloseTimestamp(uint64 channel) public view returns (uint64) {
     return channels[channel].closeTimestamp;
   }
 
@@ -244,7 +254,7 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   // returns block start timestamp  
   function blockStart(uint64 blockId) pure returns (uint64) {
-    return blockId / 1000;
+    return blockId;
   }
 
   function getParticipantIndex(uint64 channel, address participantAddress) private view returns (int8) {

@@ -27,7 +27,7 @@ contract ChannelManagerApi {
 
   // Writting data to channel
   function approve(uint64 channel, address validator) public;
-  function setBlockPart(uint64 channel, uint64 blockId, int64 length, bytes reference) public;
+  function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes reference) public;
   function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public;
   function blockSettle(uint64 channel, uint64 blockId, bytes result) public;
 
