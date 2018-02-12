@@ -216,6 +216,10 @@ contract ChannelManagerContract is ChannelManagerApi {
     return channels[channel].blockCount;
   }
 
+  function lastBlock(uint64 channel) public view returns (uint64) {
+    return channels[channel].lastBlock;
+  }
+
   function blockPart(uint64 channel, uint64 participantId, uint64 blockId) public view returns (uint64 length, bytes reference)
   {
     length = channels[channel].blocks[blockId].parts[participantId].length;
