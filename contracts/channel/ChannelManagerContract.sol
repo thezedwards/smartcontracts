@@ -27,7 +27,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     uint64 closed;
 
     mapping (uint64 => Block) blocks;
-    uint64 lastBlock;
+    mapping (uint64 => uint64) blockIds;
     uint64 blockCount;
   }
 
@@ -132,17 +132,16 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(participantIndex >= 0);
     uint8 i = uint8(participantIndex);
     if (channels[channel].blocks[blockId].parts.length == 0) {
-      if (blockId > channels[channel].lastBlock) {
-        require(blockStart(blockId) - blockStart(channels[channel].lastBlock) >= channels[channel].minBlockPeriod);
-        channels[channel].lastBlock = blockId;
+      uint64 lastBlockId = lastBlock(channel);
+      if (blockId > lastBlockId) {
+        require(blockStart(blockId) - blockStart(lastBlockId) >= channels[channel].minBlockPeriod);
+        channels[channel].blockIds[channels[channel].blockCount] = blockId;
+        channels[channel].blockCount++;
       }
       channels[channel].blocks[blockId].parts.length = channels[channel].participants.length;
     }
     channels[channel].blocks[blockId].parts[i].reference = reference;
     channels[channel].blocks[blockId].parts[i].length = length;
-    if (channels[channel].blockCount < blockId + 1) {
-      channels[channel].blockCount = blockId + 1;
-    }
     ChannelNewBlockPart(channel, msg.sender, blockId, length, reference);
   }
 
@@ -212,15 +211,22 @@ contract ChannelManagerContract is ChannelManagerApi {
     return channels[channel].closeTimestamp;
   }
 
+  function lastBlock(uint64 channel) public view returns (uint64) {
+    return channels[channel].blockCount > 0 ? channels[channel].blockIds[channels[channel].blockCount - 1] : 0;
+  }
+
   function blockCount(uint64 channel) public view returns (uint64) {
     return channels[channel].blockCount;
   }
 
-  function lastBlock(uint64 channel) public view returns (uint64) {
-    return channels[channel].lastBlock;
+  function blockIndex(uint64 channel, uint64 blockId) public view returns (uint64) {
+    return channels[channel].blockIds[blockId];
   }
 
-  function blockPart(uint64 channel, uint64 participantId, uint64 blockId) public view returns (uint64 length, bytes reference)
+  function blockPart(uint64 channel, uint64 participantId, uint64 blockId)
+    public
+    view
+    returns (uint64 length, bytes reference)
   {
     length = channels[channel].blocks[blockId].parts[participantId].length;
     reference = channels[channel].blocks[blockId].parts[participantId].reference;
@@ -257,7 +263,7 @@ contract ChannelManagerContract is ChannelManagerApi {
   // PRIVATE FUNCTIONS
 
   // returns block start timestamp  
-  function blockStart(uint64 blockId) pure returns (uint64) {
+  function blockStart(uint64 blockId) private pure returns (uint64) {
     return blockId;
   }
 

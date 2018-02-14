@@ -8,7 +8,8 @@ contract CampaignContract is RtbSettlementContract {
 
   // EVENTS
 
-  event ChannelCreate(address indexed creator, uint64 channel, string module, bytes configuration, address ssp, address auditor, uint32 closeTimeout);
+  event ChannelCreated(address indexed creator, uint64 channel, uint64 channelInternal, string module, bytes configuration,
+    address ssp, address auditor, uint32 minBlockPeriod, uint32 partTimeout, uint32 resultTimeout, uint32 closeTimeout);
 
   // PUBLIC FUNCTIONS
 
@@ -37,6 +38,9 @@ contract CampaignContract is RtbSettlementContract {
     bytes configuration,
     address ssp,
     address auditor,
+    uint32 minBlockPeriod,
+    uint32 partTimeout,
+    uint32 resultTimeout,
     uint32 closeTimeout
   )
     public
@@ -46,10 +50,10 @@ contract CampaignContract is RtbSettlementContract {
     participants[0] = dsp;
     participants[1] = ssp;
     participants[2] = auditor;
-    channel = channelManager.createChannel(module, configuration, participants, 60, 300, 600, closeTimeout);
+    channel = channelManager.createChannel(module, configuration, participants, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
     channelIndexes[ssp][channelCounts[ssp]] = channel;
     channelCounts[ssp] += 1;
-    ChannelCreate(msg.sender, channelCounts[ssp] - 1, module, configuration, ssp, auditor, closeTimeout);
+    ChannelCreated(msg.sender, channelCounts[ssp] - 1, channel, module, configuration, ssp, auditor, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
   }
 
   // FIELDS

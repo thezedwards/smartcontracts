@@ -34,6 +34,31 @@ contract CampaignManagerContract {
     CampaignCreated(campaign);
   }
 
+  function createCampaignAndChannels(
+    address _dsp,
+    string _dbId,
+    address[] _ssps,
+    address[] _auditors,
+    string module,
+    bytes configuration,
+    uint32 minBlockPeriod,
+    uint32 partTimeout,
+    uint32 resultTimeout,
+    uint32 closeTimeout
+  )
+    public
+    returns (CampaignContract campaign)
+  {
+    require(_ssps.length > 0 && _ssps.length == _auditors.length);
+    campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _dbId);
+    for (uint32 i = 0; i < _ssps.length; ++i) {
+      campaign.createChannel(module, configuration, _ssps[i], _auditors[i], minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
+    }
+    campaigns[campaignCount] = campaign;
+    campaignCount += 1;
+    CampaignCreated(campaign);
+  }
+
   // FIELDS
 
   StandardToken public token;
