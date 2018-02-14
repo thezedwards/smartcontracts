@@ -44,6 +44,7 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   struct BlockPart {
     uint64 length;
+    bytes32 hash;
     bytes reference;
   }
 
@@ -125,8 +126,9 @@ contract ChannelManagerContract is ChannelManagerApi {
     ChannelApproved(channel, msg.sender);
   }
 
-  function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes reference) public notClosed(channel, blockId) {
+  function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference) public notClosed(channel, blockId) {
     require(blockStart(blockId) + channels[channel].partTimeout >= now);
+    require(reference.length > 0);
 
     int8 participantIndex = getParticipantIndex(channel, msg.sender);
     require(participantIndex >= 0);
@@ -140,9 +142,10 @@ contract ChannelManagerContract is ChannelManagerApi {
       }
       channels[channel].blocks[blockId].parts.length = channels[channel].participants.length;
     }
+    channels[channel].blocks[blockId].parts[i].hash = hash;
     channels[channel].blocks[blockId].parts[i].reference = reference;
     channels[channel].blocks[blockId].parts[i].length = length;
-    ChannelNewBlockPart(channel, msg.sender, blockId, length, reference);
+    ChannelNewBlockPart(channel, msg.sender, blockId, length, hash, reference);
   }
 
   function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public notClosed(channel, blockId) {
@@ -226,9 +229,10 @@ contract ChannelManagerContract is ChannelManagerApi {
   function blockPart(uint64 channel, uint64 participantId, uint64 blockId)
     public
     view
-    returns (uint64 length, bytes reference)
+    returns (uint64 length, bytes32 hash, bytes reference)
   {
     length = channels[channel].blocks[blockId].parts[participantId].length;
+    hash = channels[channel].blocks[blockId].parts[participantId].hash;
     reference = channels[channel].blocks[blockId].parts[participantId].reference;
   }
 

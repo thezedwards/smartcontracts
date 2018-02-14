@@ -13,7 +13,7 @@ contract ChannelManagerApi {
   event ChannelCreated(uint64 indexed channel, address indexed participant);
   event ChannelApproved(uint64 indexed channel, address indexed participant);
   event ChannelCloseRequested(uint64 indexed channel, uint64 timestamp);
-  event ChannelNewBlockPart(uint64 indexed channel, address indexed participant, uint64 blockId, uint64 length, bytes reference);
+  event ChannelNewBlockPart(uint64 indexed channel, address indexed participant, uint64 blockId, uint64 length, bytes32 hash, bytes reference);
   event ChannelNewBlockResult(uint64 indexed channel, address indexed participant, uint64 blockId, bytes32 resultHash);
   event ChannelBlockSettled(uint64 indexed channel, address indexed participant, uint64 blockId, bytes result);
 
@@ -43,7 +43,7 @@ contract ChannelManagerApi {
 
   // Writting data to channel
   function approve(uint64 channel, address validator) public;
-  function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes reference) public;
+  function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference) public;
   function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public;
   function blockSettle(uint64 channel, uint64 blockId, bytes result) public;
 
@@ -55,8 +55,7 @@ contract ChannelManagerApi {
   function channelValidator(uint64 channel, uint64 participantId) public view returns (address);
 
   // Read channel blocks information
-  function blockCount(uint64 channel) public view returns (uint64);
-  function blockPart(uint64 channel, uint64 participantId, uint64 blockId) public view returns (uint64 length, bytes reference);
+  function blockPart(uint64 channel, uint64 participantId, uint64 blockId) public view returns (uint64 length, bytes32 hash, bytes reference);
   function blockResult(uint64 channel, uint64 participantId, uint64 blockId) public view returns (bytes32 resultHash);
   function blockSettlement(uint64 channel, uint64 blockId) public view returns (bytes result);
 }
