@@ -129,7 +129,6 @@ contract ChannelManagerContract is ChannelManagerApi {
   function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference) public notClosed(channel, blockId) {
     require(blockStart(blockId) + channels[channel].partTimeout >= now);
     require(reference.length > 0);
-
     int8 participantIndex = getParticipantIndex(channel, msg.sender);
     require(participantIndex >= 0);
     uint8 i = uint8(participantIndex);
@@ -151,7 +150,6 @@ contract ChannelManagerContract is ChannelManagerApi {
   function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public notClosed(channel, blockId) {
     //TODO require all parts were received or (blockStart(blockId) + channels[channel].partTimeout < now)
     require(blockStart(blockId) + channels[channel].resultTimeout >= now);
-    
     int8 validatorIndex = getValidatorIndex(channel, msg.sender);
     require(validatorIndex >= 0);
     uint8 i = uint8(validatorIndex);
@@ -168,6 +166,13 @@ contract ChannelManagerContract is ChannelManagerApi {
     //TODO check that sha3(result) == all results hashes (may skip participants without validator)
     require(channels[channel].blocks[blockId].settlement.result.length == 0);
     require(result.length > 0);
+    /*
+    var resultHash = keccak256(result);
+    for (uint8 i = 0; i < channels[channel].participants.length; ++i) {
+      require(channels[channel].participants[i].validator == address(0) ||
+        channels[channel].blocks[blockId].results[i].resultHash == resultHash);
+    }
+    */
     channels[channel].blocks[blockId].settlement.result = result;
     ChannelBlockSettled(channel, msg.sender, blockId, result);
   }

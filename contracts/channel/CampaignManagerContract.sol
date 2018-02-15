@@ -52,7 +52,7 @@ contract CampaignManagerContract {
     require(_ssps.length > 0 && _ssps.length == _auditors.length);
     campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _dbId);
     for (uint32 i = 0; i < _ssps.length; ++i) {
-      campaign.createChannel(module, configuration, _ssps[i], _auditors[i], minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
+      campaign.createChannel(module, configuration, _ssps[i], _auditors, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
     }
     campaigns[campaignCount] = campaign;
     campaignCount += 1;

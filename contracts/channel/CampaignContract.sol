@@ -9,7 +9,7 @@ contract CampaignContract is RtbSettlementContract {
   // EVENTS
 
   event ChannelCreated(address indexed creator, uint64 channel, uint64 channelInternal, string module, bytes configuration,
-    address ssp, address auditor, uint32 minBlockPeriod, uint32 partTimeout, uint32 resultTimeout, uint32 closeTimeout);
+    address ssp, address[] auditors, uint32 minBlockPeriod, uint32 partTimeout, uint32 resultTimeout, uint32 closeTimeout);
 
   // PUBLIC FUNCTIONS
 
@@ -37,7 +37,7 @@ contract CampaignContract is RtbSettlementContract {
     string module,
     bytes configuration,
     address ssp,
-    address auditor,
+    address[] auditors,
     uint32 minBlockPeriod,
     uint32 partTimeout,
     uint32 resultTimeout,
@@ -46,14 +46,24 @@ contract CampaignContract is RtbSettlementContract {
     public
     returns (uint64 channel)
   {
-    address[] memory participants = new address[](3);
+    address[] memory participants = new address[](2 + auditors.length);
     participants[0] = dsp;
     participants[1] = ssp;
-    participants[2] = auditor;
+    for (uint8 i = 0; i < auditors.length; ++i) {
+      participants[2 + i] = auditors[i];
+    }
     channel = channelManager.createChannel(module, configuration, participants, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
     channelIndexes[ssp][channelCounts[ssp]] = channel;
     channelCounts[ssp] += 1;
-    ChannelCreated(msg.sender, channelCounts[ssp] - 1, channel, module, configuration, ssp, auditor, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
+    ChannelCreated(msg.sender, channelCounts[ssp] - 1, channel, module, configuration, ssp, auditors, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
+  }
+
+  function ssps(uint64 index) public view returns (address) {
+    return partners[index];
+  }
+
+  function sspCount() public view returns (uint64) {
+    return partnerCount;
   }
 
   // FIELDS
@@ -61,9 +71,4 @@ contract CampaignContract is RtbSettlementContract {
   address public advertiser;
   address public dsp;
   string public dbId;
-
-  address[] public ssps;
-
-  mapping (address => mapping (uint64 => uint64)) public channelIndexes;
-  mapping (address => uint64) public channelCounts;
 }
