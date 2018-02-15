@@ -1,5 +1,7 @@
 var fs = require('fs');
 
+var PapyrusRegistry = artifacts.require("./PapyrusRegistry.sol");
+
 var MultiSigWalletWithDailyLimit = artifacts.require("./gnosis/MultiSigWalletWithDailyLimit.sol");
 var PapyrusPrototypeToken = artifacts.require("./PapyrusPrototypeToken.sol");
 var PapyrusDAO = artifacts.require("./dao/PapyrusDAO.sol");
@@ -12,6 +14,9 @@ var ECRecovery = artifacts.require("./common/ECRecovery.sol");
 var EndpointRegistryContract = artifacts.require("./channel/EndpointRegistryContract.sol");
 var ChannelManagerContract = artifacts.require("./channel/ChannelManagerContract.sol");
 var CampaignManagerContract = artifacts.require("./channel/CampaignManagerContract.sol");
+var CampaignContract = artifacts.require("./channel/CampaignContract.sol");
+
+var addressPapyrusRegistry = '0xCA97d3A4d74a80CefCD1CA254187b45dE2DfbDe6';
 
 var addressCoreAccount = web3.eth.accounts[0];
 var addressPapyrusPrototypeToken;
@@ -24,7 +29,7 @@ var addressSecurityDepositRegistry;
 var addressECRecovery;
 var addressEndpointRegistry;
 var addressChannelManager;
-var addressCampaignManagerContract;
+var addressCampaignManager;
 
 
 function printAddresses() {
@@ -41,7 +46,7 @@ function printAddresses() {
     console.log("  Endpoint Registry: " + addressEndpointRegistry);
     console.log("  Channel Manager: " + addressChannelManager);
     console.log("    ECRecovery: " + addressECRecovery);
-    console.log("  Campaign Manager: " + addressCampaignManagerContract);
+    console.log("  Campaign Manager: " + addressCampaignManager);
     console.log("====================================");
     fs.writeFileSync("contracts.properties", "dao=" + addressPapyrusDAO + "\n" + "token=" + addressPapyrusPrototypeToken);
 }
@@ -55,6 +60,7 @@ function linkDao(registryName, registryContract) {
 }
 
 module.exports = function(deployer) {
+    let papyrusRegistry = PapyrusRegistry.at(addressPapyrusRegistry);
     // First of all deploy all necessary multi signature wallets
     // For now use daily non limit multi signature wallets with 5 owners and zero daily limit
     deployer.deploy(PapyrusPrototypeToken).then(function() {
@@ -93,7 +99,7 @@ module.exports = function(deployer) {
             addressChannelManager
         );
     }).then(function() {
-        addressCampaignManagerContract = CampaignManagerContract.address;
+        addressCampaignManager = CampaignManagerContract.address;
         linkDao("SSPRegistry", SSPRegistry.at(addressSSPRegistry));
         linkDao("DSPRegistry", DSPRegistry.at(addressDSPRegistry));
         linkDao("PublisherRegistry", PublisherRegistry.at(addressPublisherRegistry));
@@ -111,6 +117,16 @@ module.exports = function(deployer) {
         }).catch(function(err) {
             console.log("Error while setting PapyrusPrototypeToken transferable");
         });
+    }).then(function() {
+        return papyrusRegistry.updateTokenContract(addressPapyrusPrototypeToken, JSON.stringify(PapyrusPrototypeToken.abi));
+    }).then(function() {
+        return papyrusRegistry.updateDaoContract(addressPapyrusDAO, JSON.stringify(PapyrusDAO.abi));
+    }).then(function() {
+        return papyrusRegistry.updateChannelManagerContract(addressChannelManager, JSON.stringify(ChannelManagerContract.abi));
+    }).then(function() {
+        return papyrusRegistry.updateCampaignManagerContract(addressCampaignManager, JSON.stringify(CampaignManagerContract.abi));
+    }).then(function() {
+        return papyrusRegistry.updateCampaignContract(JSON.stringify(CampaignContract.abi));
     }).then(function() {
         printAddresses();
     });

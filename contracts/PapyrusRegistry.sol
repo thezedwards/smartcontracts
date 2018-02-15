@@ -7,10 +7,11 @@ contract PapyrusRegistry is SafeOwnable {
 
   // EVENTS
 
-  event TokenUpdated(address contractAddress, string abi, bytes bin);
-  event DaoUpdated(address contractAddress, string abi, bytes bin);
-  event ChannelManagerUpdated(address contractAddress, string abi, bytes bin);
-  event CampaignManagerUpdated(address contractAddress, string abi, bytes bin);
+  event TokenUpdated(address contractAddress, string abi);
+  event DaoUpdated(address contractAddress, string abi);
+  event ChannelManagerUpdated(address contractAddress, string abi);
+  event CampaignManagerUpdated(address contractAddress, string abi);
+  event CampaignUpdated(string abi);
 
   // PUBLIC FUNCTIONS
 
@@ -18,49 +19,48 @@ contract PapyrusRegistry is SafeOwnable {
     revert();
   }
 
-  function updateTokenContract(address contractAddress, string abi, bytes bin) public onlyOwner {
+  function updateTokenContract(address contractAddress, string abi) public onlyOwner {
     tokenAddress = contractAddress;
     tokenAbi = abi;
-    tokenBin = bin;
-    TokenUpdated(contractAddress, abi, bin);
+    TokenUpdated(contractAddress, abi);
   }
 
-  function updateDaoContract(address contractAddress, string abi, bytes bin) public onlyOwner {
+  function updateDaoContract(address contractAddress, string abi) public onlyOwner {
     daoAddress = contractAddress;
     daoAbi = abi;
-    daoBin = bin;
-    DaoUpdated(contractAddress, abi, bin);
+    DaoUpdated(contractAddress, abi);
   }
 
-  function updateChannelManagerContract(address contractAddress, string abi, bytes bin) public onlyOwner {
+  function updateChannelManagerContract(address contractAddress, string abi) public onlyOwner {
     channelManagerAddress = contractAddress;
     channelManagerAbi = abi;
-    channelManagerBin = bin;
-    ChannelManagerUpdated(contractAddress, abi, bin);
+    ChannelManagerUpdated(contractAddress, abi);
   }
 
-  function updateCampaignManagerContract(address contractAddress, string abi, bytes bin) public onlyOwner {
+  function updateCampaignManagerContract(address contractAddress, string abi) public onlyOwner {
     campaignManagerAddress = contractAddress;
     campaignManagerAbi = abi;
-    campaignManagerBin = bin;
-    CampaignManagerUpdated(contractAddress, abi, bin);
+    CampaignManagerUpdated(contractAddress, abi);
+  }
+
+  function updateCampaignContract(string abi) public onlyOwner {
+    campaignAbi = abi;
+    CampaignUpdated(abi);
   }
 
   // FIELDS
 
   address public tokenAddress;
   string public tokenAbi;
-  bytes public tokenBin;
 
   address public daoAddress;
   string public daoAbi;
-  bytes public daoBin;
 
   address public channelManagerAddress;
   string public channelManagerAbi;
-  bytes public channelManagerBin;
 
   address public campaignManagerAddress;
   string public campaignManagerAbi;
-  bytes public campaignManagerBin;
+
+  string public campaignAbi;
 }

@@ -7,7 +7,7 @@ contract CampaignManagerContract {
 
   // EVENTS
 
-  event CampaignCreated(address indexed campaign);
+  event CampaignCreated(uint64 campaignIndex, address campaignAddress);
 
   // PUBLIC FUNCTIONS
 
@@ -31,7 +31,7 @@ contract CampaignManagerContract {
     campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _dbId);
     campaigns[campaignCount] = campaign;
     campaignCount += 1;
-    CampaignCreated(campaign);
+    CampaignCreated(campaignCount - 1, campaign);
   }
 
   function createCampaignAndChannels(
@@ -49,14 +49,14 @@ contract CampaignManagerContract {
     public
     returns (CampaignContract campaign)
   {
-    require(_ssps.length > 0 && _ssps.length == _auditors.length);
+    require(_ssps.length > 0);
     campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _dbId);
     for (uint32 i = 0; i < _ssps.length; ++i) {
       campaign.createChannel(module, configuration, _ssps[i], _auditors, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
     }
     campaigns[campaignCount] = campaign;
     campaignCount += 1;
-    CampaignCreated(campaign);
+    CampaignCreated(campaignCount - 1, campaign);
   }
 
   // FIELDS
