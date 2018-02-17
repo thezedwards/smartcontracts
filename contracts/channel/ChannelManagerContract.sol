@@ -92,7 +92,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(partTimeout > 0);
     require(resultTimeout > 0);
     require(closeTimeout > 0);
-    channel = channelCount;
+    channel = channelCount + 1;
     channels[channel].module = module;
     channels[channel].configuration = configuration;
     channels[channel].participants.length = participants.length;
