@@ -11,10 +11,11 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
 
   // PUBLIC FUNCTIONS
 
-  function RtbSettlementContract(address _token, address _channelManager) public {
-    require(_token != address(0) && _channelManager != address(0));
+  function RtbSettlementContract(address _token, address _channelManager, address _payer) public {
+    require(_token != address(0) && _channelManager != address(0) && _payer != address(0));
     token = StandardToken(_token);
     channelManager = ChannelManagerContract(_channelManager);
+    payer = _payer;
   }
 
   /// @notice Sender deposits amount of tokens.
@@ -25,10 +26,9 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
     require(token.balanceOf(msg.sender) >= amount);
     success = token.transferFrom(msg.sender, this, amount);
     if (success) {
-      contractBalance = contractBalance.add(amount);
-      Deposit(msg.sender, contractBalance);
+      Deposit(msg.sender, token.balanceOf(this));
     }
-    return (success, contractBalance);
+    return (success, token.balanceOf(this));
   }
 
   /// @notice Sender withdraws amount of tokens.
@@ -39,10 +39,40 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
     require(token.balanceOf(this) >= amount);
     success = token.transfer(owner, amount);
     if (success) {
-      contractBalance = contractBalance.sub(amount);
-      Withdraw(owner, contractBalance);
+      Withdraw(owner, token.balanceOf(this));
     }
-    return (success, contractBalance);
+    return (success, token.balanceOf(this));
+  }
+
+  function createChannel(
+    string module,
+    bytes configuration,
+    address partner,
+    address[] auditors,
+    uint256[] auditorsRates,
+    uint32 minBlockPeriod,
+    uint32 partTimeout,
+    uint32 resultTimeout,
+    uint32 closeTimeout
+  )
+    public
+    returns (uint64 channel)
+  {
+    require(auditors.length == auditorsRates.length);
+    address[] memory participants = new address[](2 + auditors.length);
+    participants[0] = payer;
+    participants[1] = partner;
+    for (uint8 i = 0; i < auditors.length; ++i) {
+      participants[2 + i] = auditors[i];
+    }
+    channel = channelManager.createChannel(module, configuration, participants, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
+    if (channelCounts[partner] == 0) {
+      partners[partnerCount] = partner;
+      partnerCount += 1;
+    }
+    channelIndexes[partner][channelCounts[partner]] = channel;
+    channelCounts[partner] += 1;
+    ChannelCreated(msg.sender, channelCounts[partner] - 1, channel, module, configuration, partner, auditors, auditorsRates, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
   }
 
   function settle(address partner, uint64 channel, uint64 blockId) public {
@@ -63,30 +93,29 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
       require(token.transfer(partnerAddress, partnerPayment));
     }
     var participantCount = channelManager.channelParticipantCount(channelInternal);
+    uint256[] memory auditorsPayments = new uint256[](participantCount - 2);
     for (uint8 i = 0; i < participantCount - 2; ++i) {
-      uint256 auditorPayment;
-      assembly {
-        auditorPayment := mload(add(add(result, 0x30), mul(i, 0x20)))
-      }
-      if (auditorPayment > 0) {
-        address auditorAddress = channelManager.channelParticipant(channel, 2);
-        require(token.transfer(auditorAddress, auditorPayment));
+      address auditorAddress = channelManager.channelParticipant(channel, 2);
+      auditorsPayments[i] = totalImpressions * auditorsRates[partner][auditorAddress];
+      if (auditorsPayments[i] > 0) {
+        require(token.transfer(auditorAddress, auditorsPayments[i]));
       }
     }
-    Settle(msg.sender, channel, blockId);
+    Settle(msg.sender, channel, blockId, totalImpressions, rejectedImpressions, partnerPayment, auditorsPayments);
   }
 
   // FIELDS
 
   StandardToken public token;
   ChannelManagerContract public channelManager;
+  address public payer;
 
   mapping (uint64 => address) public partners;
   uint64 public partnerCount;
 
+  mapping (address => mapping (address => uint256)) public auditorsRates;
+
   mapping (address => mapping (uint64 => uint64)) public channelIndexes;
   mapping (address => mapping (uint64 => bool)) public channelSettlements;
   mapping (address => uint64) public channelCounts;
-
-  uint256 public contractBalance;
 }

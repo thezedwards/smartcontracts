@@ -15,8 +15,10 @@ var EndpointRegistryContract = artifacts.require("./channel/EndpointRegistryCont
 var ChannelManagerContract = artifacts.require("./channel/ChannelManagerContract.sol");
 var CampaignManagerContract = artifacts.require("./channel/CampaignManagerContract.sol");
 var CampaignContract = artifacts.require("./channel/CampaignContract.sol");
+var SspManagerContract = artifacts.require("./channel/SspManagerContract.sol");
+var SspContract = artifacts.require("./channel/SspContract.sol");
 
-var addressPapyrusRegistry = '0xCA97d3A4d74a80CefCD1CA254187b45dE2DfbDe6';
+var addressPapyrusRegistry = '0x908743fdACbB711C4d4F5A2932F1e6b1247cd08F';
 
 var addressCoreAccount = web3.eth.accounts[0];
 var addressPapyrusPrototypeToken;
@@ -30,6 +32,7 @@ var addressECRecovery;
 var addressEndpointRegistry;
 var addressChannelManager;
 var addressCampaignManager;
+var addressSspManager;
 
 
 function printAddresses() {
@@ -47,6 +50,7 @@ function printAddresses() {
     console.log("  Channel Manager: " + addressChannelManager);
     console.log("    ECRecovery: " + addressECRecovery);
     console.log("  Campaign Manager: " + addressCampaignManager);
+    console.log("  SSP Manager: " + addressSspManager);
     console.log("====================================");
     fs.writeFileSync("contracts.properties", "dao=" + addressPapyrusDAO + "\n" + "token=" + addressPapyrusPrototypeToken);
 }
@@ -100,6 +104,12 @@ module.exports = function(deployer) {
         );
     }).then(function() {
         addressCampaignManager = CampaignManagerContract.address;
+        return deployer.deploy(SspManagerContract,
+            addressPapyrusPrototypeToken,
+            addressChannelManager
+        );
+    }).then(function() {
+        addressSspManager = SspManagerContract.address;
         linkDao("SSPRegistry", SSPRegistry.at(addressSSPRegistry));
         linkDao("DSPRegistry", DSPRegistry.at(addressDSPRegistry));
         linkDao("PublisherRegistry", PublisherRegistry.at(addressPublisherRegistry));
@@ -127,6 +137,10 @@ module.exports = function(deployer) {
         return papyrusRegistry.updateCampaignManagerContract(addressCampaignManager, JSON.stringify(CampaignManagerContract.abi));
     }).then(function() {
         return papyrusRegistry.updateCampaignContract(JSON.stringify(CampaignContract.abi));
+    }).then(function() {
+        return papyrusRegistry.updateSspManagerContract(addressSspManager, JSON.stringify(SspManagerContract.abi));
+    }).then(function() {
+        return papyrusRegistry.updateSspContract(JSON.stringify(SspContract.abi));
     }).then(function() {
         printAddresses();
     });

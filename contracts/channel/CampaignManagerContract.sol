@@ -39,6 +39,7 @@ contract CampaignManagerContract {
     string _dbId,
     address[] _ssps,
     address[] _auditors,
+    uint256[] _auditorsRates,
     string module,
     bytes configuration,
     uint32 minBlockPeriod,
@@ -52,7 +53,7 @@ contract CampaignManagerContract {
     require(_ssps.length > 0);
     campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _dbId);
     for (uint32 i = 0; i < _ssps.length; ++i) {
-      campaign.createChannel(module, configuration, _ssps[i], _auditors, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
+      campaign.createChannel(module, configuration, _ssps[i], _auditors, _auditorsRates, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
     }
     campaigns[campaignCount] = campaign;
     campaignCount += 1;

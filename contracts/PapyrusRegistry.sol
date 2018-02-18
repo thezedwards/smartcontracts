@@ -12,6 +12,8 @@ contract PapyrusRegistry is SafeOwnable {
   event ChannelManagerUpdated(address contractAddress, string abi);
   event CampaignManagerUpdated(address contractAddress, string abi);
   event CampaignUpdated(string abi);
+  event SspManagerUpdated(address contractAddress, string abi);
+  event SspUpdated(string abi);
 
   // PUBLIC FUNCTIONS
 
@@ -48,6 +50,17 @@ contract PapyrusRegistry is SafeOwnable {
     CampaignUpdated(abi);
   }
 
+  function updateSspManagerContract(address contractAddress, string abi) public onlyOwner {
+    sspManagerAddress = contractAddress;
+    sspManagerAbi = abi;
+    SspManagerUpdated(contractAddress, abi);
+  }
+
+  function updateSspContract(string abi) public onlyOwner {
+    campaignAbi = abi;
+    SspUpdated(abi);
+  }
+
   // FIELDS
 
   address public tokenAddress;
@@ -63,4 +76,9 @@ contract PapyrusRegistry is SafeOwnable {
   string public campaignManagerAbi;
 
   string public campaignAbi;
+
+  address public sspManagerAddress;
+  string public sspManagerAbi;
+
+  string public sspAbi;
 }
