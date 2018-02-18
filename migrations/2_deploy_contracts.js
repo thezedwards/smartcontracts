@@ -18,7 +18,7 @@ var CampaignContract = artifacts.require("./channel/CampaignContract.sol");
 var SspManagerContract = artifacts.require("./channel/SspManagerContract.sol");
 var SspContract = artifacts.require("./channel/SspContract.sol");
 
-var addressPapyrusRegistry = '0x908743fdACbB711C4d4F5A2932F1e6b1247cd08F';
+var addressPapyrusRegistry = '0x8c4E25a2110A01426C7aA29aFea9DfCd21d67380';
 
 var addressCoreAccount = web3.eth.accounts[0];
 var addressPapyrusPrototypeToken;

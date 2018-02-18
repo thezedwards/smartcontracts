@@ -57,7 +57,7 @@ contract PapyrusRegistry is SafeOwnable {
   }
 
   function updateSspContract(string abi) public onlyOwner {
-    campaignAbi = abi;
+    sspAbi = abi;
     SspUpdated(abi);
   }
 
