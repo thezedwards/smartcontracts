@@ -37,23 +37,22 @@ contract SspManagerContract {
   function createCampaignAndChannels(
     address _ssp,
     string _dbId,
-    address[] _publishers,
-    address[] _auditors,
-    uint256[] _auditorsRates,
+    uint256[] rates,
+    address[] publishers,
+    address[] auditors,
+    uint256[] auditorsRates,
+    address disputeResolver,
     string module,
     bytes configuration,
-    uint32 minBlockPeriod,
-    uint32 partTimeout,
-    uint32 resultTimeout,
-    uint32 closeTimeout
+    uint32[] timeouts
   )
     public
     returns (SspContract ssp)
   {
-    require(_publishers.length > 0);
+    require(publishers.length > 0);
     ssp = new SspContract(token, channelManager, _ssp, _dbId);
-    for (uint32 i = 0; i < _publishers.length; ++i) {
-      ssp.createChannel(module, configuration, _publishers[i], _auditors, _auditorsRates, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
+    for (uint32 i = 0; i < publishers.length; ++i) {
+      ssp.createChannel(module, configuration, rates[i], publishers[i], auditors, auditorsRates, disputeResolver, timeouts);
     }
     ssps[sspCount] = ssp;
     sspCount += 1;

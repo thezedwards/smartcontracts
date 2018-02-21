@@ -4,7 +4,6 @@ import '../common/ECRecovery.sol';
 import '../common/StandardToken.sol';
 import './ChannelApi.sol';
 import './ChannelManagerApi.sol';
-import './CampaignContract.sol';
 import './SettlementApi.sol';
 
 
@@ -17,6 +16,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     string module;
     bytes configuration;
     Participant[] participants;
+    address disputeResolver;
     uint32 minBlockPeriod;
     uint32 partTimeout;
     uint32 resultTimeout;
@@ -76,22 +76,22 @@ contract ChannelManagerContract is ChannelManagerApi {
     bytes configuration,
     // addresses of participants 
     address[] participants,
-    // minimal period in seconds between two subsequent blocks   
-    uint32 minBlockPeriod,
-    // timeout in seconds between now and blockStart checked in setPartResult   
-    uint32 partTimeout,
-    // timeout in seconds between now and blockStart checked in setBlockResult   
-    uint32 resultTimeout,
-    // timeout in seconds between and now and closeTimestamp set in requestClose    
-    uint32 closeTimeout
+    // address from which block can be settled with any data in case of dispute 
+    address disputeResolver,
+    // timeouts in seconds:
+    // timeouts[0] - minimal period in seconds between two subsequent blocks
+    // timeouts[1] - timeout between now and blockStart checked in setPartResult
+    // timeouts[2] - timeout between now and blockStart checked in setBlockResult
+    // timeouts[3] - timeout between and now and closeTimestamp set in requestClose
+    uint32[] timeouts
   )
     public
     returns (uint64 channel)
   {
     require(participants.length >= MIN_PARTICIPANTS && participants.length <= MAX_PARTICIPANTS);
-    require(partTimeout > 0);
-    require(resultTimeout > 0);
-    require(closeTimeout > 0);
+    require(timeouts[1] > 0);
+    require(timeouts[2] > 0);
+    require(timeouts[3] > 0);
     channel = channelCount + 1;
     channels[channel].module = module;
     channels[channel].configuration = configuration;
@@ -100,10 +100,11 @@ contract ChannelManagerContract is ChannelManagerApi {
       channels[channel].participants[i].participant = participants[i];
       ChannelCreated(channel, participants[i]);
     }
-    channels[channel].minBlockPeriod = minBlockPeriod;
-    channels[channel].partTimeout = partTimeout;
-    channels[channel].resultTimeout = resultTimeout;
-    channels[channel].closeTimeout = closeTimeout;
+    channels[channel].disputeResolver = disputeResolver;
+    channels[channel].minBlockPeriod = timeouts[0];
+    channels[channel].partTimeout = timeouts[1];
+    channels[channel].resultTimeout = timeouts[2];
+    channels[channel].closeTimeout = timeouts[3];
     channels[channel].opened = uint64(now);
     channelCount += 1;
   }
@@ -161,23 +162,28 @@ contract ChannelManagerContract is ChannelManagerApi {
     ChannelNewBlockResult(channel, msg.sender, blockId, resultHash);
   }
 
-  //TODO may be called by validator
-  function blockSettle(uint64 channel, uint64 blockId, bytes result) public onlyParticipant(channel) notClosed(channel, blockId) {
-    //TODO check that sha3(result) == all results hashes (may skip participants without validator)
-    require(channels[channel].blocks[blockId].settlement.result.length == 0);
-    require(result.length > 0);
-    /*
-    var resultHash = keccak256(result);
-    for (uint8 i = 0; i < channels[channel].participants.length; ++i) {
-      require(channels[channel].participants[i].validator == address(0) ||
-        channels[channel].blocks[blockId].results[i].resultHash == resultHash);
-    }
-    */
+  function blockSettle(uint64 channel, uint64 blockId, bytes result)
+    public
+    onlyValidator(channel)
+    notClosed(channel, blockId)
+    canSettle(channel, blockId, result)
+  {
+    channels[channel].blocks[blockId].settlement.result = result;
+    ChannelBlockSettled(channel, msg.sender, blockId, result);
+  }
+
+  function blockResolveDipsute(uint64 channel, uint64 blockId, bytes result)
+    public
+    onlyValidator(channel)
+    notClosed(channel, blockId)
+    canResolveDispute(channel, blockId, result)
+  {
+    // TODO: Here can be additional logic to control such dispute resolution
     channels[channel].blocks[blockId].settlement.result = result;
     ChannelBlockSettled(channel, msg.sender, blockId, result);
   }
   
-  //FUNCTIONS
+  // FUNCTIONS
 
   function channelModule(uint64 channel) public view returns (string) {
     return channels[channel].module;
@@ -321,6 +327,36 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   modifier notClosed(uint64 channel, uint64 blockId) {
     require(channels[channel].closeTimestamp == 0 || channels[channel].closeTimestamp > blockStart(blockId));
+    _;
+  }
+
+  modifier canSettle(uint64 channel, uint64 blockId, bytes result) {
+    require(channels[channel].blocks[blockId].settlement.result.length == 0);
+    require(result.length > 0);
+    var resultHash = keccak256(result);
+    for (uint8 i = 0; i < channels[channel].participants.length; ++i) {
+      require(channels[channel].participants[i].validator == address(0) ||
+        channels[channel].blocks[blockId].results[i].resultHash == resultHash);
+    }
+    _;
+  }
+
+  modifier canResolveDispute(uint64 channel, uint64 blockId, bytes result) {
+    require(channels[channel].disputeResolver == msg.sender);
+    require(channels[channel].blocks[blockId].settlement.result.length == 0);
+    require(result.length > 0);
+    var resultHash = keccak256(result);
+    bool consensus = true;
+    uint8 validatorCount = 0;
+    for (uint8 i = 0; i < channels[channel].participants.length; ++i) {
+      if (channels[channel].participants[i].validator != address(0)) {
+        if (channels[channel].blocks[blockId].results[i].resultHash != resultHash) {
+          consensus = false;
+        }
+        ++validatorCount;
+      }
+    }
+    require(!consensus && validatorCount > 1);
     _;
   }
 

@@ -27,6 +27,22 @@ contract CampaignContract is RtbSettlementContract {
     revert();
   }
 
+  function createChannel(
+    string module,
+    bytes configuration,
+    uint256 /*rate*/,
+    address partner,
+    address[] auditors,
+    uint256[] auditorsRates,
+    address disputeResolver,
+    uint32[] timeouts
+  )
+    public
+    returns (uint64 channel)
+  {
+    channel = super.createChannel(module, configuration, 0, partner, auditors, auditorsRates, disputeResolver, timeouts);
+  }
+
   function dsp() public view returns (address) {
     return payer;
   }

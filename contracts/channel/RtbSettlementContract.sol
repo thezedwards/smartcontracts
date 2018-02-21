@@ -47,13 +47,12 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
   function createChannel(
     string module,
     bytes configuration,
+    uint256 rate,
     address partner,
     address[] auditors,
     uint256[] auditorsRates,
-    uint32 minBlockPeriod,
-    uint32 partTimeout,
-    uint32 resultTimeout,
-    uint32 closeTimeout
+    address disputeResolver,
+    uint32[] timeouts
   )
     public
     returns (uint64 channel)
@@ -65,43 +64,93 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
     for (uint8 i = 0; i < auditors.length; ++i) {
       participants[2 + i] = auditors[i];
     }
-    channel = channelManager.createChannel(module, configuration, participants, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
+    channel = channelManager.createChannel(module, configuration, participants, disputeResolver, timeouts);
     if (channelCounts[partner] == 0) {
       partners[partnerCount] = partner;
       partnerCount += 1;
     }
     channelIndexes[partner][channelCounts[partner]] = channel;
+    channelRates[partner][channelCounts[partner]] = rate;
     channelCounts[partner] += 1;
-    ChannelCreated(msg.sender, channelCounts[partner] - 1, channel, module, configuration, partner, auditors, auditorsRates, minBlockPeriod, partTimeout, resultTimeout, closeTimeout);
+    ChannelCreated(msg.sender, channelCounts[partner] - 1, channel, module, configuration, partner,
+      auditors, auditorsRates, disputeResolver, timeouts);
   }
 
   function settle(address partner, uint64 channel, uint64 blockId) public {
     require(!channelSettlements[partner][channel]);
     channelSettlements[partner][channel] = true;
-    uint64 channelInternal = channelIndexes[partner][channel];
-    var result = channelManager.blockSettlement(channelInternal, blockId);
-    uint64 totalImpressions;
-    uint64 rejectedImpressions;
-    uint256 partnerPayment;
-    assembly {
-      totalImpressions := mload(result)
-      rejectedImpressions := mload(add(result, 0x08))
-      partnerPayment := mload(add(result, 0x10))
+    uint64 auditorCount = channelManager.channelParticipantCount(channelIndexes[partner][channel]) - 2;
+    uint64[] memory impressions = parseImpressions(partner, channel, blockId);
+    uint256[] memory sums = parseSums(partner, channel, blockId);
+    require(sums[1] >= sums[2]);
+    uint256 partnerPayment = sums[1].sub(sums[2]);
+    uint256 selfPayment = partnerPayment.mul(channelRates[partner][channel]).div(10**18);
+    partnerPayment = partnerPayment.sub(selfPayment);
+    if (selfPayment > 0) {
+      require(token.transfer(owner, selfPayment));
     }
     if (partnerPayment > 0) {
-      address partnerAddress = channelManager.channelParticipant(channel, 1);
-      require(token.transfer(partnerAddress, partnerPayment));
+      require(token.transfer(channelManager.channelParticipant(channel, 1), partnerPayment));
     }
-    var participantCount = channelManager.channelParticipantCount(channelInternal);
-    uint256[] memory auditorsPayments = new uint256[](participantCount - 2);
-    for (uint8 i = 0; i < participantCount - 2; ++i) {
-      address auditorAddress = channelManager.channelParticipant(channel, 2);
-      auditorsPayments[i] = totalImpressions * auditorsRates[partner][auditorAddress];
+    uint256[] memory auditorsPayments = new uint256[](auditorCount);
+    for (uint8 i = 0; i < auditorCount; ++i) {
+      address auditorAddress = channelManager.channelParticipant(channel, 2 + i);
+      auditorsPayments[i] = auditorsRates[partner][auditorAddress].mul(impressions[3 + i]);
       if (auditorsPayments[i] > 0) {
         require(token.transfer(auditorAddress, auditorsPayments[i]));
       }
     }
-    Settle(msg.sender, channel, blockId, totalImpressions, rejectedImpressions, partnerPayment, auditorsPayments);
+    Settle(msg.sender, channel, blockId, impressions, sums, selfPayment, partnerPayment, auditorsPayments);
+  }
+
+  // PRIVATE FUNCTIONS
+
+  function parseImpressions(address partner, uint64 channel, uint64 blockId) private view returns(uint64[] impressions) {
+    uint64 channelInternal = channelIndexes[partner][channel];
+    var result = channelManager.blockSettlement(channelInternal, blockId);
+    uint64 auditorCount = channelManager.channelParticipantCount(channelInternal) - 2;
+    uint64 totalImpressions;
+    uint64 viewedImpressions;
+    uint64 rejectedImpressions;
+    assembly {
+      totalImpressions := mload(result)
+      viewedImpressions := mload(add(result, 0x28))
+      rejectedImpressions := mload(add(result, 0x50))
+    }
+    // 0 - totalImpressions
+    // 1 - viewedImpressions
+    // 2 - rejectedImpressions
+    // 3+ - precessedImpressions by each auditor
+    impressions = new uint64[](3 + auditorCount);
+    impressions[0] = totalImpressions;
+    impressions[1] = viewedImpressions;
+    impressions[2] = rejectedImpressions;
+    for (uint8 i = 0; i < auditorCount; ++i) {
+      uint64 precessedImpressions;
+      assembly {
+        precessedImpressions := mload(add(add(result, 0x78), mul(i, 0x08)))
+      }
+      impressions[3 + i] = precessedImpressions;
+    }
+  }
+  function parseSums(address partner, uint64 channel, uint64 blockId) private view returns(uint256[] sums) {
+    uint64 channelInternal = channelIndexes[partner][channel];
+    var result = channelManager.blockSettlement(channelInternal, blockId);
+    uint256 totalSum;
+    uint256 viewedSum;
+    uint256 rejectedSum;
+    assembly {
+      totalSum := mload(add(result, 0x08))
+      viewedSum := mload(add(result, 0x30))
+      rejectedSum := mload(add(result, 0x58))
+    }
+    // 0 - totalSum
+    // 1 - viewedSum
+    // 2 - rejectedSum
+    sums = new uint256[](3);
+    sums[0] = totalSum;
+    sums[1] = viewedSum;
+    sums[2] = rejectedSum;
   }
 
   // FIELDS
@@ -109,6 +158,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
   StandardToken public token;
   ChannelManagerContract public channelManager;
   address public payer;
+  uint256 public rate;
 
   mapping (uint64 => address) public partners;
   uint64 public partnerCount;
@@ -116,6 +166,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
   mapping (address => mapping (address => uint256)) public auditorsRates;
 
   mapping (address => mapping (uint64 => uint64)) public channelIndexes;
+  mapping (address => mapping (uint64 => uint256)) public channelRates;
   mapping (address => mapping (uint64 => bool)) public channelSettlements;
   mapping (address => uint64) public channelCounts;
 }

@@ -2,7 +2,6 @@ pragma solidity ^0.4.18;
 
 import '../common/StandardToken.sol';
 import './ChannelApi.sol';
-import './CampaignContract.sol';
 import './SettlementApi.sol';
 
 
@@ -20,20 +19,20 @@ contract ChannelManagerApi {
   // PUBLIC FUNCTIONS (CHANNELS MANAGEMENT)
 
   function createChannel(
-  // validator module name
+    // validator module name
     string module,
-  // module-specific configuration 
+    // module-specific configuration 
     bytes configuration,
-  // addresses of participants 
+    // addresses of participants 
     address[] participants,
-  // minimal period in seconds between two subsequent blocks   
-    uint32 minBlockPeriod,
-  // timeout in seconds between now and blockStart checked in setPartResult   
-    uint32 partTimeout,
-  // timeout in seconds between now and blockStart checked in setBlockResult   
-    uint32 resultTimeout,
-  // timeout in seconds between and now and closeTimestamp set in requestClose    
-    uint32 closeTimeout
+    // address from which block can be settled with any data in case of dispute 
+    address disputeResolver,
+    // timeouts in seconds:
+    // timeouts[0] - minimal period in seconds between two subsequent blocks
+    // timeouts[1] - timeout between now and blockStart checked in setPartResult
+    // timeouts[2] - timeout between now and blockStart checked in setBlockResult
+    // timeouts[3] - timeout between and now and closeTimestamp set in requestClose
+    uint32[] timeouts
   )
   public
   returns (uint64 channel);
@@ -46,6 +45,7 @@ contract ChannelManagerApi {
   function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference) public;
   function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public;
   function blockSettle(uint64 channel, uint64 blockId, bytes result) public;
+  function blockResolveDispute(uint64 channel, uint64 blockId, bytes result) public;
 
   // Read channel information
   function channelModule(uint64 channel) public view returns (string);

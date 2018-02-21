@@ -14,7 +14,7 @@ contract SspContract is RtbSettlementContract {
     address _ssp,
     string _dbId
   )
-    RtbSettlementContract(_token, _channelManager, _ssp)
+    RtbSettlementContract(_token, _channelManager, address(this))
     public
   {
     dbId = _dbId;
@@ -25,8 +25,18 @@ contract SspContract is RtbSettlementContract {
     revert();
   }
 
+  function deposit(uint256) public returns (bool, uint256) {
+    // Turned off for SSP contract for now
+    revert();
+  }
+
+  function withdraw(uint256) public returns (bool, uint256) {
+    // Turned off for SSP contract for now
+    revert();
+  }
+
   function ssp() public view returns (address) {
-    return payer;
+    return owner;
   }
 
   function publishers(uint64 index) public view returns (address) {
