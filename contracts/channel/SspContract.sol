@@ -35,6 +35,22 @@ contract SspContract is RtbSettlementContract {
     revert();
   }
 
+  function approve(uint64 channel, address validator) public onlyOwner {
+    channelManager.approve(channel, validator);
+  }
+
+  function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference) public onlyOwner {
+    channelManager.setBlockPart(channel, blockId, length, hash, reference);
+  }
+
+  function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public onlyOwner {
+    channelManager.setBlockResult(channel, blockId, resultHash);
+  }
+
+  function blockSettle(uint64 channel, uint64 blockId, bytes result) public onlyOwner {
+    channelManager.blockSettle(channel, blockId, result);
+  }
+
   function ssp() public view returns (address) {
     return owner;
   }

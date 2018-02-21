@@ -172,7 +172,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     ChannelBlockSettled(channel, msg.sender, blockId, result);
   }
 
-  function blockResolveDipsute(uint64 channel, uint64 blockId, bytes result)
+  function blockResolveDispute(uint64 channel, uint64 blockId, bytes result)
     public
     onlyValidator(channel)
     notClosed(channel, blockId)
