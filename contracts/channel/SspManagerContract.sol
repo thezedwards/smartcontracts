@@ -34,7 +34,7 @@ contract SspManagerContract {
     SspCreated(sspCount - 1, ssp);
   }
 
-  function createCampaignAndChannels(
+  function createSspAndChannels(
     address _ssp,
     string _dbId,
     uint256[] rates,
