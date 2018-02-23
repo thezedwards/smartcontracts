@@ -14,11 +14,12 @@ var ECRecovery = artifacts.require("./common/ECRecovery.sol");
 var EndpointRegistryContract = artifacts.require("./channel/EndpointRegistryContract.sol");
 var ChannelManagerContract = artifacts.require("./channel/ChannelManagerContract.sol");
 var CampaignManagerContract = artifacts.require("./channel/CampaignManagerContract.sol");
-var CampaignContract = artifacts.require("./channel/CampaignContract.sol");
 var SspManagerContract = artifacts.require("./channel/SspManagerContract.sol");
+var RtbSettlementContract = artifacts.require("./channel/RtbSettlementContract.sol");
+var CampaignContract = artifacts.require("./channel/CampaignContract.sol");
 var SspContract = artifacts.require("./channel/SspContract.sol");
 
-var addressPapyrusRegistry = '0x8c4E25a2110A01426C7aA29aFea9DfCd21d67380';
+var addressPapyrusRegistry = '0x80b4BCD7ae10f5cA43dDBCCd993f2C9Ded069300';
 
 var addressCoreAccount = web3.eth.accounts[0];
 var addressPapyrusPrototypeToken;
@@ -136,11 +137,13 @@ module.exports = function(deployer) {
     }).then(function() {
         return papyrusRegistry.updateCampaignManagerContract(addressCampaignManager, JSON.stringify(CampaignManagerContract.abi));
     }).then(function() {
-        return papyrusRegistry.updateCampaignContract(JSON.stringify(CampaignContract.abi));
-    }).then(function() {
         return papyrusRegistry.updateSspManagerContract(addressSspManager, JSON.stringify(SspManagerContract.abi));
     }).then(function() {
-        return papyrusRegistry.updateSspContract(JSON.stringify(SspContract.abi));
+        return papyrusRegistry.updateRtbSettlementAbi(JSON.stringify(RtbSettlementContract.abi));
+    }).then(function() {
+        return papyrusRegistry.updateCampaignAbi(JSON.stringify(CampaignContract.abi));
+    }).then(function() {
+        return papyrusRegistry.updateSspAbi(JSON.stringify(SspContract.abi));
     }).then(function() {
         printAddresses();
     });

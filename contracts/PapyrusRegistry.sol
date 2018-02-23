@@ -11,8 +11,9 @@ contract PapyrusRegistry is SafeOwnable {
   event DaoUpdated(address contractAddress, string abi);
   event ChannelManagerUpdated(address contractAddress, string abi);
   event CampaignManagerUpdated(address contractAddress, string abi);
-  event CampaignUpdated(string abi);
   event SspManagerUpdated(address contractAddress, string abi);
+  event RtbSettlementUpdated(string abi);
+  event CampaignUpdated(string abi);
   event SspUpdated(string abi);
 
   // PUBLIC FUNCTIONS
@@ -45,18 +46,23 @@ contract PapyrusRegistry is SafeOwnable {
     CampaignManagerUpdated(contractAddress, abi);
   }
 
-  function updateCampaignContract(string abi) public onlyOwner {
-    campaignAbi = abi;
-    CampaignUpdated(abi);
-  }
-
   function updateSspManagerContract(address contractAddress, string abi) public onlyOwner {
     sspManagerAddress = contractAddress;
     sspManagerAbi = abi;
     SspManagerUpdated(contractAddress, abi);
   }
 
-  function updateSspContract(string abi) public onlyOwner {
+  function updateRtbSettlementAbi(string abi) public onlyOwner {
+    rtbSettlementAbi = abi;
+    RtbSettlementUpdated(abi);
+  }
+
+  function updateCampaignAbi(string abi) public onlyOwner {
+    campaignAbi = abi;
+    CampaignUpdated(abi);
+  }
+
+  function updateSspAbi(string abi) public onlyOwner {
     sspAbi = abi;
     SspUpdated(abi);
   }
@@ -75,10 +81,10 @@ contract PapyrusRegistry is SafeOwnable {
   address public campaignManagerAddress;
   string public campaignManagerAbi;
 
-  string public campaignAbi;
-
   address public sspManagerAddress;
   string public sspManagerAbi;
 
+  string public rtbSettlementAbi;
+  string public campaignAbi;
   string public sspAbi;
 }
