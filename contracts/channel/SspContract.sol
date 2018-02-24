@@ -12,9 +12,10 @@ contract SspContract is RtbSettlementContract {
     address _token,
     address _channelManager,
     address _ssp,
+    uint256 _feeRate,
     string _dbId
   )
-    RtbSettlementContract(_token, _channelManager, address(this))
+    RtbSettlementContract(_token, _channelManager, _ssp, _feeRate)
     public
   {
     dbId = _dbId;
@@ -35,24 +36,22 @@ contract SspContract is RtbSettlementContract {
     revert();
   }
 
-  function approve(uint64 channel, address validator) public onlyOwner {
-    channelManager.approve(channel, validator);
-  }
-
-  function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference) public onlyOwner {
-    channelManager.setBlockPart(channel, blockId, length, hash, reference);
-  }
-
-  function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public onlyOwner {
-    channelManager.setBlockResult(channel, blockId, resultHash);
-  }
-
-  function blockSettle(uint64 channel, uint64 blockId, bytes result) public onlyOwner {
-    channelManager.blockSettle(channel, blockId, result);
+  function addPublisher(
+    string module,
+    bytes configuration,
+    address publisher,
+    address[] auditors,
+    uint256[] auditorsRates,
+    address disputeResolver,
+    uint32[] timeouts
+  )
+    public
+  {
+    createChannel(module, configuration, publisher, publisher, auditors, auditorsRates, disputeResolver, timeouts);
   }
 
   function ssp() public view returns (address) {
-    return owner;
+    return payer;
   }
 
   function publishers(uint64 index) public view returns (address) {
@@ -61,6 +60,12 @@ contract SspContract is RtbSettlementContract {
 
   function publisherCount() public view returns (uint64) {
     return partnerCount;
+  }
+
+  // INTERNAL FUNCTIONS
+
+  function feeReceiver() internal view returns (address) {
+    return payer;
   }
 
   // FIELDS

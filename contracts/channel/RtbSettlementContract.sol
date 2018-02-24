@@ -11,11 +11,12 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
 
   // PUBLIC FUNCTIONS
 
-  function RtbSettlementContract(address _token, address _channelManager, address _payer) public {
+  function RtbSettlementContract(address _token, address _channelManager, address _payer, uint256 _feeRate) public {
     require(_token != address(0) && _channelManager != address(0) && _payer != address(0));
     token = StandardToken(_token);
     channelManager = ChannelManagerContract(_channelManager);
     payer = _payer;
+    feeRate = _feeRate;
   }
 
   /// @notice Sender deposits amount of tokens.
@@ -47,8 +48,8 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
   function createChannel(
     string module,
     bytes configuration,
-    uint256 rate,
     address partner,
+    address partnerPaymentAddress,
     address[] auditors,
     uint256[] auditorsRates,
     address disputeResolver,
@@ -70,37 +71,36 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
       partnerCount += 1;
     }
     channelIndexes[partner][channelCounts[partner]] = channel;
-    channelRates[partner][channelCounts[partner]] = rate;
+    channelPaymentReceivers[partner][channelCounts[partner]] = partnerPaymentAddress;
     channelCounts[partner] += 1;
-    ChannelCreated(msg.sender, channelCounts[partner] - 1, channel, module, configuration, partner,
-      auditors, auditorsRates, disputeResolver, timeouts);
+    ChannelCreated(channelCounts[partner] - 1, channel, module, configuration, partner,
+      partnerPaymentAddress, auditors, auditorsRates, disputeResolver, timeouts);
   }
 
   function settle(address partner, uint64 channel, uint64 blockId) public {
     require(!channelSettlements[partner][channel]);
     channelSettlements[partner][channel] = true;
-    uint64 auditorCount = channelManager.channelParticipantCount(channelIndexes[partner][channel]) - 2;
+    uint64 channelInternal = channelIndexes[partner][channel];
+    uint64 participantCount = channelManager.channelParticipantCount(channelInternal);
     uint64[] memory impressions = parseImpressions(partner, channel, blockId);
     uint256[] memory sums = parseSums(partner, channel, blockId);
     require(sums[1] >= sums[2]);
     uint256 partnerPayment = sums[1].sub(sums[2]);
-    uint256 selfPayment = partnerPayment.mul(channelRates[partner][channel]).div(10**18);
-    partnerPayment = partnerPayment.sub(selfPayment);
-    if (selfPayment > 0) {
-      require(token.transfer(owner, selfPayment));
+    // 0 - fee payment
+    // 1 - partner payment
+    // 2+ - auditors payments
+    address[] memory receivers = new address[](participantCount);
+    receivers[0] = feeReceiver();
+    receivers[1] = channelPaymentReceivers[partner][channelInternal];
+    uint256[] memory amounts = new uint256[](participantCount);
+    amounts[0] = partnerPayment.mul(feeRate).div(10**18);
+    amounts[1] = partnerPayment.sub(amounts[0]);
+    for (uint8 i = 2; i < participantCount; ++i) {
+      receivers[i] = channelManager.channelParticipant(channel, i);
+      amounts[i] = auditorsRates[partner][receivers[i]].mul(impressions[i + 1]);
     }
-    if (partnerPayment > 0) {
-      require(token.transfer(channelManager.channelParticipant(channel, 1), partnerPayment));
-    }
-    uint256[] memory auditorsPayments = new uint256[](auditorCount);
-    for (uint8 i = 0; i < auditorCount; ++i) {
-      address auditorAddress = channelManager.channelParticipant(channel, 2 + i);
-      auditorsPayments[i] = auditorsRates[partner][auditorAddress].mul(impressions[3 + i]);
-      if (auditorsPayments[i] > 0) {
-        require(token.transfer(auditorAddress, auditorsPayments[i]));
-      }
-    }
-    Settle(msg.sender, channel, blockId, impressions, sums, selfPayment, partnerPayment, auditorsPayments);
+    performTransfers(receivers, amounts);
+    Settle(msg.sender, channel, blockId, impressions, sums, receivers, amounts);
   }
 
   // PRIVATE FUNCTIONS
@@ -162,11 +162,21 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
     sums[3] = clickSum;
   }
 
+  function performTransfers(address[] receivers, uint256[] amounts) private {
+    require(receivers.length >= 2 && receivers.length == amounts.length);
+    for (uint8 i = 0; i < receivers.length; ++i) {
+      if (receivers[i] != address(0) && amounts[i] > 0) {
+        require(token.transfer(receivers[i], amounts[i]));
+      }
+    }
+  }
+
   // FIELDS
 
   StandardToken public token;
   ChannelManagerContract public channelManager;
   address public payer;
+  uint256 public feeRate;
 
   mapping (uint64 => address) public partners;
   uint64 public partnerCount;
@@ -174,7 +184,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
   mapping (address => mapping (address => uint256)) public auditorsRates;
 
   mapping (address => mapping (uint64 => uint64)) public channelIndexes;
-  mapping (address => mapping (uint64 => uint256)) public channelRates;
   mapping (address => mapping (uint64 => bool)) public channelSettlements;
+  mapping (address => mapping (uint64 => address)) public channelPaymentReceivers;
   mapping (address => uint64) public channelCounts;
 }

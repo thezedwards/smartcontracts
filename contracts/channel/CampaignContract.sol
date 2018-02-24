@@ -15,7 +15,7 @@ contract CampaignContract is RtbSettlementContract {
     address _dsp,
     string _dbId
   )
-    RtbSettlementContract(_token, _channelManager, _dsp)
+    RtbSettlementContract(_token, _channelManager, _dsp, 0)
     public
   {
     advertiser = _advertiser;
@@ -25,22 +25,6 @@ contract CampaignContract is RtbSettlementContract {
 
   function () public {
     revert();
-  }
-
-  function createChannel(
-    string module,
-    bytes configuration,
-    uint256 /*rate*/,
-    address partner,
-    address[] auditors,
-    uint256[] auditorsRates,
-    address disputeResolver,
-    uint32[] timeouts
-  )
-    public
-    returns (uint64 channel)
-  {
-    channel = super.createChannel(module, configuration, 0, partner, auditors, auditorsRates, disputeResolver, timeouts);
   }
 
   function dsp() public view returns (address) {
@@ -53,6 +37,12 @@ contract CampaignContract is RtbSettlementContract {
 
   function sspCount() public view returns (uint64) {
     return partnerCount;
+  }
+
+  // INTERNAL FUNCTIONS
+
+  function feeReceiver() internal view returns (address) {
+    return payer;
   }
 
   // FIELDS

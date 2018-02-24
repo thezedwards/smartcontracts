@@ -23,12 +23,13 @@ contract SspManagerContract {
 
   function createSsp(
     address _ssp,
+    uint256 _feeRate,
     string _dbId
   )
     public
     returns (address ssp)
   {
-    ssp = new SspContract(token, channelManager, _ssp, _dbId);
+    ssp = new SspContract(token, channelManager, _ssp, _feeRate, _dbId);
     ssps[sspCount] = ssp;
     sspCount += 1;
     SspCreated(sspCount - 1, ssp);
@@ -36,8 +37,8 @@ contract SspManagerContract {
 
   function createSspAndChannels(
     address _ssp,
+    uint256 _feeRate,
     string _dbId,
-    uint256[] rates,
     address[] publishers,
     address[] auditors,
     uint256[] auditorsRates,
@@ -50,9 +51,9 @@ contract SspManagerContract {
     returns (SspContract ssp)
   {
     require(publishers.length > 0);
-    ssp = new SspContract(token, channelManager, _ssp, _dbId);
+    ssp = new SspContract(token, channelManager, _ssp, _feeRate, _dbId);
     for (uint32 i = 0; i < publishers.length; ++i) {
-      ssp.createChannel(module, configuration, rates[i], publishers[i], auditors, auditorsRates, disputeResolver, timeouts);
+      ssp.createChannel(module, configuration, publishers[i], publishers[i], auditors, auditorsRates, disputeResolver, timeouts);
     }
     ssps[sspCount] = ssp;
     sspCount += 1;

@@ -38,6 +38,7 @@ contract CampaignManagerContract {
     address _dsp,
     string _dbId,
     address[] ssps,
+    address[] sspContracts,
     address[] auditors,
     uint256[] auditorsRates,
     address disputeResolver,
@@ -51,7 +52,7 @@ contract CampaignManagerContract {
     require(ssps.length > 0);
     campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _dbId);
     for (uint32 i = 0; i < ssps.length; ++i) {
-      campaign.createChannel(module, configuration, 0, ssps[i], auditors, auditorsRates, disputeResolver, timeouts);
+      campaign.createChannel(module, configuration, ssps[i], sspContracts[i], auditors, auditorsRates, disputeResolver, timeouts);
     }
     campaigns[campaignCount] = campaign;
     campaignCount += 1;
