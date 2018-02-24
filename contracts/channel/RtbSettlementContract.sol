@@ -112,45 +112,54 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
     uint64 totalImpressions;
     uint64 viewedImpressions;
     uint64 rejectedImpressions;
+    uint64 clickImpressions;
     assembly {
       totalImpressions := mload(result)
       viewedImpressions := mload(add(result, 0x28))
       rejectedImpressions := mload(add(result, 0x50))
+      clickImpressions := mload(add(result, 0x78))
     }
     // 0 - totalImpressions
     // 1 - viewedImpressions
     // 2 - rejectedImpressions
-    // 3+ - precessedImpressions by each auditor
-    impressions = new uint64[](3 + auditorCount);
+    // 3 - clickImpressions
+    // 4+ - precessedImpressions by each auditor
+    impressions = new uint64[](4 + auditorCount);
     impressions[0] = totalImpressions;
     impressions[1] = viewedImpressions;
     impressions[2] = rejectedImpressions;
+    impressions[3] = clickImpressions;
     for (uint8 i = 0; i < auditorCount; ++i) {
       uint64 precessedImpressions;
       assembly {
-        precessedImpressions := mload(add(add(result, 0x78), mul(i, 0x08)))
+        precessedImpressions := mload(add(add(result, 0xA0), mul(i, 0x08)))
       }
-      impressions[3 + i] = precessedImpressions;
+      impressions[4 + i] = precessedImpressions;
     }
   }
+
   function parseSums(address partner, uint64 channel, uint64 blockId) private view returns(uint256[] sums) {
     uint64 channelInternal = channelIndexes[partner][channel];
     var result = channelManager.blockSettlement(channelInternal, blockId);
     uint256 totalSum;
     uint256 viewedSum;
     uint256 rejectedSum;
+    uint256 clickSum;
     assembly {
       totalSum := mload(add(result, 0x08))
       viewedSum := mload(add(result, 0x30))
       rejectedSum := mload(add(result, 0x58))
+      clickSum := mload(add(result, 0x80))
     }
     // 0 - totalSum
     // 1 - viewedSum
     // 2 - rejectedSum
-    sums = new uint256[](3);
+    // 3 - clickSum
+    sums = new uint256[](4);
     sums[0] = totalSum;
     sums[1] = viewedSum;
     sums[2] = rejectedSum;
+    sums[3] = clickSum;
   }
 
   // FIELDS
@@ -158,7 +167,6 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
   StandardToken public token;
   ChannelManagerContract public channelManager;
   address public payer;
-  uint256 public rate;
 
   mapping (uint64 => address) public partners;
   uint64 public partnerCount;
