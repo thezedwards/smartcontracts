@@ -19,7 +19,7 @@ var RtbSettlementContract = artifacts.require("./channel/RtbSettlementContract.s
 var CampaignContract = artifacts.require("./channel/CampaignContract.sol");
 var SspContract = artifacts.require("./channel/SspContract.sol");
 
-var addressPapyrusRegistry = '0x80b4BCD7ae10f5cA43dDBCCd993f2C9Ded069300';
+var addressPapyrusRegistry = '0x8Ef23e41a64722a28acFC12F5b0Ac326E0aBdD13';
 
 var addressCoreAccount = web3.eth.accounts[0];
 var addressPapyrusPrototypeToken;
