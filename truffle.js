@@ -4,12 +4,11 @@ require('babel-register');
 module.exports = {
     networks: {
         development: {
-            host: '35.227.236.24',
-            port: 80,
+            host: '35.205.243.163',
+            port: 8545,
             network_id: '1337', // Match any network id
             gas: 10000000,
             gasPrice: 1000000000
-            // from: "0x3a4cac8ae75136b1e54cce14b8e1c11b8de39544"
         },
         local: {
             host: 'localhost',
