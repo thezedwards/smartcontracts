@@ -3,7 +3,7 @@ var fs = require('fs');
 var PapyrusRegistry = artifacts.require("./PapyrusRegistry.sol");
 
 var MultiSigWalletWithDailyLimit = artifacts.require("./gnosis/MultiSigWalletWithDailyLimit.sol");
-var PapyrusPrototypeToken = artifacts.require("./PapyrusPrototypeToken.sol");
+var PapyrusTokenTest = artifacts.require("./PapyrusTokenTest.sol");
 var PapyrusDAO = artifacts.require("./dao/PapyrusDAO.sol");
 var SSPRegistry = artifacts.require("./registry/impl/SSPRegistryImpl.sol");
 var DSPRegistry = artifacts.require("./registry/impl/DSPRegistryImpl.sol");
@@ -22,7 +22,7 @@ var SspContract = artifacts.require("./channel/SspContract.sol");
 var addressPapyrusRegistry = '0x8Ef23e41a64722a28acFC12F5b0Ac326E0aBdD13';
 
 var addressCoreAccount = web3.eth.accounts[0];
-var addressPapyrusPrototypeToken;
+var addressPapyrusTokenTest;
 var addressPapyrusDAO;
 var addressSSPRegistry;
 var addressDSPRegistry;
@@ -40,7 +40,7 @@ function printAddresses() {
     console.log("====================================");
     console.log("Core account: " + addressCoreAccount);
     console.log("Contracts:");
-    console.log("  Papyrus Prototype Token: " + addressPapyrusPrototypeToken);
+    console.log("  Test Papyrus Token: " + addressPapyrusTokenTest);
     console.log("  Papyrus DAO: " + addressPapyrusDAO);
     console.log("    SSP Registry: " + addressSSPRegistry);
     console.log("    DSP Registry: " + addressDSPRegistry);
@@ -53,7 +53,7 @@ function printAddresses() {
     console.log("  Campaign Manager: " + addressCampaignManager);
     console.log("  SSP Manager: " + addressSspManager);
     console.log("====================================");
-    fs.writeFileSync("contracts.properties", "dao=" + addressPapyrusDAO + "\n" + "token=" + addressPapyrusPrototypeToken);
+    fs.writeFileSync("contracts.properties", "dao=" + addressPapyrusDAO + "\n" + "token=" + addressPapyrusTokenTest);
 }
 
 function linkDao(registryName, registryContract) {
@@ -68,8 +68,8 @@ module.exports = function(deployer) {
     let papyrusRegistry = PapyrusRegistry.at(addressPapyrusRegistry);
     // First of all deploy all necessary multi signature wallets
     // For now use daily non limit multi signature wallets with 5 owners and zero daily limit
-    deployer.deploy(PapyrusPrototypeToken).then(function() {
-        addressPapyrusPrototypeToken = PapyrusPrototypeToken.address;
+    deployer.deploy(PapyrusTokenTest).then(function() {
+        addressPapyrusTokenTest = PapyrusTokenTest.address;
         return deployer.deploy(DSPRegistry);
     }).then(function() {
         addressDSPRegistry = DSPRegistry.address;
@@ -85,7 +85,7 @@ module.exports = function(deployer) {
         return deployer.deploy(SecurityDepositRegistry);
     }).then(function() {
         addressSecurityDepositRegistry = SecurityDepositRegistry.address;
-        return deployer.deploy(PapyrusDAO, addressPapyrusPrototypeToken, addressSSPRegistry, addressDSPRegistry, addressPublisherRegistry,
+        return deployer.deploy(PapyrusDAO, addressPapyrusTokenTest, addressSSPRegistry, addressDSPRegistry, addressPublisherRegistry,
             addressAuditorRegistry, addressSecurityDepositRegistry);
     }).then(function() {
         addressPapyrusDAO = PapyrusDAO.address;
@@ -100,13 +100,13 @@ module.exports = function(deployer) {
     }).then(function() {
         addressChannelManager = ChannelManagerContract.address;
         return deployer.deploy(CampaignManagerContract,
-            addressPapyrusPrototypeToken,
+            addressPapyrusTokenTest,
             addressChannelManager
         );
     }).then(function() {
         addressCampaignManager = CampaignManagerContract.address;
         return deployer.deploy(SspManagerContract,
-            addressPapyrusPrototypeToken,
+            addressPapyrusTokenTest,
             addressChannelManager
         );
     }).then(function() {
@@ -123,13 +123,13 @@ module.exports = function(deployer) {
         });
     }).then(function() {
         //TODO: Must be removed before deploying to anything public
-        PapyrusPrototypeToken.at(addressPapyrusPrototypeToken).setTransferable(true).then(function(result) {
-            console.log("[WARNING] PapyrusPrototypeToken set transferable!");
+        PapyrusTokenTest.at(addressPapyrusTokenTest).setTransferable(true).then(function(result) {
+            console.log("[WARNING] PapyrusTokenTest set transferable!");
         }).catch(function(err) {
-            console.log("Error while setting PapyrusPrototypeToken transferable");
+            console.log("Error while setting PapyrusTokenTest transferable");
         });
     }).then(function() {
-        return papyrusRegistry.updateTokenContract(addressPapyrusPrototypeToken, JSON.stringify(PapyrusPrototypeToken.abi));
+        return papyrusRegistry.updateTokenContract(addressPapyrusTokenTest, JSON.stringify(PapyrusTokenTest.abi));
     }).then(function() {
         return papyrusRegistry.updateDaoContract(addressPapyrusDAO, JSON.stringify(PapyrusDAO.abi));
     }).then(function() {
