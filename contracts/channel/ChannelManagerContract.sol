@@ -197,6 +197,10 @@ contract ChannelManagerContract is ChannelManagerApi {
     return uint64(channels[channel].participants.length);
   }
 
+  function channelDisputeResolver(uint64 channel) public view returns (address) {
+    return channels[channel].disputeResolver;
+  }
+
   function channelParticipant(uint64 channel, uint64 participantId) public view returns (address) {
     return channels[channel].participants[participantId].participant;
   }
