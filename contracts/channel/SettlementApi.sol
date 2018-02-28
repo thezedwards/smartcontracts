@@ -20,7 +20,7 @@ contract SettlementApi {
 
   function createChannel(string module, bytes configuration, address partner, address partnerPaymentAddress, address[] auditors,
     uint256[] auditorsRates, address disputeResolver, uint32[] timeouts) public returns (uint64 channel);
-  function settle(address partner, uint64 channel, uint64 blockId) public;
+  function settle(address partner, uint64 channel, uint64 blockId, bytes result) public;
 
   // INTERNAL FUNCTIONS
 

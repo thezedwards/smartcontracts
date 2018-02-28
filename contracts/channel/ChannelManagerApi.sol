@@ -58,4 +58,5 @@ contract ChannelManagerApi {
   function blockPart(uint64 channel, uint64 participantId, uint64 blockId) public view returns (uint64 length, bytes32 hash, bytes reference);
   function blockResult(uint64 channel, uint64 participantId, uint64 blockId) public view returns (bytes32 resultHash);
   function blockSettlement(uint64 channel, uint64 blockId) public view returns (bytes result);
+  function blockSettlementHash(uint64 channel, uint64 blockId) public view returns (bytes32 resultHash);
 }

@@ -54,6 +54,7 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   struct BlockSettlement {
     bytes result;
+    bytes32 resultHash;
   }
 
   // PUBLIC FUNCTIONS
@@ -169,6 +170,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     canSettle(channel, blockId, result)
   {
     channels[channel].blocks[blockId].settlement.result = result;
+    channels[channel].blocks[blockId].settlement.resultHash = keccak256(result);
     ChannelBlockSettled(channel, msg.sender, blockId, result);
   }
 
@@ -180,6 +182,7 @@ contract ChannelManagerContract is ChannelManagerApi {
   {
     // TODO: Here can be additional logic to control such dispute resolution
     channels[channel].blocks[blockId].settlement.result = result;
+    channels[channel].blocks[blockId].settlement.resultHash = keccak256(result);
     ChannelBlockSettled(channel, msg.sender, blockId, result);
   }
   
@@ -265,6 +268,14 @@ contract ChannelManagerContract is ChannelManagerApi {
     returns (bytes result)
   {
     result = channels[channel].blocks[blockId].settlement.result;
+  }
+
+  function blockSettlementHash(uint64 channel, uint64 blockId)
+    public
+    view
+    returns (bytes32 resultHash)
+  {
+    resultHash = channels[channel].blocks[blockId].settlement.resultHash;
   }
 
   function hashState(address _channel, uint256 _nonce, uint256 _receiverPayment, uint256 _auditorPayment) public pure returns (bytes32) {
