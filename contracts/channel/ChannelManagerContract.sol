@@ -134,9 +134,9 @@ contract ChannelManagerContract is ChannelManagerApi {
   {
     require(blockStart(blockId) + channels[channel].partTimeout >= now);
     require(reference.length > 0);
-    int8 participantIndex = getParticipantIndex(channel, msg.sender);
-    require(participantIndex >= 0);
-    uint8 i = uint8(participantIndex);
+    int8 validatorIndex = getValidatorIndex(channel, msg.sender);
+    require(validatorIndex >= 0);
+    uint8 i = uint8(validatorIndex);
     if (channels[channel].blocks[blockId].parts.length == 0) {
       uint64 lastBlockId = lastBlock(channel);
       if (blockId > lastBlockId) {
