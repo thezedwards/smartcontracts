@@ -128,7 +128,10 @@ contract ChannelManagerContract is ChannelManagerApi {
     ChannelApproved(channel, msg.sender);
   }
 
-  function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference) public notClosed(channel, blockId) {
+  function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference)
+    public
+    notClosed(channel, blockId)
+  {
     require(blockStart(blockId) + channels[channel].partTimeout >= now);
     require(reference.length > 0);
     int8 participantIndex = getParticipantIndex(channel, msg.sender);
@@ -149,9 +152,11 @@ contract ChannelManagerContract is ChannelManagerApi {
     ChannelNewBlockPart(channel, msg.sender, blockId, length, hash, reference);
   }
 
-  function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public notClosed(channel, blockId) {
-    //TODO require all parts were received or (blockStart(blockId) + channels[channel].partTimeout < now)
-    require(blockStart(blockId) + channels[channel].resultTimeout >= now);
+  function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash)
+    public
+    notClosed(channel, blockId)
+    canStoreBlockResult(channel, blockId, resultHash)
+  {
     int8 validatorIndex = getValidatorIndex(channel, msg.sender);
     require(validatorIndex >= 0);
     uint8 i = uint8(validatorIndex);
@@ -345,13 +350,35 @@ contract ChannelManagerContract is ChannelManagerApi {
     _;
   }
 
+  modifier canStoreBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) {
+    if (blockStart(blockId) + channels[channel].partTimeout >= now) {
+      for (uint8 i = 0; i < channels[channel].participants.length; ++i) {
+        require(channels[channel].participants[i].validator == address(0) ||
+          channels[channel].blocks[blockId].results[i].resultHash != 0);
+      }
+    }
+    require(blockStart(blockId) + channels[channel].resultTimeout >= now);
+    _;
+  }
+
   modifier canSettle(uint64 channel, uint64 blockId, bytes result) {
     require(channels[channel].blocks[blockId].settlement.result.length == 0);
     require(result.length > 0);
+    uint8 i;
     var resultHash = keccak256(result);
-    for (uint8 i = 0; i < channels[channel].participants.length; ++i) {
-      require(channels[channel].participants[i].validator == address(0) ||
-        channels[channel].blocks[blockId].results[i].resultHash == resultHash);
+    if (blockStart(blockId) + channels[channel].resultTimeout >= now) {
+      // Require results from all approved participants are stored
+      for (i = 0; i < channels[channel].participants.length; ++i) {
+        require(channels[channel].participants[i].validator == address(0) ||
+          channels[channel].blocks[blockId].results[i].resultHash == resultHash);
+      }
+    } else {
+      // Check only stored results since allowed time to store them is over
+      for (i = 0; i < channels[channel].participants.length; ++i) {
+        require(channels[channel].participants[i].validator == address(0) ||
+          channels[channel].blocks[blockId].results[i].resultHash == 0 ||
+          channels[channel].blocks[blockId].results[i].resultHash == resultHash);
+      }
     }
     _;
   }
