@@ -375,8 +375,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     } else {
       // Check only stored results since allowed time to store them is over
       for (i = 0; i < channels[channel].participants.length; ++i) {
-        require(channels[channel].participants[i].validator == address(0) ||
-          channels[channel].blocks[blockId].results[i].resultHash == 0 ||
+        require(channels[channel].blocks[blockId].results[i].resultHash == 0 ||
           channels[channel].blocks[blockId].results[i].resultHash == resultHash);
       }
     }
