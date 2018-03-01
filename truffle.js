@@ -3,6 +3,13 @@ require('babel-register');
 
 module.exports = {
     networks: {
+        mvp: {
+            host: '213.239.219.107',
+            port: 8545,
+            network_id: '4', // Match any network id
+            gas: 7450000,
+            gasPrice: 25000000000
+        },
         development: {
             host: '35.205.243.163',
             port: 8545,

@@ -59,11 +59,6 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   // PUBLIC FUNCTIONS
 
-  function ChannelManagerContract(address _channelApi) public {
-    require(_channelApi != address(0));
-    channelApi = ChannelApi(_channelApi);
-  }
-
   function () public {
     revert();
   }
@@ -354,7 +349,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     if (blockStart(blockId) + channels[channel].partTimeout >= now) {
       for (uint8 i = 0; i < channels[channel].participants.length; ++i) {
         require(channels[channel].participants[i].validator == address(0) ||
-          channels[channel].blocks[blockId].results[i].resultHash != 0);
+          channels[channel].blocks[blockId].parts[i].hash != 0);
       }
     }
     require(blockStart(blockId) + channels[channel].resultTimeout >= now);
@@ -402,8 +397,6 @@ contract ChannelManagerContract is ChannelManagerApi {
   }
 
   // FIELDS
-
-  ChannelApi public channelApi;
 
   mapping (uint64 => Channel) public channels;
   uint64 public channelCount;
