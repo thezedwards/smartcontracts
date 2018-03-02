@@ -13,9 +13,10 @@ contract CampaignContract is RtbSettlementContract {
     address _channelManager,
     address _advertiser,
     address _dsp,
+    uint256 _feeRate,
     string _dbId
   )
-    RtbSettlementContract(_token, _channelManager, _dsp, 0)
+    RtbSettlementContract(_token, _channelManager, _dsp, _feeRate)
     public
   {
     advertiser = _advertiser;
