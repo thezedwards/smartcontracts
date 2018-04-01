@@ -57,6 +57,7 @@ dependencies {
     compile ('org.web3j:tuples:3.2.0')
     compile ('org.web3j:codegen:3.2.0')
     compile ('org.web3j:infura:3.2.0')
+    compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.59'
 
     testCompile('org.testng:testng:6.11')
 }
