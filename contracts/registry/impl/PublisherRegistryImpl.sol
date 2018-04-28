@@ -21,19 +21,22 @@ contract PublisherRegistryImpl is PublisherRegistry, DaoOwnable {
 
     bytes32[5] url;
 
+    bytes masterKeyPublic;
+
     uint256[2] karma;
   }
 
   // PUBLIC FUNCTIONS
 
   // This is the function that actually insert a record.
-  function register(address key, bytes32[5] url, address recordOwner) public onlyDaoOrOwner {
+  function register(address key, bytes32[5] url, address recordOwner, bytes masterKeyPublic) public onlyDaoOrOwner {
     require(records[key].time == 0);
     records[key].time = now;
     records[key].owner = recordOwner;
     records[key].keysIndex = keys.length;
     records[key].publisherAddress = key;
     records[key].url = url;
+    records[key].masterKeyPublic = masterKeyPublic;
     keys.length++;
     keys[keys.length - 1] = key;
     numRecords++;
@@ -75,12 +78,21 @@ contract PublisherRegistryImpl is PublisherRegistry, DaoOwnable {
     return records[key].time != 0;
   }
 
-  function getPublisher(address key) public view returns (address publisherAddress, bytes32[5] url, uint256[2] karma, address recordOwner) {
+  function getMemberCount() public view returns (uint256) {
+    return keys.length;
+  }
+
+  function getMemberAddress(uint256 index) public view returns (address) {
+    return keys[index];
+  }
+
+  function getMember(address key) public view returns (address publisherAddress, bytes32[5] url, uint256[2] karma, address recordOwner, bytes masterKeyPublic) {
     Publisher storage record = records[key];
     publisherAddress = record.publisherAddress;
     url = record.url;
     karma = record.karma;
     recordOwner = record.owner;
+    masterKeyPublic = record.masterKeyPublic;
   }
 
   // Returns the owner of the given record. The owner could also be get
@@ -96,24 +108,7 @@ contract PublisherRegistryImpl is PublisherRegistry, DaoOwnable {
   function getTime(address key) public view returns (uint256) {
     return records[key].time;
   }
-
-  //@dev Get list of all registered publishers
-  //@return Returns array of addresses registered as DSP with register times
-  function getAllPublishers() public view returns (address[] addresses, bytes32[5][] urls, uint256[2][] karmas, address[] recordOwners) {
-    addresses = new address[](numRecords);
-    urls = new bytes32[5][](numRecords);
-    karmas = new uint256[2][](numRecords);
-    recordOwners = new address[](numRecords);
-    uint256 i;
-    for (i = 0; i < numRecords; i++) {
-      Publisher storage publisher = records[keys[i]];
-      addresses[i] = publisher.publisherAddress;
-      urls[i] = publisher.url;
-      karmas[i] = publisher.karma;
-      recordOwners[i] = publisher.owner;
-    }
-  }
-
+  
   function kill() public onlyOwner {
       selfdestruct(owner);
   }

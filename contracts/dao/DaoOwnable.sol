@@ -27,6 +27,7 @@ contract DaoOwnable is SafeOwnable {
     _;
   }
 
+  /// @dev Throws if called by any account other than the DAO or contract owner.
   modifier onlyDaoOrOwner() {
     require(msg.sender == dao || msg.sender == owner);
     _;

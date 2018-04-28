@@ -16,9 +16,9 @@ contract SSPRegistrar is SSPTypeAware, SecurityDepositAware {
 
   //@dev Register organisation as SSP
   //@param sspAddress address of wallet to register
-  function registerSsp(address sspAddress, SSPType sspType, uint16 publisherFee) public {
+  function registerSsp(address sspAddress, SSPType sspType, uint16 publisherFee, bytes masterKeyPublic) public {
     receiveSecurityDeposit(sspAddress);
-    sspRegistry.register(sspAddress, sspType, publisherFee, msg.sender);
+    sspRegistry.register(sspAddress, sspType, publisherFee, msg.sender, masterKeyPublic);
     SSPRegistered(sspAddress);
   }
 
@@ -43,16 +43,6 @@ contract SSPRegistrar is SSPTypeAware, SecurityDepositAware {
   //@param address of new owner
   function transferSSPRecord(address key, address newOwner) public {
     sspRegistry.transfer(key, newOwner, msg.sender);
-  }
-
-  //@dev Retrieve information about registered SSP
-  //@return Address of registered SSP and time when registered
-  function findSsp(address _sspAddress)
-    public
-    view
-    returns (address sspAddress, SSPType sspType, uint16 publisherFee, uint256[2] karma, address recordOwner)
-  {
-    return sspRegistry.getSSP(_sspAddress);
   }
 
   //@dev check if SSP registered

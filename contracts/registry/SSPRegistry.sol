@@ -6,7 +6,7 @@ import "./SSPTypeAware.sol";
 contract SSPRegistry is SSPTypeAware {
 
   // This is the function that actually insert a record.
-  function register(address key, SSPType sspType, uint16 publisherFee, address recordOwner) public;
+  function register(address key, SSPType sspType, uint16 publisherFee, address recordOwner, bytes masterKeyPublic) public;
 
   // Updates the values of the given record.
   function updatePublisherFee(address key, uint16 newFee, address sender) public;
@@ -24,9 +24,11 @@ contract SSPRegistry is SSPTypeAware {
   // Tells whether a given key is registered.
   function isRegistered(address key) public view returns (bool);
 
-  function getSSP(address key) public view returns (address sspAddress, SSPType sspType, uint16 publisherFee, uint256[2] karma, address recordOwner);
+  function getMemberCount() public view returns (uint256);
 
-  function getAllSSP() public view returns (address[] addresses, SSPType[] sspTypes, uint16[] publisherFees, uint256[2][] karmas, address[] recordOwners);
+  function getMemberAddress(uint256 index) public view returns (address);
+
+  function getMember(address key) public view returns (address sspAddress, SSPType sspType, uint16 publisherFee, uint256[2] karma, address recordOwner, bytes masterKeyPublic);
 
   function kill() public;
 }

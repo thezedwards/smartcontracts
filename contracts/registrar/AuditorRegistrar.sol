@@ -14,9 +14,9 @@ contract AuditorRegistrar is SecurityDepositAware {
   // PUBLIC FUNCTIONS
 
   /// @dev Register organisation as Auditor
-  function registerAuditor(address auditorAddress) public {
+  function registerAuditor(address auditorAddress, bytes masterKeyPublic) public {
     receiveSecurityDeposit(auditorAddress);
-    auditorRegistry.register(auditorAddress, msg.sender);
+    auditorRegistry.register(auditorAddress, msg.sender, masterKeyPublic);
     AuditorRegistered(auditorAddress);
   }
 
@@ -32,16 +32,7 @@ contract AuditorRegistrar is SecurityDepositAware {
     auditorRegistry.transfer(key, newOwner, msg.sender);
   }
 
-  /// @dev Retrieve information about registered Auditor
-  function findAuditor(address auditor)
-    public
-    view
-    returns (address auditorAddress, uint256[2] karma, address recordOwner)
-  {
-    return auditorRegistry.getAuditor(auditor);
-  }
-
-  /// @dev Ccheck if Auditor registered
+  /// @dev Check if Auditor registered
   function isAuditorRegistered(address key) public view returns (bool) {
     return auditorRegistry.isRegistered(key);
   }

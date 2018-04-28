@@ -20,18 +20,21 @@ contract AuditorRegistryImpl is AuditorRegistry, DaoOwnable {
     // Auditor Address
     address auditorAddress;
 
+    bytes masterKeyPublic;
+
     uint256[2] karma;
   }
 
   // PUBLIC FUNCTIONS
 
   // This is the function that actually insert a record.
-  function register(address key, address recordOwner) public onlyDaoOrOwner {
+  function register(address key, address recordOwner, bytes masterKeyPublic) public onlyDaoOrOwner {
     require(records[key].time == 0);
     records[key].time = now;
     records[key].owner = recordOwner;
     records[key].keysIndex = keys.length;
     records[key].auditorAddress = key;
+    records[key].masterKeyPublic = masterKeyPublic;
     keys.length++;
     keys[keys.length - 1] = key;
     numRecords++;
@@ -65,11 +68,20 @@ contract AuditorRegistryImpl is AuditorRegistry, DaoOwnable {
     return records[key].time != 0;
   }
 
-  function getAuditor(address key) public view returns (address auditorAddress, uint256[2] karma, address recordOwner) {
+  function getMemberCount() public view returns (uint256) {
+    return keys.length;
+  }
+
+  function getMemberAddress(uint256 index) public view returns (address) {
+    return keys[index];
+  }
+
+  function getMember(address key) public view returns (address auditorAddress, uint256[2] karma, address recordOwner, bytes masterKeyPublic) {
     Auditor storage record = records[key];
     auditorAddress = record.auditorAddress;
     karma = record.karma;
     recordOwner = record.owner;
+    masterKeyPublic = record.masterKeyPublic;
   }
 
   // Returns the owner of the given record. The owner could also be get
@@ -86,28 +98,11 @@ contract AuditorRegistryImpl is AuditorRegistry, DaoOwnable {
     return records[key].time;
   }
 
-  //@dev Get list of all registered auditor
-  //@return Returns array of addresses registered as Auditor with register times
-  function getAllAuditors() public view returns (address[] addresses, uint256[2][] karmas, address[] recordOwners) {
-    addresses = new address[](numRecords);
-    karmas = new uint256[2][](numRecords);
-    recordOwners = new address[](numRecords);
-    uint256 i;
-    for (i = 0; i < numRecords; i++) {
-      Auditor storage auditor = records[keys[i]];
-      addresses[i] = auditor.auditorAddress;
-      karmas[i] = auditor.karma;
-      recordOwners[i] = auditor.owner;
-    }
-  }
-
   function kill() public onlyOwner {
       selfdestruct(owner);
   }
 
   // FIELDS
-
-  uint256 public creationTime = now;
 
   // This mapping keeps the records of this Registry.
   mapping(address => Auditor) records;
