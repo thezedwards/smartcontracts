@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutionException;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint8;
 import org.web3j.crypto.CipherException;
@@ -134,10 +135,10 @@ public class DSPTest extends DepositTest{
 
     protected void testDspRegistration(PapyrusDAO dao, PapyrusPrototypeToken token) {
         asCf(dao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(dao.registerDsp(dsp.getAddress(), DSPType.Direct.code, generateUrl5())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerDsp(dsp.getAddress(), DSPType.Direct.code, generateUrl5(), DynamicBytes.DEFAULT)).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
         asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
-        asCf(dao.registerDsp(dsp.getAddress(), DSPType.Direct.code, generateUrl5())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerDsp(dsp.getAddress(), DSPType.Direct.code, generateUrl5(), DynamicBytes.DEFAULT)).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isDspRegistered(dsp.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
 //        asCf(dao.findDsp(dsp.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), dsp.address)).join();
     }

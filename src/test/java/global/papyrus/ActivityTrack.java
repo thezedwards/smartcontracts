@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Uint16;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.CipherException;
@@ -50,7 +51,7 @@ public class ActivityTrack {
 
             CompletableFuture.allOf(
                     asCf(dspToken.approve(daoAddress(), new Uint256(10))).thenCompose(wtw ->
-                            asCf(dspDao.registerDsp(dsp.getAddress(), DSPTest.DSPType.Direct.code, generateUrl5())).thenAccept(
+                            asCf(dspDao.registerDsp(dsp.getAddress(), DSPTest.DSPType.Direct.code, generateUrl5(), DynamicBytes.DEFAULT)).thenAccept(
                                     transactionReceipt -> {
                                         asCf(dspDao.isDspRegistered(dsp.getAddress())).thenAccept(res -> {
                                             Assert.assertTrue(res.getValue());
@@ -58,7 +59,7 @@ public class ActivityTrack {
                                         });
                                     })),
                     asCf(sspToken.approve(daoAddress(), new Uint256(10))).thenCompose(wtw ->
-                            asCf(sspDao.registerSsp(ssp.getAddress(), SSPTest.SSPType.Direct.code, new Uint16(5))).thenAccept(
+                            asCf(sspDao.registerSsp(ssp.getAddress(), SSPTest.SSPType.Direct.code, new Uint16(5), DynamicBytes.DEFAULT)).thenAccept(
                                     transactionReceipt -> {
                                         asCf(sspDao.isSspRegistered(ssp.getAddress())).thenAccept(res -> {
                                             Assert.assertTrue(res.getValue());
@@ -66,7 +67,7 @@ public class ActivityTrack {
                                         });
                                     })),
                     asCf(auditorToken.approve(daoAddress(), new Uint256(10))).thenCompose(wtw ->
-                            asCf(auditorDao.registerAuditor(auditor.getAddress())).thenAccept(
+                            asCf(auditorDao.registerAuditor(auditor.getAddress(), DynamicBytes.DEFAULT)).thenAccept(
                                     transactionReceipt -> {
                                         asCf(auditorDao.isAuditorRegistered(auditor.getAddress())).thenAccept(res -> {
                                             Assert.assertTrue(res.getValue());

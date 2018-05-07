@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutionException;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Uint16;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint8;
@@ -135,10 +136,10 @@ public class SSPTest extends DepositTest {
 
     protected void testSspRegistration(PapyrusDAO dao, PapyrusPrototypeToken token) {
         asCf(dao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(dao.registerSsp(ssp.getAddress(), SSPType.Direct.code, new Uint16(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerSsp(ssp.getAddress(), SSPType.Direct.code, new Uint16(3), DynamicBytes.DEFAULT)).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
         asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
-        asCf(dao.registerSsp(ssp.getAddress(), SSPType.Direct.code, new Uint16(3))).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerSsp(ssp.getAddress(), SSPType.Direct.code, new Uint16(3), DynamicBytes.DEFAULT)).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isSspRegistered(ssp.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
 //        asCf(dao.findSsp(ssp.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), ssp.address)).join();
     }

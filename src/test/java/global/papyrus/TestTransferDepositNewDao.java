@@ -7,6 +7,7 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.CipherException;
 import org.web3j.tx.ClientTransactionManager;
@@ -43,7 +44,7 @@ public class TestTransferDepositNewDao {
         ownerToken = asCf(dao.token()).thenApply(tokenAddress -> loadTokenContract(tokenAddress.toString(), new ClientTransactionManager(web3j, ownerAddr))).join();
         asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
         asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
-        asCf(dao.registerAuditor(auditor.getAddress())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerAuditor(auditor.getAddress(), DynamicBytes.DEFAULT)).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isAuditorRegistered(auditor.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
     }
 

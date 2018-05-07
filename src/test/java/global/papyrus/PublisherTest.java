@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutionException;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.CipherException;
 
@@ -123,10 +124,10 @@ public class PublisherTest extends DepositTest{
 
     protected void testPublisherRegistration(PapyrusDAO dao, PapyrusPrototypeToken token) {
         asCf(dao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
-        asCf(dao.registerPublisher(publisher.getAddress(), generateUrl5())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerPublisher(publisher.getAddress(), generateUrl5(), DynamicBytes.DEFAULT)).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertFalse(types.getValue())).join();
         asCf(token.approve(daoAddress(), new Uint256(BigInteger.TEN))).join();
-        asCf(dao.registerPublisher(publisher.getAddress(), generateUrl5())).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
+        asCf(dao.registerPublisher(publisher.getAddress(), generateUrl5(), DynamicBytes.DEFAULT)).thenAccept(receipt -> Assert.assertNotNull(receipt.getTransactionHash())).join();
         asCf(dao.isPublisherRegistered(publisher.getAddress())).thenAccept(types -> Assert.assertTrue(types.getValue())).join();
 //        asCf(dao.findPublisher(publisher.getAddress())).thenAccept(types -> Assert.assertEquals(types.get(0).getTypeAsString(), publisher.address)).join();
     }
