@@ -22,6 +22,8 @@ contract ChannelManagerContract is ChannelManagerApi {
     uint32 resultTimeout;
     uint32 closeTimeout;
 
+    mapping (address => bytes32) encryptionKeys;
+
     uint64 opened;
     uint64 closeTimestamp;
     uint64 closed;
@@ -34,7 +36,6 @@ contract ChannelManagerContract is ChannelManagerApi {
   struct Participant {
     address participant;
     address validator;
-    bytes encryptionKey;
   }
 
   struct Block {
@@ -114,14 +115,14 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   // PUBLIC FUNCTIONS (CHANNELS INTERACTION)
 
-  function approve(uint64 channel, address validator, bytes encryptionKey) public notClosedChannel(channel) {
+  function approve(uint64 channel, address validator, bytes32 encryptionKey) public notClosedChannel(channel) {
     require(validator != address(0));
     int8 participantIndex = getParticipantIndex(channel, msg.sender);
     require(participantIndex >= 0);
     uint8 i = uint8(participantIndex);
     require(channels[channel].participants[i].validator == 0);
     channels[channel].participants[i].validator = validator;
-    channels[channel].participants[i].encryptionKey = encryptionKey;
+    channels[channel].encryptionKeys[msg.sender] = encryptionKey;
     ChannelApproved(channel, msg.sender);
   }
 
@@ -214,8 +215,8 @@ contract ChannelManagerContract is ChannelManagerApi {
     return channels[channel].participants[participantId].validator;
   }
 
-  function channelEncryptionKey(uint64 channel, uint64 participantId) public view returns (bytes) {
-    return channels[channel].participants[participantId].encryptionKey;
+  function channelEncryptionKey(uint64 channel) public view returns (bytes32) {
+    return channels[channel].encryptionKeys[msg.sender];
   }
 
   function channelPartTimeout(uint64 channel) public view returns (uint32) {

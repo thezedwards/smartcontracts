@@ -41,7 +41,7 @@ contract ChannelManagerApi {
   function requestClose(uint64 channel) public;
 
   // Writting data to channel
-  function approve(uint64 channel, address validator) public;
+  function approve(uint64 channel, address validator, bytes32 encryptionKey) public;
   function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference) public;
   function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public;
   function blockSettle(uint64 channel, uint64 blockId, bytes result) public;
@@ -53,6 +53,7 @@ contract ChannelManagerApi {
   function channelParticipantCount(uint64 channel) public view returns (uint64);
   function channelParticipant(uint64 channel, uint64 participantId) public view returns (address);
   function channelValidator(uint64 channel, uint64 participantId) public view returns (address);
+  function channelEncryptionKey(uint64 channel) public view returns (bytes32);
 
   // Read channel blocks information
   function blockPart(uint64 channel, uint64 participantId, uint64 blockId) public view returns (uint64 length, bytes32 hash, bytes reference);
