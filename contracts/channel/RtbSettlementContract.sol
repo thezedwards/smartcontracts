@@ -52,6 +52,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
     address partnerPaymentAddress,
     address[] auditors,
     uint256[] _auditorsRates,
+    bytes32[] encryptionKeys,
     address disputeResolver,
     uint32[] timeouts
   )
@@ -59,6 +60,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
     returns (uint64 channel)
   {
     require(auditors.length == _auditorsRates.length);
+    require(encryptionKeys.length == 2 + auditors.length);
     address[] memory participants = new address[](2 + auditors.length);
     participants[0] = payer;
     participants[1] = partner;
@@ -66,7 +68,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
       participants[2 + i] = auditors[i];
       auditorsRates[partner][auditors[i]] = _auditorsRates[i];
     }
-    channel = channelManager.createChannel(module, configuration, participants, disputeResolver, timeouts);
+    channel = channelManager.createChannel(module, configuration, participants, encryptionKeys, disputeResolver, timeouts);
     if (channelCounts[partner] == 0) {
       partners[partnerCount] = partner;
       partnerCount += 1;

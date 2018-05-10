@@ -74,6 +74,8 @@ contract ChannelManagerContract is ChannelManagerApi {
     bytes configuration,
     // addresses of participants 
     address[] participants,
+    // encryption keys of participants 
+    bytes32[] encryptionKeys,
     // address from which block can be settled with any data in case of dispute 
     address disputeResolver,
     // timeouts in seconds:
@@ -87,6 +89,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     returns (uint64 channel)
   {
     require(participants.length >= MIN_PARTICIPANTS && participants.length <= MAX_PARTICIPANTS);
+    require(participants.length == encryptionKeys.length);
     require(timeouts[1] > 0);
     require(timeouts[2] > 0);
     require(timeouts[3] > 0);
@@ -96,6 +99,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     channels[channel].participants.length = participants.length;
     for (uint16 i = 0; i < participants.length; ++i) {
       channels[channel].participants[i].participant = participants[i];
+      channels[channel].encryptionKeys[msg.sender] = encryptionKeys[i];
       ChannelCreated(channel, participants[i]);
     }
     channels[channel].disputeResolver = disputeResolver;
@@ -115,14 +119,13 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   // PUBLIC FUNCTIONS (CHANNELS INTERACTION)
 
-  function approve(uint64 channel, address validator, bytes32 encryptionKey) public notClosedChannel(channel) {
+  function approve(uint64 channel, address validator) public notClosedChannel(channel) {
     require(validator != address(0));
     int8 participantIndex = getParticipantIndex(channel, msg.sender);
     require(participantIndex >= 0);
     uint8 i = uint8(participantIndex);
     require(channels[channel].participants[i].validator == 0);
     channels[channel].participants[i].validator = validator;
-    channels[channel].encryptionKeys[msg.sender] = encryptionKey;
     ChannelApproved(channel, msg.sender);
   }
 

@@ -25,6 +25,8 @@ contract ChannelManagerApi {
     bytes configuration,
     // addresses of participants 
     address[] participants,
+    // encryption keys of participants 
+    bytes32[] encryptionKeys,
     // address from which block can be settled with any data in case of dispute 
     address disputeResolver,
     // timeouts in seconds:
@@ -41,7 +43,7 @@ contract ChannelManagerApi {
   function requestClose(uint64 channel) public;
 
   // Writting data to channel
-  function approve(uint64 channel, address validator, bytes32 encryptionKey) public;
+  function approve(uint64 channel, address validator) public;
   function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference) public;
   function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash) public;
   function blockSettle(uint64 channel, uint64 blockId, bytes result) public;
