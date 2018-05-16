@@ -40,13 +40,13 @@ contract SspContract is RtbSettlementContract {
     address publisher,
     address[] auditors,
     uint256[] auditorsRates,
-    bytes32[] encryptionKeys,
+    bytes32 encryptionKey,
     address disputeResolver,
     uint32[] timeouts
   )
     public
   {
-    createChannel(module, configuration, publisher, publisher, auditors, auditorsRates, encryptionKeys, disputeResolver, timeouts);
+    createChannel(module, configuration, publisher, publisher, auditors, auditorsRates, encryptionKey, disputeResolver, timeouts);
   }
 
   function ssp() public view returns (address) {

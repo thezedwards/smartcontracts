@@ -2,7 +2,6 @@ var fs = require('fs');
 
 var PapyrusRegistry = artifacts.require("./PapyrusRegistry.sol");
 
-var MultiSigWalletWithDailyLimit = artifacts.require("./gnosis/MultiSigWalletWithDailyLimit.sol");
 var PapyrusTokenTest = artifacts.require("./PapyrusTokenTest.sol");
 var PapyrusDAO = artifacts.require("./dao/PapyrusDAO.sol");
 var SSPRegistry = artifacts.require("./registry/impl/SSPRegistryImpl.sol");
@@ -19,7 +18,7 @@ var RtbSettlementContract = artifacts.require("./channel/RtbSettlementContract.s
 var CampaignContract = artifacts.require("./channel/CampaignContract.sol");
 var SspContract = artifacts.require("./channel/SspContract.sol");
 
-var addressPapyrusRegistry = '0x8264b231f391C039E1E3801203B09DB475ED3C70';
+var addressPapyrusRegistry = '0x3602F8889FC30A432f21c0B62e5b599A05A3E403';
 
 var addressCoreAccount = web3.eth.accounts[0];
 var addressPapyrusTokenTest;
@@ -66,11 +65,9 @@ function linkDao(registryName, registryContract) {
 
 module.exports = function(deployer) {
     let papyrusRegistry = PapyrusRegistry.at(addressPapyrusRegistry);
-    // First of all deploy all necessary multi signature wallets
-    // For now use daily non limit multi signature wallets with 5 owners and zero daily limit
-    deployer.deploy(PapyrusTokenTest).then(function() {
+    return deployer.deploy(PapyrusTokenTest).then(function() {
         addressPapyrusTokenTest = PapyrusTokenTest.address;
-        /*return deployer.deploy(DSPRegistry);
+        return deployer.deploy(DSPRegistry);
     }).then(function() {
         addressDSPRegistry = DSPRegistry.address;
         return deployer.deploy(SSPRegistry);
@@ -96,7 +93,7 @@ module.exports = function(deployer) {
     }).then(function() {
         addressEndpointRegistry = EndpointRegistryContract.address;
         deployer.link(ECRecovery, ChannelManagerContract);
-        */return deployer.deploy(ChannelManagerContract, '0x0000000000000000000000000000000000000000'/*addressPapyrusDAO*/);
+        return deployer.deploy(ChannelManagerContract, addressPapyrusDAO);
     }).then(function() {
         addressChannelManager = ChannelManagerContract.address;
         return deployer.deploy(CampaignManagerContract,
@@ -111,7 +108,7 @@ module.exports = function(deployer) {
         );
     }).then(function() {
         addressSspManager = SspManagerContract.address;
-        /*linkDao("SSPRegistry", SSPRegistry.at(addressSSPRegistry));
+        linkDao("SSPRegistry", SSPRegistry.at(addressSSPRegistry));
         linkDao("DSPRegistry", DSPRegistry.at(addressDSPRegistry));
         linkDao("PublisherRegistry", PublisherRegistry.at(addressPublisherRegistry));
         linkDao("AuditorRegistry", AuditorRegistry.at(addressAuditorRegistry));
@@ -122,7 +119,6 @@ module.exports = function(deployer) {
             console.log("Error while linking Dao to ChannelManagerContract : " + err);
         });
     }).then(function() {
-        */
        //TODO: Must be removed before deploying to anything public
         return PapyrusTokenTest.at(addressPapyrusTokenTest).setTransferable(true).then(function(result) {
             console.log("[WARNING] PapyrusTokenTest set transferable!");

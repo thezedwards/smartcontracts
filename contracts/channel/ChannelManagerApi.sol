@@ -21,13 +21,13 @@ contract ChannelManagerApi {
   function createChannel(
     // validator module name
     string module,
-    // module-specific configuration 
+    // module-specific configuration
     bytes configuration,
-    // addresses of participants 
+    // addresses of participants
     address[] participants,
-    // encryption keys of participants 
-    bytes32[] encryptionKeys,
-    // address from which block can be settled with any data in case of dispute 
+    // encryption key of participants
+    bytes32 encryptionKey,
+    // address from which block can be settled with any data in case of dispute
     address disputeResolver,
     // timeouts in seconds:
     // timeouts[0] - minimal period in seconds between two subsequent blocks

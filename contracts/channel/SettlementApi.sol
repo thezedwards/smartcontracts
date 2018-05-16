@@ -19,7 +19,7 @@ contract SettlementApi {
   function withdraw(uint256 amount) public returns (bool success, uint256 balance);
 
   function createChannel(string module, bytes configuration, address partner, address partnerPaymentAddress, address[] auditors,
-    uint256[] auditorsRates, bytes32[] encryptionKeys, address disputeResolver, uint32[] timeouts) public returns (uint64 channel);
+    uint256[] auditorsRates, bytes32 encryptionKey, address disputeResolver, uint32[] timeouts) public returns (uint64 channel);
   function settle(address partner, uint64 channel, uint64 blockId, bytes result) public;
 
   // INTERNAL FUNCTIONS

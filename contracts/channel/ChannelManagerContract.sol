@@ -16,13 +16,13 @@ contract ChannelManagerContract is ChannelManagerApi {
     string module;
     bytes configuration;
     Participant[] participants;
+    bytes32 encryptionKey;
     address disputeResolver;
     uint32 minBlockPeriod;
     uint32 partTimeout;
     uint32 resultTimeout;
     uint32 closeTimeout;
 
-    mapping (address => bytes32) encryptionKeys;
 
     uint64 opened;
     uint64 closeTimestamp;
@@ -70,13 +70,13 @@ contract ChannelManagerContract is ChannelManagerApi {
   function createChannel(
     // validator module name
     string module,
-    // module-specific configuration 
+    // module-specific configuration
     bytes configuration,
-    // addresses of participants 
+    // addresses of participants
     address[] participants,
-    // encryption keys of participants 
-    bytes32[] encryptionKeys,
-    // address from which block can be settled with any data in case of dispute 
+    // encryption key of participants
+    bytes32 encryptionKey,
+    // address from which block can be settled with any data in case of dispute
     address disputeResolver,
     // timeouts in seconds:
     // timeouts[0] - minimal period in seconds between two subsequent blocks
@@ -89,7 +89,6 @@ contract ChannelManagerContract is ChannelManagerApi {
     returns (uint64 channel)
   {
     require(participants.length >= MIN_PARTICIPANTS && participants.length <= MAX_PARTICIPANTS);
-    require(participants.length == encryptionKeys.length);
     require(timeouts[1] > 0);
     require(timeouts[2] > 0);
     require(timeouts[3] > 0);
@@ -99,9 +98,9 @@ contract ChannelManagerContract is ChannelManagerApi {
     channels[channel].participants.length = participants.length;
     for (uint16 i = 0; i < participants.length; ++i) {
       channels[channel].participants[i].participant = participants[i];
-      channels[channel].encryptionKeys[msg.sender] = encryptionKeys[i];
       ChannelCreated(channel, participants[i]);
     }
+    channels[channel].encryptionKey = encryptionKey;
     channels[channel].disputeResolver = disputeResolver;
     channels[channel].minBlockPeriod = timeouts[0];
     channels[channel].partTimeout = timeouts[1];
@@ -219,7 +218,7 @@ contract ChannelManagerContract is ChannelManagerApi {
   }
 
   function channelEncryptionKey(uint64 channel) public view returns (bytes32) {
-    return channels[channel].encryptionKeys[msg.sender];
+    return channels[channel].encryptionKey;
   }
 
   function channelPartTimeout(uint64 channel) public view returns (uint32) {
