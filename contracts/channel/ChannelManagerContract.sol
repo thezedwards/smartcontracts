@@ -13,16 +13,15 @@ contract ChannelManagerContract is ChannelManagerApi {
   // STRUCTURES
 
   struct Channel {
-    string module;
+    //string module;
     bytes configuration;
     Participant[] participants;
-    bytes32 encryptionKey;
+    bytes encryptionKey;
     address disputeResolver;
     uint32 minBlockPeriod;
     uint32 partTimeout;
     uint32 resultTimeout;
     uint32 closeTimeout;
-
 
     uint64 opened;
     uint64 closeTimestamp;
@@ -69,13 +68,13 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   function createChannel(
     // validator module name
-    string module,
+    //string module,
     // module-specific configuration
     bytes configuration,
     // addresses of participants
     address[] participants,
     // encryption key of participants
-    bytes32 encryptionKey,
+    bytes encryptionKey,
     // address from which block can be settled with any data in case of dispute
     address disputeResolver,
     // timeouts in seconds:
@@ -93,7 +92,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(timeouts[2] > 0);
     require(timeouts[3] > 0);
     channel = channelCount + 1;
-    channels[channel].module = module;
+    //channels[channel].module = module;
     channels[channel].configuration = configuration;
     channels[channel].participants.length = participants.length;
     for (uint16 i = 0; i < participants.length; ++i) {
@@ -193,9 +192,9 @@ contract ChannelManagerContract is ChannelManagerApi {
   
   // FUNCTIONS
 
-  function channelModule(uint64 channel) public view returns (string) {
+  /*function channelModule(uint64 channel) public view returns (string) {
     return channels[channel].module;
-  }
+  }*/
 
   function channelConfiguration(uint64 channel) public view returns (bytes) {
     return channels[channel].configuration;
@@ -217,7 +216,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     return channels[channel].participants[participantId].validator;
   }
 
-  function channelEncryptionKey(uint64 channel) public view returns (bytes32) {
+  function channelEncryptionKey(uint64 channel) public view returns (bytes) {
     return channels[channel].encryptionKey;
   }
 
