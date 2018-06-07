@@ -50,7 +50,7 @@ contract ChannelManagerApi {
   function blockResolveDispute(uint64 channel, uint64 blockId, bytes result) public;
 
   // Read channel information
-  function channelModule(uint64 channel) public view returns (string);
+  //function channelModule(uint64 channel) public view returns (string);
   function channelConfiguration(uint64 channel) public view returns (bytes);
   function channelParticipantCount(uint64 channel) public view returns (uint64);
   function channelParticipant(uint64 channel, uint64 participantId) public view returns (address);
