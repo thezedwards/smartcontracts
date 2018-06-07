@@ -21,8 +21,14 @@ module.exports = {
             host: 'localhost',
             port: 8545,
             network_id: '*', // Match any network id
-            gas: 2500000,
-            gasPrice: 21000000000
+            gas: 5000000,
+            gasPrice: 10000000000
+        }
+    },
+    solc: {
+        optimizer: {
+            enabled: true,
+            runs: 200
         }
     }
 };
