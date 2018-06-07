@@ -18,7 +18,8 @@ var RtbSettlementContract = artifacts.require("./channel/RtbSettlementContract.s
 var CampaignContract = artifacts.require("./channel/CampaignContract.sol");
 var SspContract = artifacts.require("./channel/SspContract.sol");
 
-var addressPapyrusRegistry = '0x3602F8889FC30A432f21c0B62e5b599A05A3E403';
+// Encryption tests on Rinkeby
+var addressPapyrusRegistry = '0x3951B3Fda07C1632D35E4a475352f20b786C41ce';
 
 var addressCoreAccount = web3.eth.accounts[0];
 var addressPapyrusTokenTest;
@@ -126,11 +127,11 @@ module.exports = function(deployer) {
             console.log("Error while setting PapyrusTokenTest transferable");
         });
     }).then(function() {
-        return papyrusRegistry.updateTokenContract(addressPapyrusTokenTest, JSON.stringify(PapyrusTokenTest.abi));
+        /*return papyrusRegistry.updateTokenContract(addressPapyrusTokenTest, JSON.stringify(PapyrusTokenTest.abi));
     }).then(function() {
-        /*return papyrusRegistry.updateDaoContract(addressPapyrusDAO, JSON.stringify(PapyrusDAO.abi));
+        return papyrusRegistry.updateDaoContract(addressPapyrusDAO, JSON.stringify(PapyrusDAO.abi));
     }).then(function() {
-        */return papyrusRegistry.updateChannelManagerContract(addressChannelManager, JSON.stringify(ChannelManagerContract.abi));
+        return papyrusRegistry.updateChannelManagerContract(addressChannelManager, JSON.stringify(ChannelManagerContract.abi));
     }).then(function() {
         return papyrusRegistry.updateCampaignManagerContract(addressCampaignManager, JSON.stringify(CampaignManagerContract.abi));
     }).then(function() {
@@ -142,6 +143,6 @@ module.exports = function(deployer) {
     }).then(function() {
         return papyrusRegistry.updateSspAbi(JSON.stringify(SspContract.abi));
     }).then(function() {
-        printAddresses();
+        */printAddresses();
     });
 };
