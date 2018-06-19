@@ -13,9 +13,10 @@ contract ChannelManagerContract is ChannelManagerApi {
   // STRUCTURES
 
   struct Channel {
-    string module;
+    //string module;
     bytes configuration;
     Participant[] participants;
+    bytes encryptionKey;
     address disputeResolver;
     uint32 minBlockPeriod;
     uint32 partTimeout;
@@ -67,12 +68,14 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   function createChannel(
     // validator module name
-    string module,
-    // module-specific configuration 
+    //string module,
+    // module-specific configuration
     bytes configuration,
-    // addresses of participants 
+    // addresses of participants
     address[] participants,
-    // address from which block can be settled with any data in case of dispute 
+    // encryption key of participants
+    bytes encryptionKey,
+    // address from which block can be settled with any data in case of dispute
     address disputeResolver,
     // timeouts in seconds:
     // timeouts[0] - minimal period in seconds between two subsequent blocks
@@ -89,13 +92,14 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(timeouts[2] > 0);
     require(timeouts[3] > 0);
     channel = channelCount + 1;
-    channels[channel].module = module;
+    //channels[channel].module = module;
     channels[channel].configuration = configuration;
     channels[channel].participants.length = participants.length;
     for (uint16 i = 0; i < participants.length; ++i) {
       channels[channel].participants[i].participant = participants[i];
       ChannelCreated(channel, participants[i]);
     }
+    channels[channel].encryptionKey = encryptionKey;
     channels[channel].disputeResolver = disputeResolver;
     channels[channel].minBlockPeriod = timeouts[0];
     channels[channel].partTimeout = timeouts[1];
@@ -188,9 +192,9 @@ contract ChannelManagerContract is ChannelManagerApi {
   
   // FUNCTIONS
 
-  function channelModule(uint64 channel) public view returns (string) {
+  /*function channelModule(uint64 channel) public view returns (string) {
     return channels[channel].module;
-  }
+  }*/
 
   function channelConfiguration(uint64 channel) public view returns (bytes) {
     return channels[channel].configuration;
@@ -210,6 +214,10 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   function channelValidator(uint64 channel, uint64 participantId) public view returns (address) {
     return channels[channel].participants[participantId].validator;
+  }
+
+  function channelEncryptionKey(uint64 channel) public view returns (bytes) {
+    return channels[channel].encryptionKey;
   }
 
   function channelPartTimeout(uint64 channel) public view returns (uint32) {

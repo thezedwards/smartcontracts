@@ -20,12 +20,14 @@ contract ChannelManagerApi {
 
   function createChannel(
     // validator module name
-    string module,
-    // module-specific configuration 
+    //string module,
+    // module-specific configuration
     bytes configuration,
-    // addresses of participants 
+    // addresses of participants
     address[] participants,
-    // address from which block can be settled with any data in case of dispute 
+    // encryption key of participants
+    bytes encryptionKey,
+    // address from which block can be settled with any data in case of dispute
     address disputeResolver,
     // timeouts in seconds:
     // timeouts[0] - minimal period in seconds between two subsequent blocks
@@ -53,6 +55,7 @@ contract ChannelManagerApi {
   function channelParticipantCount(uint64 channel) public view returns (uint64);
   function channelParticipant(uint64 channel, uint64 participantId) public view returns (address);
   function channelValidator(uint64 channel, uint64 participantId) public view returns (address);
+  function channelEncryptionKey(uint64 channel) public view returns (bytes);
 
   // Read channel blocks information
   function blockPart(uint64 channel, uint64 participantId, uint64 blockId) public view returns (uint64 length, bytes32 hash, bytes reference);

@@ -16,9 +16,9 @@ contract DSPRegistrar is DSPTypeAware, SecurityDepositAware {
 
   //@dev Register organisation as DSP
   //@param dspAddress address of wallet to register
-  function registerDsp(address dspAddress, DSPType dspType, bytes32[5] url) public {
+  function registerDsp(address dspAddress, DSPType dspType, bytes32[5] url, bytes masterKeyPublic) public {
     receiveSecurityDeposit(dspAddress);
-    dspRegistry.register(dspAddress, dspType, url, msg.sender);
+    dspRegistry.register(dspAddress, dspType, url, msg.sender, masterKeyPublic);
     DSPRegistered(dspAddress);
   }
 
@@ -43,16 +43,6 @@ contract DSPRegistrar is DSPTypeAware, SecurityDepositAware {
   //@param address of new owner
   function transferDSPRecord(address key, address newOwner) public {
     dspRegistry.transfer(key, newOwner, msg.sender);
-  }
-
-  //@dev Retrieve information about registered DSP
-  //@return Address of registered DSP and time when registered
-  function findDsp(address addr)
-    public
-    view
-    returns (address dspAddress, DSPType dspType, bytes32[5] url, uint256[2] karma, address recordOwner)
-  {
-    return dspRegistry.getDSP(addr);
   }
 
   //@dev Check if DSP registered

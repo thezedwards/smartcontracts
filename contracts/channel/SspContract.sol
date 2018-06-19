@@ -12,13 +12,11 @@ contract SspContract is RtbSettlementContract {
     address _token,
     address _channelManager,
     address _ssp,
-    uint256 _feeRate,
-    string _dbId
+    uint256 _feeRate
   )
     RtbSettlementContract(_token, _channelManager, _ssp, _feeRate)
     public
   {
-    dbId = _dbId;
     owner = _ssp;
   }
 
@@ -37,17 +35,18 @@ contract SspContract is RtbSettlementContract {
   }
 
   function addPublisher(
-    string module,
+    //string module,
     bytes configuration,
     address publisher,
     address[] auditors,
     uint256[] auditorsRates,
+    bytes encryptionKey,
     address disputeResolver,
     uint32[] timeouts
   )
     public
   {
-    createChannel(module, configuration, publisher, publisher, auditors, auditorsRates, disputeResolver, timeouts);
+    createChannel(/*module, */configuration, publisher, publisher, auditors, auditorsRates, encryptionKey, disputeResolver, timeouts);
   }
 
   function ssp() public view returns (address) {
@@ -67,8 +66,4 @@ contract SspContract is RtbSettlementContract {
   function feeReceiver() internal view returns (address) {
     return payer;
   }
-
-  // FIELDS
-
-  string public dbId;
 }

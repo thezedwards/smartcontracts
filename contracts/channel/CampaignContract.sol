@@ -13,14 +13,12 @@ contract CampaignContract is RtbSettlementContract {
     address _channelManager,
     address _advertiser,
     address _dsp,
-    uint256 _feeRate,
-    string _dbId
+    uint256 _feeRate
   )
     RtbSettlementContract(_token, _channelManager, _dsp, _feeRate)
     public
   {
     advertiser = _advertiser;
-    dbId = _dbId;
     owner = advertiser;
   }
 
@@ -49,5 +47,4 @@ contract CampaignContract is RtbSettlementContract {
   // FIELDS
 
   address public advertiser;
-  string public dbId;
 }

@@ -7,7 +7,7 @@ import "./DSPTypeAware.sol";
 contract DSPRegistry is DSPTypeAware {
 
     // This is the function that actually insert a record.
-    function register(address key, DSPType dspType, bytes32[5] url, address recordOwner) public;
+    function register(address key, DSPType dspType, bytes32[5] url, address recordOwner, bytes masterKeyPublic) public;
 
     // Updates the values of the given record.
     function updateUrl(address key, bytes32[5] url, address sender) public;
@@ -25,11 +25,11 @@ contract DSPRegistry is DSPTypeAware {
     // Tells whether a given key is registered.
     function isRegistered(address key) public view returns (bool);
 
-    function getDSP(address key) public view returns (address dspAddress, DSPType dspType, bytes32[5] url, uint256[2] karma, address recordOwner);
+    function getMemberCount() public view returns (uint256);
 
-    //@dev Get list of all registered dsp
-    //@return Returns array of addresses registered as DSP with register times
-    function getAllDSP() public view returns (address[] addresses, DSPType[] dspTypes, bytes32[5][] urls, uint256[2][] karmas, address[] recordOwners) ;
+    function getMemberAddress(uint256 index) public view returns (address);
+
+    function getMember(address key) public view returns (address dspAddress, DSPType dspType, bytes32[5] url, uint256[2] karma, address recordOwner, bytes masterKeyPublic);
 
     function kill() public;
 }

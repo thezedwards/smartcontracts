@@ -24,13 +24,15 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
 
     uint16 publisherFee;
 
+    bytes masterKeyPublic;
+
     uint256[2] karma;
   }
 
   // PUBLIC FUNCTIONS
 
   // This is the function that actually insert a record.
-  function register(address key, SSPType sspType, uint16 publisherFee, address recordOwner) public onlyDaoOrOwner {
+  function register(address key, SSPType sspType, uint16 publisherFee, address recordOwner, bytes masterKeyPublic) public onlyDaoOrOwner {
     require(records[key].time == 0);
     records[key].time = now;
     records[key].owner = recordOwner;
@@ -38,6 +40,7 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
     records[key].sspAddress = key;
     records[key].sspType = sspType;
     records[key].publisherFee = publisherFee;
+    records[key].masterKeyPublic = masterKeyPublic;
     keys.length++;
     keys[keys.length - 1] = key;
     numRecords++;
@@ -78,13 +81,22 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
     return records[key].time != 0;
   }
 
-  function getSSP(address key) public view returns (address sspAddress, SSPType sspType, uint16 publisherFee, uint256[2] karma, address recordOwner) {
+  function getMemberCount() public view returns (uint256) {
+    return keys.length;
+  }
+
+  function getMemberAddress(uint256 index) public view returns (address) {
+    return keys[index];
+  }
+
+  function getMember(address key) public view returns (address sspAddress, SSPType sspType, uint16 publisherFee, uint256[2] karma, address recordOwner, bytes masterKeyPublic) {
     SSP storage record = records[key];
     sspAddress = record.sspAddress;
     sspType = record.sspType;
     publisherFee = record.publisherFee;
     karma = record.karma;
-    recordOwner = owner;
+    recordOwner = record.owner;
+    masterKeyPublic = record.masterKeyPublic;
   }
 
   // Returns the owner of the given record. The owner could also be get
@@ -92,23 +104,6 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
   // are returned.
   function getOwner(address key) public view returns (address) {
     return records[key].owner;
-  }
-
-  function getAllSSP() public view returns (address[] addresses, SSPType[] sspTypes, uint16[] publisherFees, uint256[2][] karmas, address[] recordOwners) {
-    addresses = new address[](numRecords);
-    sspTypes = new SSPType[](numRecords);
-    publisherFees = new uint16[](numRecords);
-    karmas = new uint256[2][](numRecords);
-    recordOwners = new address[](numRecords);
-    uint256 i;
-    for (i = 0; i < numRecords; i++) {
-      SSP storage ssp = records[keys[i]];
-      addresses[i] = ssp.sspAddress;
-      sspTypes[i] = ssp.sspType;
-      publisherFees[i] = ssp.publisherFee;
-      karmas[i] = ssp.karma;
-      recordOwners[i] = ssp.owner;
-    }
   }
 
   // Returns the registration time of the given record. The time could also
@@ -123,8 +118,6 @@ contract SSPRegistryImpl is SSPRegistry, DaoOwnable {
   }
 
   // FIELDS
-
-  uint256 public creationTime = now;
 
   // This mapping keeps the records of this Registry.
   mapping(address => SSP) records;

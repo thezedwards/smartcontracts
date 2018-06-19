@@ -23,39 +23,12 @@ contract CampaignManagerContract {
 
   function createCampaign(
     address _dsp,
-    uint256 _feeRate,
-    string _dbId
+    uint256 _feeRate
   )
     public
     returns (address campaign)
   {
-    campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _feeRate, _dbId);
-    campaigns[campaignCount] = campaign;
-    campaignCount += 1;
-    CampaignCreated(campaignCount - 1, campaign);
-  }
-
-  function createCampaignAndChannels(
-    address _dsp,
-    uint256 _feeRate,
-    string _dbId,
-    address[] ssps,
-    address[] sspContracts,
-    address[] auditors,
-    uint256[] auditorsRates,
-    address disputeResolver,
-    string module,
-    bytes configuration,
-    uint32[] timeouts
-  )
-    public
-    returns (CampaignContract campaign)
-  {
-    require(ssps.length > 0);
-    campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _feeRate, _dbId);
-    for (uint32 i = 0; i < ssps.length; ++i) {
-      campaign.createChannel(module, configuration, ssps[i], sspContracts[i], auditors, auditorsRates, disputeResolver, timeouts);
-    }
+    campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _feeRate);
     campaigns[campaignCount] = campaign;
     campaignCount += 1;
     CampaignCreated(campaignCount - 1, campaign);

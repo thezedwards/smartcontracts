@@ -46,12 +46,13 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
   }
 
   function createChannel(
-    string module,
+    //string module,
     bytes configuration,
     address partner,
     address partnerPaymentAddress,
     address[] auditors,
     uint256[] _auditorsRates,
+    bytes encryptionKey,
     address disputeResolver,
     uint32[] timeouts
   )
@@ -66,7 +67,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
       participants[2 + i] = auditors[i];
       auditorsRates[partner][auditors[i]] = _auditorsRates[i];
     }
-    channel = channelManager.createChannel(module, configuration, participants, disputeResolver, timeouts);
+    channel = channelManager.createChannel(/*module, */configuration, participants, encryptionKey, disputeResolver, timeouts);
     if (channelCounts[partner] == 0) {
       partners[partnerCount] = partner;
       partnerCount += 1;
@@ -74,7 +75,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
     channelIndexes[partner][channelCounts[partner]] = channel;
     channelPaymentReceivers[partner][channelCounts[partner]] = partnerPaymentAddress;
     channelCounts[partner] += 1;
-    ChannelCreated(channelCounts[partner] - 1, channel, module, configuration, partner,
+    ChannelCreated(channelCounts[partner] - 1, channel, /*module, */configuration, partner,
       partnerPaymentAddress, auditors, _auditorsRates, disputeResolver, timeouts);
   }
 

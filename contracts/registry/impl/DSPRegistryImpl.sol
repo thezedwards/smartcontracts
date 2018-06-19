@@ -24,13 +24,15 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
 
     bytes32[5] url;
 
+    bytes masterKeyPublic;
+
     uint256[2] karma;
   }
 
   // PUBLIC FUNCTIONS
 
   // This is the function that actually insert a record.
-  function register(address key, DSPType dspType, bytes32[5] url, address recordOwner) public onlyDaoOrOwner {
+  function register(address key, DSPType dspType, bytes32[5] url, address recordOwner, bytes masterKeyPublic) public onlyDaoOrOwner {
     require(records[key].time == 0);
     records[key].time = now;
     records[key].owner = recordOwner;
@@ -38,6 +40,7 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
     records[key].dspAddress = key;
     records[key].dspType = dspType;
     records[key].url = url;
+    records[key].masterKeyPublic = masterKeyPublic;
     keys.length++;
     keys[keys.length - 1] = key;
     numRecords++;
@@ -78,13 +81,22 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
     return records[key].time != 0;
   }
 
-  function getDSP(address key) public view returns (address dspAddress, DSPType dspType, bytes32[5] url, uint256[2] karma, address recordOwner) {
+  function getMemberCount() public view returns (uint256) {
+    return keys.length;
+  }
+
+  function getMemberAddress(uint256 index) public view returns (address) {
+    return keys[index];
+  }
+
+  function getMember(address key) public view returns (address dspAddress, DSPType dspType, bytes32[5] url, uint256[2] karma, address recordOwner, bytes masterKeyPublic) {
     DSP storage record = records[key];
     dspAddress = record.dspAddress;
     url = record.url;
     dspType = record.dspType;
     karma = record.karma;
     recordOwner = record.owner;
+    masterKeyPublic = record.masterKeyPublic;
   }
 
   // Returns the owner of the given record. The owner could also be get
@@ -101,32 +113,11 @@ contract DSPRegistryImpl is DSPRegistry, DaoOwnable {
     return records[key].time;
   }
 
-  //@dev Get list of all registered dsp
-  //@return Returns array of addresses registered as DSP with register times
-  function getAllDSP() public view returns (address[] addresses, DSPType[] dspTypes, bytes32[5][] urls, uint256[2][] karmas, address[] recordOwners) {
-    addresses = new address[](numRecords);
-    dspTypes = new DSPType[](numRecords);
-    urls = new bytes32[5][](numRecords);
-    karmas = new uint256[2][](numRecords);
-    recordOwners = new address[](numRecords);
-    uint256 i;
-    for (i = 0; i < numRecords; i++) {
-      DSP storage dsp = records[keys[i]];
-      addresses[i] = dsp.dspAddress;
-      dspTypes[i] = dsp.dspType;
-      urls[i] = dsp.url;
-      karmas[i] = dsp.karma;
-      recordOwners[i] = dsp.owner;
-    }
-  }
-
   function kill() public onlyOwner {
     selfdestruct(owner);
   }
 
   // FIELDS
-
-  uint256 public creationTime = now;
 
   // This mapping keeps the records of this Registry.
   mapping(address => DSP) records;

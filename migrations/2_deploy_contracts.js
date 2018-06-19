@@ -18,8 +18,7 @@ var RtbSettlementContract = artifacts.require("./channel/RtbSettlementContract.s
 var CampaignContract = artifacts.require("./channel/CampaignContract.sol");
 var SspContract = artifacts.require("./channel/SspContract.sol");
 
-// Encryption tests on Rinkeby
-//var addressPapyrusRegistry = '0x3951B3Fda07C1632D35E4a475352f20b786C41ce';
+var addressPapyrusRegistry = '0x3602F8889FC30A432f21c0B62e5b599A05A3E403';
 
 var addressCoreAccount = web3.eth.accounts[0];
 var addressPapyrusTokenTest;
