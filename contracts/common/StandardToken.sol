@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.24;
 
 import './ERC20.sol';
 import './SafeMath.sol';
@@ -20,7 +20,7 @@ contract StandardToken is ERC20 {
     require(_value <= balances[msg.sender]);
     balances[msg.sender] = balances[msg.sender].sub(_value);
     balances[_to] = balances[_to].add(_value);
-    Transfer(msg.sender, _to, _value);
+    emit Transfer(msg.sender, _to, _value);
     return true;
   }
 
@@ -36,7 +36,7 @@ contract StandardToken is ERC20 {
     balances[_from] = balances[_from].sub(_value);
     balances[_to] = balances[_to].add(_value);
     allowances[_from][msg.sender] = allowances[_from][msg.sender].sub(_value);
-    Transfer(_from, _to, _value);
+    emit Transfer(_from, _to, _value);
     return true;
   }
 
@@ -50,7 +50,7 @@ contract StandardToken is ERC20 {
   /// @return A boolean that indicates if the operation was successful.
   function approve(address _spender, uint256 _value) public returns (bool) {
     allowances[msg.sender][_spender] = _value;
-    Approval(msg.sender, _spender, _value);
+    emit Approval(msg.sender, _spender, _value);
     return true;
   }
 

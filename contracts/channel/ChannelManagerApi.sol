@@ -1,8 +1,4 @@
-pragma solidity ^0.4.18;
-
-import '../common/StandardToken.sol';
-import './ChannelApi.sol';
-import './SettlementApi.sol';
+pragma solidity ^0.4.24;
 
 
 contract ChannelManagerApi {
@@ -19,8 +15,6 @@ contract ChannelManagerApi {
   // PUBLIC FUNCTIONS (CHANNELS MANAGEMENT)
 
   function createChannel(
-    // validator module name
-    //string module,
     // module-specific configuration
     bytes configuration,
     // addresses of participants
@@ -50,12 +44,12 @@ contract ChannelManagerApi {
   function blockResolveDispute(uint64 channel, uint64 blockId, bytes result) public;
 
   // Read channel information
-  function channelModule(uint64 channel) public view returns (string);
   function channelConfiguration(uint64 channel) public view returns (bytes);
   function channelParticipantCount(uint64 channel) public view returns (uint64);
   function channelParticipant(uint64 channel, uint64 participantId) public view returns (address);
   function channelValidator(uint64 channel, uint64 participantId) public view returns (address);
   function channelEncryptionKey(uint64 channel) public view returns (bytes);
+  function channelDisputeResolver(uint64 channel) public view returns (address);
 
   // Read channel blocks information
   function blockPart(uint64 channel, uint64 participantId, uint64 blockId) public view returns (uint64 length, bytes32 hash, bytes reference);

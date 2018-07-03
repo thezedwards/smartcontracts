@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.24;
 
 import '../common/StandardToken.sol';
 import './RtbSettlementContract.sol';
@@ -8,7 +8,7 @@ contract CampaignContract is RtbSettlementContract {
 
   // PUBLIC FUNCTIONS
 
-  function CampaignContract(
+  constructor(
     address _token,
     address _channelManager,
     address _advertiser,

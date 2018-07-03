@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.24;
 
 import './CampaignContract.sol';
 
@@ -11,7 +11,7 @@ contract CampaignManagerContract {
 
   // PUBLIC FUNCTIONS
 
-  function CampaignManagerContract(address _token, address _channelManager) public {
+  constructor(address _token, address _channelManager) public {
     require(_token != address(0) && _channelManager != address(0));
     token = StandardToken(_token);
     channelManager = ChannelManagerContract(_channelManager);
@@ -21,17 +21,11 @@ contract CampaignManagerContract {
     revert();
   }
 
-  function createCampaign(
-    address _dsp,
-    uint256 _feeRate
-  )
-    public
-    returns (address campaign)
-  {
-    campaign = new CampaignContract(token, channelManager, msg.sender, _dsp, _feeRate);
+  function createCampaign(address dsp, uint256 feeRate) public returns (address campaign) {
+    campaign = new CampaignContract(token, channelManager, msg.sender, dsp, feeRate);
     campaigns[campaignCount] = campaign;
     campaignCount += 1;
-    CampaignCreated(campaignCount - 1, campaign);
+    emit CampaignCreated(campaignCount - 1, campaign);
   }
 
   // FIELDS
@@ -39,6 +33,6 @@ contract CampaignManagerContract {
   StandardToken public token;
   ChannelManagerContract public channelManager;
 
-  mapping (uint64 => address) public campaigns;
   uint64 public campaignCount;
+  mapping (uint64 => address) public campaigns;
 }

@@ -1,10 +1,7 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.24;
 
-import '../common/ECRecovery.sol';
-import '../common/StandardToken.sol';
-import './ChannelApi.sol';
+import '../common/SafeMath.sol';
 import './ChannelManagerApi.sol';
-import './SettlementApi.sol';
 
 
 contract ChannelManagerContract is ChannelManagerApi {
@@ -13,7 +10,6 @@ contract ChannelManagerContract is ChannelManagerApi {
   // STRUCTURES
 
   struct Channel {
-    //string module;
     bytes configuration;
     Participant[] participants;
     bytes encryptionKey;
@@ -67,9 +63,7 @@ contract ChannelManagerContract is ChannelManagerApi {
   // PUBLIC FUNCTIONS (CHANNELS MANAGEMENT)
 
   function createChannel(
-    // validator module name
-    //string module,
-    // module-specific configuration
+    // custom channel configuration
     bytes configuration,
     // addresses of participants
     address[] participants,
@@ -92,12 +86,11 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(timeouts[2] > 0);
     require(timeouts[3] > 0);
     channel = channelCount + 1;
-    //channels[channel].module = module;
     channels[channel].configuration = configuration;
     channels[channel].participants.length = participants.length;
     for (uint16 i = 0; i < participants.length; ++i) {
       channels[channel].participants[i].participant = participants[i];
-      ChannelCreated(channel, participants[i]);
+      emit ChannelCreated(channel, participants[i]);
     }
     channels[channel].encryptionKey = encryptionKey;
     channels[channel].disputeResolver = disputeResolver;
@@ -112,7 +105,7 @@ contract ChannelManagerContract is ChannelManagerApi {
   function requestClose(uint64 channel) public onlyParticipant(channel) {
     require(channels[channel].closeTimestamp == 0); 
     channels[channel].closeTimestamp = uint64(now) + channels[channel].closeTimeout;
-    ChannelCloseRequested(channel, channels[channel].closeTimestamp);
+    emit ChannelCloseRequested(channel, channels[channel].closeTimestamp);
   }
 
   // PUBLIC FUNCTIONS (CHANNELS INTERACTION)
@@ -124,7 +117,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     uint8 i = uint8(participantIndex);
     require(channels[channel].participants[i].validator == 0);
     channels[channel].participants[i].validator = validator;
-    ChannelApproved(channel, msg.sender);
+    emit ChannelApproved(channel, msg.sender);
   }
 
   function setBlockPart(uint64 channel, uint64 blockId, uint64 length, bytes32 hash, bytes reference)
@@ -148,7 +141,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     channels[channel].blocks[blockId].parts[i].hash = hash;
     channels[channel].blocks[blockId].parts[i].reference = reference;
     channels[channel].blocks[blockId].parts[i].length = length;
-    ChannelNewBlockPart(channel, msg.sender, blockId, length, hash, reference);
+    emit ChannelNewBlockPart(channel, msg.sender, blockId, length, hash, reference);
   }
 
   function setBlockResult(uint64 channel, uint64 blockId, bytes32 resultHash)
@@ -164,7 +157,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     }
     require(channels[channel].blocks[blockId].results[i].resultHash == 0);
     channels[channel].blocks[blockId].results[i].resultHash = resultHash;
-    ChannelNewBlockResult(channel, msg.sender, blockId, resultHash);
+    emit ChannelNewBlockResult(channel, msg.sender, blockId, resultHash);
   }
 
   function blockSettle(uint64 channel, uint64 blockId, bytes result)
@@ -175,7 +168,7 @@ contract ChannelManagerContract is ChannelManagerApi {
   {
     channels[channel].blocks[blockId].settlement.result = result;
     channels[channel].blocks[blockId].settlement.resultHash = keccak256(result);
-    ChannelBlockSettled(channel, msg.sender, blockId, result);
+    emit ChannelBlockSettled(channel, msg.sender, blockId, result);
   }
 
   function blockResolveDispute(uint64 channel, uint64 blockId, bytes result)
@@ -187,14 +180,10 @@ contract ChannelManagerContract is ChannelManagerApi {
     // TODO: Here can be additional logic to control such dispute resolution
     channels[channel].blocks[blockId].settlement.result = result;
     channels[channel].blocks[blockId].settlement.resultHash = keccak256(result);
-    ChannelBlockSettled(channel, msg.sender, blockId, result);
+    emit ChannelBlockSettled(channel, msg.sender, blockId, result);
   }
   
   // FUNCTIONS
-
-  /*function channelModule(uint64 channel) public view returns (string) {
-    return channels[channel].module;
-  }*/
 
   function channelConfiguration(uint64 channel) public view returns (bytes) {
     return channels[channel].configuration;
@@ -202,10 +191,6 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   function channelParticipantCount(uint64 channel) public view returns (uint64) {
     return uint64(channels[channel].participants.length);
-  }
-
-  function channelDisputeResolver(uint64 channel) public view returns (address) {
-    return channels[channel].disputeResolver;
   }
 
   function channelParticipant(uint64 channel, uint64 participantId) public view returns (address) {
@@ -218,6 +203,10 @@ contract ChannelManagerContract is ChannelManagerApi {
 
   function channelEncryptionKey(uint64 channel) public view returns (bytes) {
     return channels[channel].encryptionKey;
+  }
+
+  function channelDisputeResolver(uint64 channel) public view returns (address) {
+    return channels[channel].disputeResolver;
   }
 
   function channelPartTimeout(uint64 channel) public view returns (uint32) {
@@ -287,14 +276,14 @@ contract ChannelManagerContract is ChannelManagerApi {
   }
 
   function hashState(address _channel, uint256 _nonce, uint256 _receiverPayment, uint256 _auditorPayment) public pure returns (bytes32) {
-    return keccak256(_channel, _nonce, _receiverPayment, _auditorPayment);
+    return keccak256(abi.encodePacked(_channel, _nonce, _receiverPayment, _auditorPayment));
   }
 
   function hashTransfer(address _transferId, address _channel, bytes _lockData, uint256 _sum) public pure returns (bytes32) {
     if (_lockData.length > 0) {
-      return keccak256(_transferId, _channel, _sum, _lockData);
+      return keccak256(abi.encodePacked(_transferId, _channel, _sum, _lockData));
     } else {
-      return keccak256(_transferId, _channel, _sum);
+      return keccak256(abi.encodePacked(_transferId, _channel, _sum));
     }
   }
 
@@ -368,7 +357,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(channels[channel].blocks[blockId].settlement.result.length == 0);
     require(result.length > 0);
     uint8 i;
-    var resultHash = keccak256(result);
+    bytes32 resultHash = keccak256(result);
     if (blockStart(blockId) + channels[channel].resultTimeout >= now) {
       // Require results from all approved participants are stored
       for (i = 0; i < channels[channel].participants.length; ++i) {
@@ -389,7 +378,7 @@ contract ChannelManagerContract is ChannelManagerApi {
     require(channels[channel].disputeResolver == msg.sender);
     require(channels[channel].blocks[blockId].settlement.result.length == 0);
     require(result.length > 0);
-    var resultHash = keccak256(result);
+    bytes32 resultHash = keccak256(result);
     bool consensus = true;
     uint8 validatorCount = 0;
     for (uint8 i = 0; i < channels[channel].participants.length; ++i) {

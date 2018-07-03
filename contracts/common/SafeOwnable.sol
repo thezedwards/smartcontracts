@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.24;
 
 
 /// @title SafeOwnable
@@ -13,7 +13,7 @@ contract SafeOwnable {
   // PUBLIC FUNCTIONS
 
   /// @dev The Ownable constructor sets the original `owner` of the contract to the sender account.
-  function SafeOwnable() public {
+  constructor() public {
     owner = msg.sender;
   }
 
@@ -28,7 +28,7 @@ contract SafeOwnable {
   function approveOwnership() onlyOwnerCandidate public {
     owner = ownerCandidate;
     ownerCandidate = address(0);
-    OwnershipTransferred(owner, ownerCandidate);
+    emit OwnershipTransferred(owner, ownerCandidate);
   }
 
   // MODIFIERS

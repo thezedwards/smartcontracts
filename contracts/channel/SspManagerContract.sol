@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.24;
 
 import './SspContract.sol';
 
@@ -11,7 +11,7 @@ contract SspManagerContract {
 
   // PUBLIC FUNCTIONS
 
-  function SspManagerContract(address _token, address _channelManager) public {
+  constructor(address _token, address _channelManager) public {
     require(_token != address(0) && _channelManager != address(0));
     token = StandardToken(_token);
     channelManager = ChannelManagerContract(_channelManager);
@@ -21,17 +21,11 @@ contract SspManagerContract {
     revert();
   }
 
-  function createSsp(
-    address _ssp,
-    uint256 _feeRate
-  )
-    public
-    returns (address ssp)
-  {
-    ssp = new SspContract(token, channelManager, _ssp, _feeRate);
-    ssps[sspCount] = ssp;
+  function createSsp(address ssp, uint256 feeRate) public returns (address sspContract) {
+    sspContract = new SspContract(token, channelManager, ssp, feeRate);
+    ssps[sspCount] = sspContract;
     sspCount += 1;
-    SspCreated(sspCount - 1, ssp);
+    SspCreated(sspCount - 1, sspContract);
   }
 
   // FIELDS

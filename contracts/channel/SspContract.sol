@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.24;
 
 import '../common/StandardToken.sol';
 import './RtbSettlementContract.sol';
@@ -8,7 +8,7 @@ contract SspContract is RtbSettlementContract {
 
   // PUBLIC FUNCTIONS
 
-  function SspContract(
+  constructor(
     address _token,
     address _channelManager,
     address _ssp,
@@ -32,21 +32,6 @@ contract SspContract is RtbSettlementContract {
   function withdraw(uint256) public returns (bool, uint256) {
     // Turned off for SSP contract for now
     revert();
-  }
-
-  function addPublisher(
-    //string module,
-    bytes configuration,
-    address publisher,
-    address[] auditors,
-    uint256[] auditorsRates,
-    bytes encryptionKey,
-    address disputeResolver,
-    uint32[] timeouts
-  )
-    public
-  {
-    createChannel(/*module, */configuration, publisher, publisher, auditors, auditorsRates, encryptionKey, disputeResolver, timeouts);
   }
 
   function ssp() public view returns (address) {

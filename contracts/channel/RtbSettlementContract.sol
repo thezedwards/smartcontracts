@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.24;
 
 import '../common/StandardToken.sol';
 import '../common/SafeOwnable.sol';
@@ -11,7 +11,7 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
 
   // PUBLIC FUNCTIONS
 
-  function RtbSettlementContract(address _token, address _channelManager, address _payer, uint256 _feeRate) public {
+  constructor(address _token, address _channelManager, address _payer, uint256 _feeRate) public {
     require(_token != address(0) && _channelManager != address(0) && _payer != address(0));
     token = StandardToken(_token);
     channelManager = ChannelManagerContract(_channelManager);
@@ -22,12 +22,12 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
   /// @notice Sender deposits amount of tokens.
   /// @param amount The amount to be deposited to the contract
   /// @return success Success if the transfer was successful
-  /// @return contractBalance The new contractBalance of the contract
-  function deposit(uint256 amount) public returns (bool success, uint256 contractBalance) {
+  /// @return balance The new balance of the contract
+  function deposit(uint256 amount) public returns (bool success, uint256 balance) {
     require(token.balanceOf(msg.sender) >= amount);
     success = token.transferFrom(msg.sender, this, amount);
     if (success) {
-      Deposit(msg.sender, token.balanceOf(this));
+      emit Deposit(msg.sender, token.balanceOf(this));
     }
     return (success, token.balanceOf(this));
   }
@@ -35,59 +35,54 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
   /// @notice Sender withdraws amount of tokens.
   /// @param amount The amount to be withdrawn from the contract
   /// @return success Success if the transfer was successful
-  /// @return contractBalance The new contractBalance of the contract
-  function withdraw(uint256 amount) public onlyOwner returns (bool success, uint256 contractBalance) {
+  /// @return balance The new balance of the contract
+  function withdraw(uint256 amount) public onlyOwner returns (bool success, uint256 balance) {
     require(token.balanceOf(this) >= amount);
     success = token.transfer(owner, amount);
     if (success) {
-      Withdraw(owner, token.balanceOf(this));
+      emit Withdraw(owner, token.balanceOf(this));
     }
     return (success, token.balanceOf(this));
   }
 
-  function createChannel(
-    //string module,
-    bytes configuration,
-    address partner,
-    address partnerPaymentAddress,
-    address[] auditors,
-    uint256[] _auditorsRates,
-    bytes encryptionKey,
-    address disputeResolver,
-    uint32[] timeouts
+  function registerChannel(
+    uint64 channelId,
+    address payee,
+    uint256[] auditorsRates
   )
     public
-    returns (uint64 channel)
+    onlyOwner
   {
-    require(auditors.length == _auditorsRates.length);
-    address[] memory participants = new address[](2 + auditors.length);
-    participants[0] = payer;
-    participants[1] = partner;
-    for (uint8 i = 0; i < auditors.length; ++i) {
-      participants[2 + i] = auditors[i];
-      auditorsRates[partner][auditors[i]] = _auditorsRates[i];
-    }
-    channel = channelManager.createChannel(/*module, */configuration, participants, encryptionKey, disputeResolver, timeouts);
-    if (channelCounts[partner] == 0) {
+    uint256 participantCount = channelManager.channelParticipantCount(channelId);
+    require(participantCount >= 2);
+    uint256 auditorCount = participantCount - 2;
+    require(auditorCount == auditorsRates.length);
+    require(payer == channelManager.channelParticipant(channelId, 0));
+    address partner = channelManager.channelParticipant(channelId, 1);
+    address[] memory auditors = new address[](auditorCount);
+    uint64 channelIndex = channelCounts[partner];
+    if (channelIndex == 0) {
       partners[partnerCount] = partner;
       partnerCount += 1;
     }
-    channelIndexes[partner][channelCounts[partner]] = channel;
-    channelPaymentReceivers[partner][channelCounts[partner]] = partnerPaymentAddress;
+    channelIds[partner][channelIndex] = channelId;
+    channelPayees[partner][channelIndex] = payee;
+    for (uint64 i = 0; i < auditorCount; ++i) {
+      auditors[i] = channelManager.channelParticipant(channelId, 2 + i);
+      channelAuditorsRates[partner][channelIndex][auditors[i]] = auditorsRates[i];
+    }
     channelCounts[partner] += 1;
-    ChannelCreated(channelCounts[partner] - 1, channel, /*module, */configuration, partner,
-      partnerPaymentAddress, auditors, _auditorsRates, disputeResolver, timeouts);
+    emit ChannelRegistered(partner, channelIndex, channelId, payee, auditors, auditorsRates);
   }
 
-  function settle(address partner, uint64 channel, uint64 blockId, bytes result) public {
-    require(!channelSettlements[partner][channel][blockId]);
-    require(result.length > 0);
-    uint64 channelInternal = channelIndexes[partner][channel];
-    require(channelInternal > 0);
-    uint64 participantCount = channelManager.channelParticipantCount(channelInternal);
+  function settle(address partner, uint64 channelIndex, uint64 blockId, bytes result) public {
+    require(!settlements[partner][channelIndex][blockId]);
+    uint64 channelId = channelIds[partner][channelIndex];
+    require(channelId > 0 && blockId > 0 && result.length > 0);
+    uint64 participantCount = channelManager.channelParticipantCount(channelId);
     require(participantCount > 0);
-    require(keccak256(result) == channelManager.blockSettlementHash(channelInternal, blockId));
-    channelSettlements[partner][channel][blockId] = true;
+    require(keccak256(result) == channelManager.blockSettlementHash(channelId, blockId));
+    settlements[partner][channelIndex][blockId] = true;
     uint64[] memory impressions = parseImpressions(participantCount - 2, result);
     uint256[] memory sums = parseSums(result);
     require(sums[1] >= sums[2]);
@@ -97,16 +92,16 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
     // 2+ - auditors payments
     address[] memory receivers = new address[](participantCount);
     receivers[0] = feeReceiver();
-    receivers[1] = channelPaymentReceivers[partner][channel];
+    receivers[1] = channelPayees[partner][channelIndex];
     uint256[] memory amounts = new uint256[](participantCount);
     amounts[0] = partnerPayment.mul(feeRate).div(10**18);
     amounts[1] = partnerPayment.sub(amounts[0]);
     for (uint8 i = 2; i < participantCount; ++i) {
-      receivers[i] = channelManager.channelParticipant(channelInternal, i);
-      amounts[i] = auditorsRates[partner][receivers[i]].mul(impressions[i + 2]);
+      receivers[i] = channelManager.channelParticipant(channelId, i);
+      amounts[i] = channelAuditorsRates[partner][channelIndex][receivers[i]].mul(impressions[i + 2]);
     }
     performTransfers(receivers, amounts);
-    Settle(msg.sender, channel, blockId, impressions, sums, receivers, amounts);
+    emit ChannelBlockSettled(partner, channelIndex, channelId, blockId, impressions, sums, receivers, amounts);
   }
 
   // PRIVATE FUNCTIONS
@@ -126,18 +121,18 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
     // 1 - viewedImpressions
     // 2 - rejectedImpressions
     // 3 - clickImpressions
-    // 4+ - precessedImpressions by each auditor
+    // 4+ - processedImpressions by each auditor
     impressions = new uint64[](4 + auditorCount);
     impressions[0] = totalImpressions;
     impressions[1] = viewedImpressions;
     impressions[2] = rejectedImpressions;
     impressions[3] = clickImpressions;
     for (uint8 i = 0; i < auditorCount; ++i) {
-      uint64 precessedImpressions;
+      uint64 processedImpressions;
       assembly {
-        precessedImpressions := mload(add(add(result, 0x120), mul(i, 0x20)))
+        processedImpressions := mload(add(add(result, 0x120), mul(i, 0x20)))
       }
-      impressions[4 + i] = precessedImpressions;
+      impressions[4 + i] = processedImpressions;
     }
   }
 
@@ -179,14 +174,26 @@ contract RtbSettlementContract is SafeOwnable, SettlementApi {
   address public payer;
   uint256 public feeRate;
 
-  mapping (uint64 => address) public partners;
+
+  // Total amount of known partners (based on registered channels)
   uint64 public partnerCount;
 
-  mapping (address => mapping (address => uint256)) public auditorsRates;
+  // Addresses of known partners (by partner index)
+  mapping (uint64 => address) public partners;
 
-  mapping (address => mapping (uint64 => uint64)) public channelIndexes;
-  mapping (address => mapping (uint64 => address)) public channelPaymentReceivers;
+
+  // Total amount of registered channels (by partner address)
   mapping (address => uint64) public channelCounts;
 
-  mapping (address => mapping (uint64 => mapping (uint64 => bool))) public channelSettlements;
+  // Channels identifiers in ChannelManager (by partner and channel index)
+  mapping (address => mapping (uint64 => uint64)) public channelIds;
+
+  // Addresses receiving partner's payment (by partner and channel index)
+  mapping (address => mapping (uint64 => address)) public channelPayees;
+
+  // Rates of auditors specified for registered channels (by partner, channel index and auditor address)
+  mapping (address => mapping (uint64 => mapping (address => uint256))) public channelAuditorsRates;
+
+  // Switches showing if settlement already done (by partner, channel index and block identifier)
+  mapping (address => mapping (uint64 => mapping (uint64 => bool))) public settlements;
 }
